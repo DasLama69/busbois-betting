@@ -4,139 +4,84 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Bus Bois Betting 🏇</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
-  --navy: #0A1628;
-  --navy2: #0F2040;
-  --mid: #163356;
-  --steel: #2563A8;
-  --gold: #D4A017;
-  --gold-lt: #F0C040;
-  --gold-dim: #8B6914;
-  --green: #16A34A;
-  --green-lt: #DCFCE7;
-  --green-dim: #14532D;
-  --red: #DC2626;
-  --red-lt: #FEE2E2;
-  --red-dim: #7F1D1D;
-  --orange: #EA580C;
-  --white: #FFFFFF;
-  --off: #F8FAFC;
-  --gray: #E2E8F0;
-  --gray2: #CBD5E1;
-  --dark: #1E293B;
-  --muted: #64748B;
+  --navy: #0A1628; --navy2: #0F2040; --mid: #163356; --steel: #2563A8;
+  --gold: #D4A017; --gold-lt: #F0C040; --gold-dim: #8B6914;
+  --green: #16A34A; --green-lt: #DCFCE7; --green-dim: #14532D;
+  --red: #DC2626; --red-lt: #FEE2E2; --red-dim: #7F1D1D;
+  --orange: #EA580C; --white: #FFFFFF; --off: #F8FAFC;
+  --gray: #E2E8F0; --gray2: #CBD5E1; --dark: #1E293B; --muted: #64748B;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html, body { height: 100%; overflow: hidden; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
-  background: var(--navy);
-  color: var(--dark);
-  display: flex;
-  flex-direction: column;
-}
-
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+html,body { height:100%; overflow:hidden; }
+body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif; background:var(--navy); color:var(--dark); display:flex; flex-direction:column; }
+ 
+/* ── SYNC STATUS BAR ── */
+.sync-bar { flex-shrink:0; display:flex; align-items:center; justify-content:center; gap:6px; padding:4px 12px; font-size:10px; font-weight:700; transition:all 0.3s; }
+.sync-bar.connected    { background:#064E3B; color:#6EE7B7; }
+.sync-bar.syncing      { background:#1E3A5F; color:#93C5FD; }
+.sync-bar.error        { background:#7F1D1D; color:#FCA5A5; }
+.sync-bar.offline      { background:#3B2F00; color:#FCD34D; }
+.sync-dot { width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; }
+.sync-dot.pulse { animation:pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+ 
 /* ── HEADER ── */
-.hdr {
-  flex-shrink: 0;
-  background: linear-gradient(160deg, var(--navy) 0%, var(--navy2) 50%, var(--mid) 100%);
-  padding: 12px 16px 8px;
-  border-bottom: 1.5px solid rgba(212,160,23,0.4);
-  position: relative; overflow: hidden;
-}
+.hdr { flex-shrink:0; background:linear-gradient(160deg,var(--navy) 0%,var(--navy2) 50%,var(--mid) 100%); padding:11px 16px 8px; border-bottom:1.5px solid rgba(212,160,23,0.4); position:relative; overflow:hidden; }
 .hdr::before { content:'🏇'; position:absolute; right:-10px; top:-10px; font-size:80px; opacity:0.06; }
 .hdr-top { display:flex; align-items:center; justify-content:space-between; }
 .hdr-title { color:var(--gold); font-size:18px; font-weight:900; letter-spacing:0.3px; }
 .hdr-badge { background:linear-gradient(135deg,var(--gold-dim),var(--gold)); color:var(--navy); font-size:10px; font-weight:800; padding:3px 9px; border-radius:20px; letter-spacing:0.5px; }
 .hdr-sub { color:rgba(255,255,255,0.45); font-size:11px; margin-top:2px; }
-
+ 
 /* ── TABS ── */
 .tabs { flex-shrink:0; display:flex; background:var(--navy2); border-bottom:1px solid rgba(255,255,255,0.07); }
 .tab { flex:1; padding:9px 2px 8px; text-align:center; font-size:10px; font-weight:700; color:rgba(255,255,255,0.38); cursor:pointer; border-bottom:2.5px solid transparent; transition:all 0.2s; }
 .tab.active { color:var(--gold); border-bottom-color:var(--gold); }
-
+ 
 /* ── SCROLL ── */
 .scroll-area { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .page { display:none; padding:10px 12px 80px; }
 .page.active { display:block; }
-
+ 
 /* ── CARDS ── */
 .card { background:var(--white); border-radius:14px; padding:14px; margin-bottom:10px; box-shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.08); }
 .card-dark { background:linear-gradient(135deg,var(--navy2),var(--mid)); border-radius:14px; padding:14px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.08); }
 .card-title { font-size:10px; font-weight:800; color:var(--steel); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; padding-bottom:7px; border-bottom:1px solid var(--gray); display:flex; align-items:center; gap:5px; }
-
-/* ── ROTATION STRIP (compact, above hero) ── */
-.rotation-strip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  padding: 8px 12px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 12px;
-  margin-bottom: 8px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
+ 
+/* ── ROTATION STRIP ── */
+.rotation-strip { display:flex; align-items:center; justify-content:center; gap:3px; padding:8px 12px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:12px; margin-bottom:8px; overflow-x:auto; scrollbar-width:none; }
 .rotation-strip::-webkit-scrollbar { display:none; }
 .rs-item { display:flex; flex-direction:column; align-items:center; gap:2px; flex-shrink:0; }
-.rs-bubble {
-  width: 28px; height: 28px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 9px; font-weight: 800;
-  border: 1.5px solid transparent;
-}
-.rs-bubble.current {
-  background: var(--gold);
-  color: var(--navy);
-  border-color: var(--gold-lt);
-  box-shadow: 0 0 0 2px rgba(212,160,23,0.3);
-}
-.rs-bubble.done-bet { background: rgba(22,163,74,0.18); color: var(--green); border-color: rgba(22,163,74,0.3); }
-.rs-bubble.upcoming { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.4); border-color: rgba(255,255,255,0.1); }
-.rs-label { font-size: 7px; font-weight: 700; color: rgba(255,255,255,0.35); }
-.rs-label.current-lbl { color: var(--gold); }
-.rs-arrow { color: rgba(255,255,255,0.15); font-size: 10px; margin-bottom: 8px; flex-shrink:0; }
-
+.rs-bubble { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:800; border:1.5px solid transparent; }
+.rs-bubble.current { background:var(--gold); color:var(--navy); border-color:var(--gold-lt); box-shadow:0 0 0 2px rgba(212,160,23,0.3); }
+.rs-bubble.done-bet { background:rgba(22,163,74,0.18); color:var(--green); border-color:rgba(22,163,74,0.3); }
+.rs-bubble.upcoming { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.4); border-color:rgba(255,255,255,0.1); }
+.rs-label { font-size:7px; font-weight:700; color:rgba(255,255,255,0.35); }
+.rs-label.current-lbl { color:var(--gold); }
+.rs-arrow { color:rgba(255,255,255,0.15); font-size:10px; margin-bottom:8px; flex-shrink:0; }
+ 
 /* ── HERO ── */
-.hero {
-  background: linear-gradient(135deg, var(--navy2) 0%, #1a3a6b 50%, var(--mid) 100%);
-  border-radius: 16px;
-  padding: 14px 16px;
-  margin-bottom: 8px;
-  border: 1px solid rgba(212,160,23,0.25);
-  position: relative; overflow: hidden;
-}
+.hero { background:linear-gradient(135deg,var(--navy2) 0%,#1a3a6b 50%,var(--mid) 100%); border-radius:16px; padding:14px 16px; margin-bottom:8px; border:1px solid rgba(212,160,23,0.25); position:relative; overflow:hidden; }
 .hero::after { content:''; position:absolute; top:-40px; right:-40px; width:130px; height:130px; background:radial-gradient(circle,rgba(212,160,23,0.1) 0%,transparent 70%); border-radius:50%; }
 .hero-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; }
-.hero-left {}
 .hero-eyebrow { font-size:10px; font-weight:800; color:rgba(212,160,23,0.7); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:4px; }
 .hero-name { font-size:30px; font-weight:900; color:var(--white); line-height:1; }
 .hero-sub { font-size:11px; color:rgba(255,255,255,0.45); margin-top:3px; }
-.hero-right { flex-shrink:0; text-align:right; }
-.streak-badge {
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 10px;
-  padding: 6px 10px;
-  text-align: center;
-}
+.streak-badge { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:6px 10px; text-align:center; }
 .streak-badge.hot { background:rgba(22,163,74,0.2); border-color:rgba(22,163,74,0.4); }
 .streak-badge.cold { background:rgba(220,38,38,0.2); border-color:rgba(220,38,38,0.4); }
 .streak-val { font-size:18px; font-weight:900; color:var(--white); line-height:1; }
 .streak-lbl { font-size:8px; font-weight:700; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
 .streak-badge.hot .streak-lbl { color:rgba(134,239,172,0.8); }
 .streak-badge.cold .streak-lbl { color:rgba(252,165,165,0.8); }
-
-/* Hero punter stats */
 .hero-stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; }
 .hero-stat { background:rgba(255,255,255,0.06); border-radius:9px; padding:7px 4px; text-align:center; border:1px solid rgba(255,255,255,0.07); }
 .hero-stat-val { font-size:15px; font-weight:800; color:var(--white); line-height:1; }
 .hero-stat-lbl { font-size:8px; font-weight:700; color:rgba(255,255,255,0.38); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
-
+ 
 /* ── ACCOUNT BAR ── */
 .acct-bar-card { background:linear-gradient(135deg,var(--green-dim),#15803D); border-radius:14px; padding:12px 14px; margin-bottom:8px; color:white; }
 .acct-bar-card.losing { background:linear-gradient(135deg,var(--red-dim),#B91C1C); }
@@ -148,15 +93,15 @@ body {
 .acct-track { background:rgba(255,255,255,0.2); border-radius:4px; height:5px; margin-bottom:5px; overflow:hidden; }
 .acct-fill { height:100%; background:rgba(255,255,255,0.85); border-radius:4px; transition:width 0.8s; }
 .acct-labels { display:flex; justify-content:space-between; font-size:9px; opacity:0.5; }
-
+ 
 /* ── STAT TILES ── */
 .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
 .stat-tile { background:var(--white); border-radius:12px; padding:11px 10px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
 .stat-tile-val { font-size:18px; font-weight:800; color:var(--dark); line-height:1; }
 .stat-tile-lbl { font-size:9px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:3px; }
 .stat-tile-sub { font-size:10px; color:var(--muted); margin-top:2px; }
-
-/* ── RECENT BETS ── */
+ 
+/* ── BET ROWS ── */
 .bet-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--gray); }
 .bet-row:last-child { border-bottom:none; }
 .bet-avatar { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; flex-shrink:0; }
@@ -173,7 +118,7 @@ body {
 .pill-win  { background:var(--green-lt); color:var(--green); }
 .pill-loss { background:var(--red-lt); color:var(--red); }
 .pill-void { background:var(--gray); color:var(--muted); }
-
+ 
 /* ── LEADERBOARD ── */
 .lb-row { display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid var(--gray); }
 .lb-row:last-child { border-bottom:none; }
@@ -187,7 +132,7 @@ body {
 .lb-right { text-align:right; flex-shrink:0; }
 .lb-net { font-size:15px; font-weight:900; }
 .lb-roi { font-size:10px; color:var(--muted); margin-top:1px; }
-
+ 
 /* ── FORM ── */
 .form-group { margin-bottom:12px; }
 .form-label { display:block; font-size:10px; font-weight:800; color:var(--steel); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:5px; }
@@ -198,22 +143,22 @@ body {
 .form-control.editable-auto { background:#FFF7ED; border-color:#FED7AA; }
 .form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%2364748B' d='M5 7L0 2h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; }
-
+ 
 /* ── BUTTONS ── */
 .btn { width:100%; padding:14px; border:none; border-radius:12px; font-size:15px; font-weight:800; cursor:pointer; letter-spacing:0.2px; transition:all 0.15s; -webkit-appearance:none; }
 .btn:active { transform:scale(0.98); }
 .btn-primary { background:linear-gradient(135deg,var(--mid),var(--steel)); color:white; box-shadow:0 4px 12px rgba(37,99,168,0.3); }
-.btn-win   { background:linear-gradient(135deg,var(--green-dim),var(--green)); color:white; box-shadow:0 4px 12px rgba(22,163,74,0.3); }
-.btn-loss  { background:linear-gradient(135deg,var(--red-dim),var(--red)); color:white; box-shadow:0 4px 12px rgba(220,38,38,0.3); }
+.btn-win   { background:linear-gradient(135deg,var(--green-dim),var(--green)); color:white; }
+.btn-loss  { background:linear-gradient(135deg,var(--red-dim),var(--red)); color:white; }
 .btn-warn  { background:linear-gradient(135deg,#92400E,var(--orange)); color:white; }
-.btn-danger{ background:linear-gradient(135deg,var(--red-dim),var(--red)); color:white; }
 .btn-group { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
-
+.btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+ 
 /* ── PREVIEW ── */
 .preview-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
 .preview-lbl { font-size:9px; color:var(--muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px; }
 .preview-val { font-size:14px; font-weight:800; color:var(--dark); }
-
+ 
 /* ── HISTORY ── */
 .hist-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--gray); font-size:12px; }
 .hist-row:last-child { border-bottom:none; }
@@ -221,8 +166,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .hist-name { font-weight:700; flex:1; }
 .hist-net { font-weight:700; font-size:12px; }
 .hist-del { background:none; border:none; color:var(--muted); font-size:14px; cursor:pointer; padding:2px 4px; border-radius:4px; flex-shrink:0; }
-.hist-del:active { background:var(--red-lt); color:var(--red); }
-
+ 
 /* ── AI ── */
 .ai-card { background:linear-gradient(135deg,#1e0a3c,#2D1B69,#1a3a6b); border-radius:14px; padding:14px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.08); }
 .ai-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
@@ -230,32 +174,46 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .ai-refresh { background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.15); border-radius:20px; padding:4px 12px; font-size:10px; font-weight:700; cursor:pointer; }
 .ai-text { font-size:13px; line-height:1.55; color:rgba(255,255,255,0.88); min-height:40px; }
 .ai-loading { color:rgba(255,255,255,0.4); font-style:italic; }
-
-/* ── ADMIN SECTION ── */
+ 
+/* ── ADMIN ── */
 .admin-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--gray); }
 .admin-row:last-child { border-bottom:none; }
 .admin-lbl { font-size:13px; font-weight:600; color:var(--dark); }
 .admin-sub { font-size:11px; color:var(--muted); margin-top:1px; }
-.admin-action { flex-shrink:0; }
-
+ 
+/* ── LOADING OVERLAY ── */
+.loading-overlay { position:fixed; inset:0; background:var(--navy); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:999; transition:opacity 0.4s; }
+.loading-overlay.hidden { opacity:0; pointer-events:none; }
+.loading-logo { font-size:48px; margin-bottom:16px; }
+.loading-title { color:var(--gold); font-size:20px; font-weight:900; margin-bottom:8px; }
+.loading-msg { color:rgba(255,255,255,0.4); font-size:12px; }
+.loading-spinner { width:32px; height:32px; border:3px solid rgba(255,255,255,0.1); border-top-color:var(--gold); border-radius:50%; animation:spin 0.8s linear infinite; margin-top:20px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+ 
 /* ── TOAST ── */
-.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--dark); color:white; padding:11px 22px; border-radius:24px; font-size:13px; font-weight:700; z-index:999; transition:transform 0.3s ease; white-space:nowrap; box-shadow:0 4px 20px rgba(0,0,0,0.3); }
+.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--dark); color:white; padding:11px 22px; border-radius:24px; font-size:13px; font-weight:700; z-index:998; transition:transform 0.3s ease; white-space:nowrap; box-shadow:0 4px 20px rgba(0,0,0,0.3); }
 .toast.show { transform:translateX(-50%) translateY(0); }
-
+ 
 .section-label { font-size:10px; font-weight:800; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; padding-top:4px; }
 .empty { color:var(--muted); font-size:13px; padding:16px 0; text-align:center; }
-
-/* ── MODAL ── */
-.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:500; align-items:flex-end; justify-content:center; }
-.modal-overlay.open { display:flex; }
-.modal-sheet { background:white; border-radius:20px 20px 0 0; padding:20px; width:100%; max-height:80vh; overflow-y:auto; }
-.modal-title { font-size:16px; font-weight:800; color:var(--dark); margin-bottom:4px; }
-.modal-sub { font-size:12px; color:var(--muted); margin-bottom:16px; }
-.modal-close { float:right; background:var(--gray); border:none; border-radius:20px; padding:4px 12px; font-size:12px; font-weight:700; cursor:pointer; color:var(--muted); }
 </style>
 </head>
 <body>
-
+ 
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-logo">🏇</div>
+  <div class="loading-title">Bus Bois Betting</div>
+  <div class="loading-msg" id="loading-msg">Connecting to live data…</div>
+  <div class="loading-spinner"></div>
+</div>
+ 
+<!-- SYNC STATUS -->
+<div class="sync-bar syncing" id="sync-bar">
+  <div class="sync-dot pulse" id="sync-dot"></div>
+  <span id="sync-label">Connecting…</span>
+</div>
+ 
 <!-- HEADER -->
 <div class="hdr">
   <div class="hdr-top">
@@ -264,7 +222,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   </div>
   <div class="hdr-sub" id="hdr-sub">2026 Season · Loading…</div>
 </div>
-
+ 
 <!-- TABS -->
 <div class="tabs">
   <div class="tab active" onclick="switchTab('home')">🏠 Home</div>
@@ -272,48 +230,33 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   <div class="tab" onclick="switchTab('board')">🏆 Board</div>
   <div class="tab" onclick="switchTab('account')">⚙️ Admin</div>
 </div>
-
+ 
 <div class="scroll-area">
-
-<!-- ══════════ HOME ══════════ -->
+ 
+<!-- HOME -->
 <div class="page active" id="tab-home">
-
-  <!-- ROTATION STRIP (compact, above hero) -->
   <div class="rotation-strip" id="home-rotation-strip"></div>
-
-  <!-- HERO: who's up -->
   <div class="hero">
     <div class="hero-top">
-      <div class="hero-left">
+      <div>
         <div class="hero-eyebrow" id="hero-eyebrow">WEEK – · UP NOW</div>
         <div class="hero-name" id="hero-punter-name">–</div>
         <div class="hero-sub" id="hero-punter-sub">Loading…</div>
       </div>
-      <div class="hero-right">
+      <div>
         <div class="streak-badge" id="streak-badge">
           <div class="streak-val" id="streak-val">–</div>
           <div class="streak-lbl" id="streak-lbl">Streak</div>
         </div>
       </div>
     </div>
-    <!-- Punter's own stats -->
     <div class="hero-stats">
-      <div class="hero-stat">
-        <div class="hero-stat-val" id="hs-wl">–</div>
-        <div class="hero-stat-lbl">W / L</div>
-      </div>
-      <div class="hero-stat">
-        <div class="hero-stat-val" id="hs-roi">–</div>
-        <div class="hero-stat-lbl">ROI</div>
-      </div>
-      <div class="hero-stat">
-        <div class="hero-stat-val" id="hs-net">–</div>
-        <div class="hero-stat-lbl">Net P&L</div>
-      </div>
+      <div class="hero-stat"><div class="hero-stat-val" id="hs-wl">–</div><div class="hero-stat-lbl">W / L</div></div>
+      <div class="hero-stat"><div class="hero-stat-val" id="hs-roi">–</div><div class="hero-stat-lbl">ROI</div></div>
+      <div class="hero-stat"><div class="hero-stat-val" id="hs-net">–</div><div class="hero-stat-lbl">Net P&L</div></div>
     </div>
   </div>
-
-  <!-- ACCOUNT BALANCE BAR -->
+ 
   <div class="acct-bar-card" id="acct-bar-card">
     <div class="acct-bar-top">
       <div>
@@ -329,38 +272,19 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div class="acct-track"><div class="acct-fill" id="home-acct-fill" style="width:50%"></div></div>
     <div class="acct-labels"><span>$0</span><span id="home-acct-open-label">Opening: $–</span></div>
   </div>
-
-  <!-- GROUP STAT TILES -->
+ 
   <div class="stat-grid">
-    <div class="stat-tile">
-      <div class="stat-tile-val" id="st-bets">0</div>
-      <div class="stat-tile-lbl">Total Bets</div>
-      <div class="stat-tile-sub" id="st-winrate-sub">–% win rate</div>
-    </div>
-    <div class="stat-tile">
-      <div class="stat-tile-val" id="st-wl">–/–</div>
-      <div class="stat-tile-lbl">Group W / L</div>
-      <div class="stat-tile-sub" id="st-streak-sub">–</div>
-    </div>
-    <div class="stat-tile">
-      <div class="stat-tile-val" id="st-bestwin" style="font-size:15px">$–</div>
-      <div class="stat-tile-lbl">Best Return</div>
-      <div class="stat-tile-sub" id="st-bestwin-who">–</div>
-    </div>
-    <div class="stat-tile">
-      <div class="stat-tile-val" id="st-leader" style="font-size:15px">–</div>
-      <div class="stat-tile-lbl">Leading Punter</div>
-      <div class="stat-tile-sub" id="st-leader-net">by net P&L</div>
-    </div>
+    <div class="stat-tile"><div class="stat-tile-val" id="st-bets">0</div><div class="stat-tile-lbl">Total Bets</div><div class="stat-tile-sub" id="st-winrate-sub">–% win rate</div></div>
+    <div class="stat-tile"><div class="stat-tile-val" id="st-wl">–/–</div><div class="stat-tile-lbl">Group W / L</div><div class="stat-tile-sub" id="st-streak-sub">–</div></div>
+    <div class="stat-tile"><div class="stat-tile-val" id="st-bestwin" style="font-size:15px">$–</div><div class="stat-tile-lbl">Best Return</div><div class="stat-tile-sub" id="st-bestwin-who">–</div></div>
+    <div class="stat-tile"><div class="stat-tile-val" id="st-leader" style="font-size:15px">–</div><div class="stat-tile-lbl">Leading Punter</div><div class="stat-tile-sub" id="st-leader-net">by net P&L</div></div>
   </div>
-
-  <!-- RECENT BETS -->
+ 
   <div class="card">
     <div class="card-title">📅 Recent Bets</div>
-    <div id="home-recent"><div class="empty">No bets yet — tap ➕ Log Bet to start</div></div>
+    <div id="home-recent"><div class="empty">No bets yet</div></div>
   </div>
-
-  <!-- AI -->
+ 
   <div class="ai-card">
     <div class="ai-header">
       <div class="ai-title">✨ AI Weekly Insight</div>
@@ -368,16 +292,14 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     </div>
     <div class="ai-text" id="ai-insight"><span class="ai-loading">Tap Generate for this week's analysis…</span></div>
   </div>
-
-</div><!-- end home -->
-
-<!-- ══════════ LOG BET ══════════ -->
+</div>
+ 
+<!-- LOG BET -->
 <div class="page" id="tab-enter">
   <div class="card-dark" style="margin-top:2px">
     <div style="color:rgba(255,255,255,0.5);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Log a Bet</div>
     <div style="color:var(--gold-lt);font-size:13px;font-weight:700" id="enter-auto-label">Auto-filled from rotation · adjust if needed</div>
   </div>
-
   <div class="card">
     <div class="card-title">📋 Bet Details</div>
     <div class="form-row" style="margin-bottom:12px">
@@ -405,7 +327,6 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
       </div>
     </div>
   </div>
-
   <div class="card">
     <div class="card-title">🏁 Result</div>
     <div class="btn-group">
@@ -414,24 +335,19 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     </div>
     <div id="result-display" style="text-align:center;font-size:12px;color:var(--muted);padding:4px 0">No result selected yet</div>
   </div>
-
   <div class="card" id="preview-card" style="display:none">
     <div class="card-title">👁 Preview</div>
     <div class="preview-grid" id="preview-grid"></div>
     <div style="margin-top:10px;padding:8px;background:var(--off);border-radius:8px;font-size:11px;color:var(--muted)" id="preview-next"></div>
   </div>
-
-  <button class="btn btn-primary" onclick="submitBet()" style="margin-bottom:12px">💾 Save Bet</button>
-
-  <!-- Compact rotation in log tab -->
+  <button class="btn btn-primary" id="save-btn" onclick="submitBet()" style="margin-bottom:12px">💾 Save Bet</button>
   <div class="section-label" style="margin-top:4px">Current Rotation</div>
   <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:10px 12px;overflow-x:auto;">
     <div class="rotation-strip" id="enter-rotation-strip" style="margin-bottom:0;background:none;border:none;padding:0;justify-content:flex-start;"></div>
   </div>
-
-</div><!-- end enter -->
-
-<!-- ══════════ LEADERBOARD ══════════ -->
+</div>
+ 
+<!-- LEADERBOARD -->
 <div class="page" id="tab-board">
   <div class="card" style="margin-top:2px">
     <div class="card-title">🏆 Season Leaderboard</div>
@@ -446,60 +362,48 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div id="fun-stats"></div>
   </div>
 </div>
-
-<!-- ══════════ ADMIN ══════════ -->
+ 
+<!-- ADMIN -->
 <div class="page" id="tab-account">
-
   <div class="stat-grid" style="margin-top:2px">
     <div class="stat-tile" style="grid-column:span 2;padding:14px">
       <div class="stat-tile-val" id="acct-big" style="font-size:30px;color:var(--green)">$–</div>
       <div class="stat-tile-lbl">Account Balance</div>
       <div class="stat-tile-sub" id="acct-big-sub">–</div>
     </div>
-    <div class="stat-tile">
-      <div class="stat-tile-val" id="acct-split2" style="font-size:17px">$–</div>
-      <div class="stat-tile-lbl">Split/Person</div>
-    </div>
-    <div class="stat-tile">
-      <div class="stat-tile-val" id="acct-pnl2" style="font-size:17px">$–</div>
-      <div class="stat-tile-lbl">P&L Each</div>
-    </div>
+    <div class="stat-tile"><div class="stat-tile-val" id="acct-split2" style="font-size:17px">$–</div><div class="stat-tile-lbl">Split/Person</div></div>
+    <div class="stat-tile"><div class="stat-tile-val" id="acct-pnl2" style="font-size:17px">$–</div><div class="stat-tile-lbl">P&L Each</div></div>
   </div>
-
-  <!-- ADMIN: Weekly Report -->
+ 
   <div class="card">
     <div class="card-title">📄 Weekly Group Report</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Generate a clean one-page summary to share with the group. Opens in a new tab — tap Share → Print → Save as PDF, or screenshot it.</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Generate a one-page summary to share with the group.</div>
     <div class="form-group">
       <label class="form-label">Report for Week #</label>
       <input type="number" id="report-week" class="form-control" min="1" placeholder="Leave blank for latest week">
     </div>
     <button class="btn btn-primary" onclick="generateReport()">📄 Generate Report</button>
   </div>
-
-  <!-- ADMIN: Override who's up -->
+ 
   <div class="card">
     <div class="card-title">🎯 Override Rotation</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Manually set who's betting next. Use this if the auto-rotation is wrong.</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Manually set who's betting next if auto-rotation is wrong.</div>
     <div class="form-group">
       <label class="form-label">Set Next Punter</label>
-      <select id="override-punter" class="form-control">
-        <!-- populated by JS -->
-      </select>
+      <select id="override-punter" class="form-control"></select>
     </div>
     <div class="form-row">
       <div class="form-group" style="margin-bottom:0">
         <label class="form-label">Set Week #</label>
         <input type="number" id="override-week" class="form-control" min="1">
       </div>
-      <div style="display:flex;align-items:flex-end;padding-bottom:0">
+      <div style="display:flex;align-items:flex-end;">
         <button class="btn btn-warn" onclick="applyOverride()" style="margin-bottom:0;padding:12px">✅ Apply</button>
       </div>
     </div>
     <div id="override-status" style="font-size:11px;color:var(--muted);margin-top:8px;padding:6px 8px;background:var(--off);border-radius:8px;display:none"></div>
   </div>
-
-  <!-- ADMIN: Settings -->
+ 
   <div class="card">
     <div class="card-title">⚙️ Settings</div>
     <div class="form-group">
@@ -507,7 +411,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
       <input type="number" id="settings-opening" class="form-control" step="0.01" value="600">
     </div>
     <div class="form-group">
-      <label class="form-label">Weekly Pool ($) <span>auto: punters × $10</span></label>
+      <label class="form-label">Weekly Pool ($)</label>
       <input type="number" id="settings-pool" class="form-control" step="1" value="60">
     </div>
     <div class="form-group">
@@ -516,136 +420,190 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     </div>
     <button class="btn btn-primary" onclick="saveSettings()" style="margin-bottom:0">💾 Save Settings</button>
   </div>
-
-  <!-- ADMIN: Export / Import -->
-  <div class="card">
-    <div class="card-title">💾 Backup & Restore</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Export your data regularly to avoid losing bets if the browser cache is cleared. Import to restore or move to a new device.</div>
-
-    <div class="admin-row">
-      <div>
-        <div class="admin-lbl">Export as JSON</div>
-        <div class="admin-sub">Full backup — re-importable</div>
-      </div>
-      <div class="admin-action">
-        <button onclick="exportJSON()" style="background:#EFF6FF;color:var(--steel);border:1.5px solid #BFDBFE;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer">⬇️ Export</button>
-      </div>
-    </div>
-
-    <div class="admin-row">
-      <div>
-        <div class="admin-lbl">Export as CSV</div>
-        <div class="admin-sub">Open in Excel or Numbers</div>
-      </div>
-      <div class="admin-action">
-        <button onclick="exportCSV()" style="background:#F0FDF4;color:var(--green);border:1.5px solid #BBF7D0;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer">📊 Export</button>
-      </div>
-    </div>
-
-    <div class="admin-row" style="border-bottom:none">
-      <div>
-        <div class="admin-lbl">Import from JSON</div>
-        <div class="admin-sub">Restore a previous backup</div>
-      </div>
-      <div class="admin-action">
-        <label style="background:#FFF7ED;color:var(--orange);border:1.5px solid #FED7AA;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer">
-          ⬆️ Import
-          <input type="file" id="import-file" accept=".json" onchange="importJSON(event)" style="display:none">
-        </label>
-      </div>
-    </div>
-
-    <div id="import-status" style="display:none;margin-top:8px;padding:8px 10px;border-radius:8px;font-size:11px;font-weight:700"></div>
-  </div>
-
-  <!-- ADMIN: Delete last bet -->
+ 
   <div class="card">
     <div class="card-title">🔧 Bet Management</div>
     <div class="admin-row">
-      <div>
-        <div class="admin-lbl">Delete Last Bet</div>
-        <div class="admin-sub" id="last-bet-preview">–</div>
-      </div>
-      <div class="admin-action">
-        <button onclick="deleteLastBet()" style="background:var(--red-lt);color:var(--red);border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer">🗑 Undo</button>
-      </div>
+      <div><div class="admin-lbl">Delete Last Bet</div><div class="admin-sub" id="last-bet-preview">–</div></div>
+      <button onclick="deleteLastBet()" style="background:var(--red-lt);color:var(--red);border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer">🗑 Undo</button>
     </div>
     <div class="admin-row">
-      <div>
-        <div class="admin-lbl">Clear All History</div>
-        <div class="admin-sub">Wipe everything and start fresh</div>
-      </div>
-      <div class="admin-action">
-        <button onclick="clearHistory()" style="background:var(--red-lt);color:var(--red);border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer">⚠️ Clear</button>
-      </div>
+      <div><div class="admin-lbl">Export CSV</div><div class="admin-sub">Download all bets as spreadsheet</div></div>
+      <button onclick="exportCSV()" style="background:#F0FDF4;color:var(--green);border:1.5px solid #BBF7D0;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer">📊 Export</button>
+    </div>
+    <div class="admin-row">
+      <div><div class="admin-lbl">Clear All Data</div><div class="admin-sub">Wipe everything from the live database</div></div>
+      <button onclick="clearHistory()" style="background:var(--red-lt);color:var(--red);border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer">⚠️ Clear</button>
     </div>
   </div>
-
-  <!-- ADMIN: Full history with delete per row -->
+ 
   <div class="card">
     <div class="card-title">📜 Full History</div>
     <div id="acct-history"><div class="empty">No bets yet</div></div>
   </div>
-
-</div><!-- end admin -->
-
+</div>
+ 
 </div><!-- scroll area -->
-
 <div class="toast" id="toast"></div>
-
+ 
 <script>
-// ═══════════════════ CONSTANTS ═══════════════════
-const PUNTERS     = ["Cass","Hoops","Pedro","Benji","Billy","CC"];
-const MEDALS      = ["🥇","🥈","🥉","4️⃣","5️⃣","6️⃣"];
-const INI         = p => p.slice(0,2).toUpperCase();
-const START_WEEK  = 2;
-const START_PUNTER= "Hoops";
-const DOUBLE_MIN  = 120;
-
-// ═══════════════════ STATE ═══════════════════
+// ═══════════════ SUPABASE CONFIG ═══════════════
+const SUPA_URL = 'https://dxgfdjqwdgjlvcdgxcvn.supabase.co';
+const SUPA_KEY = 'sb_publishable_sqN6esaChuCE1cfRc7O1Gw_yvA1hPMD';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+ 
+// ═══════════════ CONSTANTS ═══════════════
+const PUNTERS    = ["Cass","Hoops","Pedro","Benji","Billy","CC"];
+const MEDALS     = ["🥇","🥈","🥉","4️⃣","5️⃣","6️⃣"];
+const INI        = p => p.slice(0,2).toUpperCase();
+const START_WEEK = 2;
+const START_PUNTER = "Hoops";
+const DOUBLE_MIN = 120;
+ 
+// ═══════════════ STATE ═══════════════
 let state = {
   bets: [],
   openingBalance: 600,
   numPunters: 6,
   poolSize: 60,
-  override: null  // { punter, week } — manual override for next rotation
+  override: null
 };
-
-function loadState() {
-  try { const s = localStorage.getItem('bbb26v3'); if(s) state={...state,...JSON.parse(s)}; } catch(e){}
+let syncChannel = null;
+ 
+// ═══════════════ SUPABASE HELPERS ═══════════════
+function setSyncStatus(status, msg) {
+  const bar = document.getElementById('sync-bar');
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  bar.className = 'sync-bar ' + status;
+  dot.className = 'sync-dot' + (status === 'syncing' ? ' pulse' : '');
+  lbl.textContent = msg;
 }
-function saveState() {
-  try { localStorage.setItem('bbb26v3', JSON.stringify(state)); } catch(e){}
+ 
+async function loadFromSupabase() {
+  setSyncStatus('syncing', 'Loading data…');
+  try {
+    // Load settings
+    const { data: settingsData, error: se } = await supa
+      .from('settings').select('*').eq('id', 1).single();
+    if (se && se.code !== 'PGRST116') throw se;
+    if (settingsData) {
+      state.openingBalance = parseFloat(settingsData.opening_balance) || 600;
+      state.numPunters     = parseInt(settingsData.num_punters) || 6;
+      state.poolSize       = parseInt(settingsData.pool_size) || 60;
+      state.override       = settingsData.override_punter
+        ? { punter: settingsData.override_punter, week: settingsData.override_week }
+        : null;
+    }
+ 
+    // Load bets ordered by created_at
+    const { data: betsData, error: be } = await supa
+      .from('bets').select('*').order('created_at', { ascending: true });
+    if (be) throw be;
+ 
+    state.bets = (betsData || []).map(b => ({
+      id:        b.id,
+      week:      b.week,
+      date:      b.date,
+      punter:    b.punter,
+      bet:       parseFloat(b.bet),
+      returnAmt: parseFloat(b.return_amt),
+      result:    b.result
+    }));
+ 
+    setSyncStatus('connected', `Live · ${state.bets.length} bet${state.bets.length!==1?'s':''}`);
+    return true;
+  } catch(e) {
+    console.error('Load error:', e);
+    setSyncStatus('error', 'Connection error — tap to retry');
+    document.getElementById('sync-bar').onclick = () => init();
+    return false;
+  }
 }
-
-// ═══════════════════ ROTATION LOGIC ═══════════════════
-function getPoolSize() { return state.poolSize || (state.numPunters * 10); }
-
+ 
+async function saveBetToSupabase(bet) {
+  setSyncStatus('syncing', 'Saving…');
+  const { data, error } = await supa.from('bets').insert({
+    week:       bet.week,
+    date:       bet.date,
+    punter:     bet.punter,
+    bet:        bet.bet,
+    return_amt: bet.returnAmt,
+    result:     bet.result
+  }).select().single();
+  if (error) throw error;
+  setSyncStatus('connected', `Live · ${state.bets.length} bets`);
+  return data.id;
+}
+ 
+async function deleteBetFromSupabase(id) {
+  setSyncStatus('syncing', 'Deleting…');
+  const { error } = await supa.from('bets').delete().eq('id', id);
+  if (error) throw error;
+  setSyncStatus('connected', `Live · ${state.bets.length} bets`);
+}
+ 
+async function saveSettingsToSupabase() {
+  const { error } = await supa.from('settings').upsert({
+    id:               1,
+    opening_balance:  state.openingBalance,
+    num_punters:      state.numPunters,
+    pool_size:        state.poolSize,
+    override_punter:  state.override?.punter || null,
+    override_week:    state.override?.week || null
+  });
+  if (error) throw error;
+}
+ 
+function subscribeToRealtime() {
+  if (syncChannel) supa.removeChannel(syncChannel);
+  syncChannel = supa.channel('bbb-live')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'bets' }, async () => {
+      setSyncStatus('syncing', 'Syncing…');
+      await loadFromSupabase();
+      refreshCurrentTab();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, async () => {
+      await loadFromSupabase();
+      refreshCurrentTab();
+    })
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        setSyncStatus('connected', `Live · ${state.bets.length} bets`);
+      }
+    });
+}
+ 
+function refreshCurrentTab() {
+  const active = document.querySelector('.page.active')?.id?.replace('tab-','');
+  if (active === 'home')    renderHome();
+  if (active === 'board')   renderBoard();
+  if (active === 'account') renderAdmin();
+  if (active === 'enter')   populateEntryForm();
+}
+ 
+// ═══════════════ GAME LOGIC ═══════════════
+function getPoolSize() { return state.poolSize || 60; }
+ 
 function computeCurrentState() {
-  // If there's a manual override, use it (and clear it after reading once)
   if (state.override) return { week: state.override.week, punter: state.override.punter, overridden: true };
-
   if (state.bets.length === 0) return { week: START_WEEK, punter: START_PUNTER };
   const last = state.bets[state.bets.length - 1];
-  if (last.result === 'Win') {
-    return { week: last.week, punter: last.punter };
-  }
+  if (last.result === 'Win') return { week: last.week, punter: last.punter };
   const nextIdx = (PUNTERS.indexOf(last.punter) + 1) % PUNTERS.length;
   return { week: last.week + 1, punter: PUNTERS[nextIdx] };
 }
-
-// Did the current punter already bet this week?
+ 
 function punterAlreadyBetThisWeek(punter, week) {
   return state.bets.some(b => b.punter === punter && b.week === week);
 }
-
-// ═══════════════════ COMPUTED ═══════════════════
+ 
 function getAccountTotal() {
   let bal = state.openingBalance;
   for (const b of state.bets) { if (b.result !== 'Void') bal += (b.returnAmt - b.bet); }
   return bal;
 }
-
+ 
 function getPunterStats() {
   return PUNTERS.map(name => {
     const pb = state.bets.filter(b => b.punter === name && b.result !== 'Void');
@@ -665,8 +623,8 @@ function getPunterStats() {
     return { name, bets:pb.length, wins, losses, totalBet, totalRet, net, roi, streak, streakType };
   });
 }
-
-// ═══════════════════ TABS ═══════════════════
+ 
+// ═══════════════ TABS ═══════════════
 const TAB_NAMES = ['home','enter','board','account'];
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',TAB_NAMES[i]===tab));
@@ -677,32 +635,22 @@ function switchTab(tab) {
   if(tab==='board')   renderBoard();
   if(tab==='account') renderAdmin();
 }
-
-// ═══════════════════ ROTATION STRIP ═══════════════════
+ 
+// ═══════════════ ROTATION STRIP ═══════════════
 function renderRotationStrip(elId, currentPunter, currentWeek) {
   const el = document.getElementById(elId);
   if (!el) return;
-
-  // Figure out which punters have already bet this week
-  const betsThisWeek = state.bets.filter(b => b.week === currentWeek);
-  const betPuntersThisWeek = new Set(betsThisWeek.map(b => b.punter));
-
-  el.innerHTML = PUNTERS.map((p, i) => {
-    const isCurrent = p === currentPunter;
-    const hasBet = betPuntersThisWeek.has(p) && !isCurrent;
-    const cls = isCurrent ? 'current' : hasBet ? 'done-bet' : 'upcoming';
-    const lblCls = isCurrent ? 'current-lbl' : '';
-    const arrow = i < PUNTERS.length - 1
-      ? '<div class="rs-arrow">›</div>'
-      : '';
-    return `<div class="rs-item">
-        <div class="rs-bubble ${cls}">${INI(p)}</div>
-        <div class="rs-label ${lblCls}">${p}</div>
-      </div>${arrow}`;
+  const betPunters = new Set(state.bets.filter(b=>b.week===currentWeek).map(b=>b.punter));
+  el.innerHTML = PUNTERS.map((p,i) => {
+    const isCur = p===currentPunter;
+    const cls = isCur ? 'current' : betPunters.has(p) ? 'done-bet' : 'upcoming';
+    const lCls = isCur ? 'current-lbl' : '';
+    const arrow = i<PUNTERS.length-1 ? '<div class="rs-arrow">›</div>' : '';
+    return `<div class="rs-item"><div class="rs-bubble ${cls}">${INI(p)}</div><div class="rs-label ${lCls}">${p}</div></div>${arrow}`;
   }).join('');
 }
-
-// ═══════════════════ HOME ═══════════════════
+ 
+// ═══════════════ HOME ═══════════════
 function renderHome() {
   const { week, punter, overridden } = computeCurrentState();
   const pool = getPoolSize();
@@ -710,806 +658,308 @@ function renderHome() {
   const split = account / state.numPunters;
   const opening = state.openingBalance;
   const pnl = split - (opening / state.numPunters);
-
-  // Header
+ 
   document.getElementById('hdr-week-badge').textContent = 'WK ' + week;
-  document.getElementById('hdr-sub').textContent = `2026 Season · ${state.bets.length} bet${state.bets.length!==1?'s':''} logged`;
-
-  // Rotation strip
+  document.getElementById('hdr-sub').textContent = `2026 Season · ${state.bets.length} bet${state.bets.length!==1?'s':''} · Live`;
   renderRotationStrip('home-rotation-strip', punter, week);
-
-  // Work out if this punter already bet this week
+ 
   const alreadyBet = punterAlreadyBetThisWeek(punter, week) && !overridden;
-  const eyebrowText = alreadyBet
-    ? `WEEK ${week} · UP NEXT`
-    : `WEEK ${week} · UP NOW`;
-  const subText = alreadyBet
-    ? `Waiting on result · $${pool} pool`
-    : overridden
-      ? `⚠️ Manually set · $${pool} pool`
-      : `Ready to bet · $${pool} pool`;
-
-  document.getElementById('hero-eyebrow').textContent = eyebrowText;
+  document.getElementById('hero-eyebrow').textContent = alreadyBet ? `WEEK ${week} · UP NEXT` : `WEEK ${week} · UP NOW`;
   document.getElementById('hero-punter-name').textContent = punter;
-  document.getElementById('hero-punter-sub').textContent = subText;
-
-  // Punter's own stats for the hero
-  const pStats = getPunterStats().find(s => s.name === punter);
-  const wlStr = pStats.bets > 0 ? `${pStats.wins}/${pStats.losses}` : '–/–';
-  const roiStr = pStats.bets > 0 ? (pStats.roi>=0?'+':'')+pStats.roi.toFixed(1)+'%' : '–';
-  const netStr = pStats.bets > 0 ? (pStats.net>=0?'+$':'-$')+Math.abs(pStats.net).toFixed(0) : '–';
-  document.getElementById('hs-wl').textContent = wlStr;
-  document.getElementById('hs-roi').textContent = roiStr;
-  document.getElementById('hs-net').textContent = netStr;
-
-  // Streak badge
-  const sb = document.getElementById('streak-badge');
-  const sv = document.getElementById('streak-val');
-  const sl = document.getElementById('streak-lbl');
-  if (pStats.streak > 0) {
-    const isHot = pStats.streakType === 'Win';
-    sb.className = 'streak-badge ' + (isHot ? 'hot' : 'cold');
-    sv.textContent = pStats.streak + (isHot ? '🔥' : '❄️');
-    sl.textContent = isHot ? 'Win Streak' : 'Loss Streak';
-  } else {
-    sb.className = 'streak-badge';
-    sv.textContent = '–';
-    sl.textContent = 'No bets yet';
-  }
-
-  // Account bar
-  const pct = Math.min(account/opening*100, 150);
-  document.getElementById('acct-bar-card').className = 'acct-bar-card' + (account < opening ? ' losing' : '');
-  document.getElementById('home-acct-bal').textContent = '$'+account.toFixed(2);
-  document.getElementById('home-split-val').textContent = '$'+split.toFixed(2);
-  document.getElementById('home-pnl-label').textContent = (pnl>=0?'+':'-')+'$'+Math.abs(pnl).toFixed(2)+' each vs opening';
-  document.getElementById('home-acct-fill').style.width = Math.min(pct,100)+'%';
-  document.getElementById('home-acct-open-label').textContent = 'Opening: $'+opening.toFixed(2);
-
-  // Group stat tiles
-  const allValid = state.bets.filter(b=>b.result!=='Void');
-  const gWins = allValid.filter(b=>b.result==='Win').length;
-  const gLosses = allValid.filter(b=>b.result==='Loss').length;
-  const gWr = allValid.length>0 ? Math.round(gWins/allValid.length*100) : 0;
-
-  document.getElementById('st-bets').textContent = state.bets.length;
-  document.getElementById('st-winrate-sub').textContent = gWr+'% win rate';
-  document.getElementById('st-wl').textContent = gWins+'/'+gLosses;
-
-  // Group streak
-  let grpStreak=0, grpType=null;
-  for(let i=state.bets.length-1;i>=0;i--){
-    const b=state.bets[i]; if(b.result==='Void') continue;
-    if(grpType===null){grpType=b.result;grpStreak=1;}
-    else if(b.result===grpType) grpStreak++;
-    else break;
-  }
-  document.getElementById('st-streak-sub').textContent = grpStreak>1 ? `${grpStreak}× ${grpType} streak` : 'No streak';
-
-  // Best return
-  if (state.bets.length > 0) {
-    const best = state.bets.reduce((a,b)=>b.returnAmt>a.returnAmt?b:a,state.bets[0]);
-    document.getElementById('st-bestwin').textContent = '$'+best.returnAmt.toFixed(0);
-    document.getElementById('st-bestwin-who').textContent = best.punter+' Wk'+best.week;
-  }
-
-  // Leader
-  const stats = getPunterStats().filter(s=>s.bets>0).sort((a,b)=>b.net-a.net);
-  if (stats.length>0) {
-    document.getElementById('st-leader').textContent = stats[0].name;
-    document.getElementById('st-leader-net').textContent = (stats[0].net>=0?'+$':'-$')+Math.abs(stats[0].net).toFixed(2);
-  }
-
-  // Recent bets
-  const recent = [...state.bets].reverse().slice(0,8);
-  const recentEl = document.getElementById('home-recent');
-  if (!recent.length) {
-    recentEl.innerHTML = '<div class="empty">No bets yet — tap ➕ Log Bet to start</div>';
-  } else {
-    recentEl.innerHTML = recent.map(b => {
-      const net = b.returnAmt - b.bet;
-      const roi = b.bet>0?(net/b.bet*100).toFixed(0):0;
-      const cls = b.result==='Win'?'win':b.result==='Loss'?'loss':'void';
-      return `<div class="bet-row">
-        <div class="bet-avatar ${cls}">${INI(b.punter)}</div>
-        <div class="bet-info">
-          <div class="bet-name">${b.punter} <span class="pill pill-${cls}">${b.result}</span></div>
-          <div class="bet-meta">Wk${b.week} · ${b.date} · $${b.bet.toFixed(0)} staked</div>
-        </div>
-        <div class="bet-amount">
-          <div class="bet-net" style="color:${net>=0?'var(--green)':'var(--red)'}">${net>=0?'+':'-'}$${Math.abs(net).toFixed(2)}</div>
-          <div class="bet-roi">${roi>0?'+':''}${roi}% ROI</div>
-        </div>
-      </div>`;
-    }).join('');
-  }
+  document.getElementById('hero-punter-sub').textContent = alreadyBet ? `Waiting on result · $${pool} pool` : overridden ? `⚠️ Manually set · $${pool} pool` : `Ready to bet · $${pool} pool`;
+ 
+  const pStats = getPunterStats().find(s=>s.name===punter);
+  document.getElementById('hs-wl').textContent = pStats.bets>0 ? `${pStats.wins}/${pStats.losses}` : '–/–';
+  document.getElementById('hs-roi').textContent = pStats.bets>0 ? (pStats.roi>=0?'+':'')+pStats.roi.toFixed(1)+'%' : '–';
+  document.getElementById('hs-net').textContent = pStats.bets>0 ? (pStats.net>=0?'+$':'-$')+Math.abs(pStats.net).toFixed(0) : '–';
+ 
+  const sb=document.getElementById('streak-badge'),sv=document.getElementById('streak-val'),sl=document.getElementById('streak-lbl');
+  if(pStats.streak>0){const hot=pStats.streakType==='Win';sb.className='streak-badge '+(hot?'hot':'cold');sv.textContent=pStats.streak+(hot?'🔥':'❄️');sl.textContent=hot?'Win Streak':'Loss Streak';}
+  else{sb.className='streak-badge';sv.textContent='–';sl.textContent='No bets yet';}
+ 
+  document.getElementById('acct-bar-card').className='acct-bar-card'+(account<opening?' losing':'');
+  document.getElementById('home-acct-bal').textContent='$'+account.toFixed(2);
+  document.getElementById('home-split-val').textContent='$'+split.toFixed(2);
+  document.getElementById('home-pnl-label').textContent=(pnl>=0?'+':'-')+'$'+Math.abs(pnl).toFixed(2)+' each vs opening';
+  document.getElementById('home-acct-fill').style.width=Math.min(account/opening*100,100)+'%';
+  document.getElementById('home-acct-open-label').textContent='Opening: $'+opening.toFixed(2);
+ 
+  const allValid=state.bets.filter(b=>b.result!=='Void');
+  const gW=allValid.filter(b=>b.result==='Win').length,gL=allValid.filter(b=>b.result==='Loss').length;
+  document.getElementById('st-bets').textContent=state.bets.length;
+  document.getElementById('st-winrate-sub').textContent=(allValid.length>0?Math.round(gW/allValid.length*100):0)+'% win rate';
+  document.getElementById('st-wl').textContent=gW+'/'+gL;
+ 
+  let gs=0,gt=null;
+  for(let i=state.bets.length-1;i>=0;i--){const b=state.bets[i];if(b.result==='Void')continue;if(gt===null){gt=b.result;gs=1;}else if(b.result===gt)gs++;else break;}
+  document.getElementById('st-streak-sub').textContent=gs>1?`${gs}× ${gt} streak`:'No streak';
+ 
+  if(state.bets.length>0){const best=state.bets.reduce((a,b)=>b.returnAmt>a.returnAmt?b:a,state.bets[0]);document.getElementById('st-bestwin').textContent='$'+best.returnAmt.toFixed(0);document.getElementById('st-bestwin-who').textContent=best.punter+' Wk'+best.week;}
+ 
+  const ranked=getPunterStats().filter(s=>s.bets>0).sort((a,b)=>b.net-a.net);
+  if(ranked.length>0){document.getElementById('st-leader').textContent=ranked[0].name;document.getElementById('st-leader-net').textContent=(ranked[0].net>=0?'+$':'-$')+Math.abs(ranked[0].net).toFixed(2);}
+ 
+  const recent=[...state.bets].reverse().slice(0,8);
+  document.getElementById('home-recent').innerHTML = recent.length ? recent.map(b=>{
+    const net=b.returnAmt-b.bet,roi=b.bet>0?(net/b.bet*100).toFixed(0):0,cls=b.result==='Win'?'win':b.result==='Loss'?'loss':'void';
+    return `<div class="bet-row"><div class="bet-avatar ${cls}">${INI(b.punter)}</div><div class="bet-info"><div class="bet-name">${b.punter} <span class="pill pill-${cls}">${b.result}</span></div><div class="bet-meta">Wk${b.week} · ${b.date} · $${b.bet.toFixed(0)} staked</div></div><div class="bet-amount"><div class="bet-net" style="color:${net>=0?'var(--green)':'var(--red)'}">${net>=0?'+':'-'}$${Math.abs(net).toFixed(2)}</div><div class="bet-roi">${roi>0?'+':''}${roi}% ROI</div></div></div>`;
+  }).join('') : '<div class="empty">No bets yet</div>';
 }
-
-// ═══════════════════ ENTRY FORM ═══════════════════
+ 
+// ═══════════════ ENTRY FORM ═══════════════
 let selectedResult = null;
-
+ 
 function populateEntryForm() {
-  const { week, punter } = computeCurrentState();
+  const {week,punter} = computeCurrentState();
   const pool = getPoolSize();
-
   document.getElementById('entry-week').value = week;
   document.getElementById('entry-bet').value = pool.toFixed(2);
   document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
-
   const sel = document.getElementById('entry-punter');
   sel.innerHTML = PUNTERS.map(p=>`<option value="${p}" ${p===punter?'selected':''}>${p}${p===punter?' 👈 auto':''}</option>`).join('');
-
-  selectedResult = null;
-  document.getElementById('result-display').textContent = 'No result selected yet';
-  document.getElementById('result-display').style.color = 'var(--muted)';
-  document.getElementById('result-display').style.fontWeight = '400';
-  document.getElementById('entry-return').value = '';
-  document.getElementById('preview-card').style.display = 'none';
-  document.getElementById('enter-auto-label').textContent = `${punter} is up · Week ${week} · $${pool} pool`;
-
+  selectedResult=null;
+  document.getElementById('result-display').textContent='No result selected yet';
+  document.getElementById('result-display').style.color='var(--muted)';
+  document.getElementById('entry-return').value='';
+  document.getElementById('preview-card').style.display='none';
+  document.getElementById('enter-auto-label').textContent=`${punter} is up · Week ${week} · $${pool} pool`;
   renderRotationStrip('enter-rotation-strip', punter, week);
 }
-
+ 
 function onPunterChange() { updatePreview(); }
-
+ 
 function setResult(r) {
-  selectedResult = r;
-  const disp = document.getElementById('result-display');
-  if (r==='Win') {
-    disp.innerHTML = '<div style="background:var(--green-lt);border:2px solid var(--green);border-radius:10px;padding:7px;text-align:center;color:var(--green);font-weight:800;font-size:13px">✅ WIN selected</div>';
-  } else {
-    disp.innerHTML = '<div style="background:var(--red-lt);border:2px solid var(--red);border-radius:10px;padding:7px;text-align:center;color:var(--red);font-weight:800;font-size:13px">❌ LOSS selected</div>';
-  }
+  selectedResult=r;
+  const disp=document.getElementById('result-display');
+  disp.innerHTML=r==='Win'
+    ?'<div style="background:var(--green-lt);border:2px solid var(--green);border-radius:10px;padding:7px;text-align:center;color:var(--green);font-weight:800;font-size:13px">✅ WIN selected</div>'
+    :'<div style="background:var(--red-lt);border:2px solid var(--red);border-radius:10px;padding:7px;text-align:center;color:var(--red);font-weight:800;font-size:13px">❌ LOSS selected</div>';
   updatePreview();
 }
-
+ 
 function updatePreview() {
-  const ret = parseFloat(document.getElementById('entry-return').value);
-  const bet = parseFloat(document.getElementById('entry-bet').value) || getPoolSize();
-  const punter = document.getElementById('entry-punter').value;
-  if (!selectedResult || isNaN(ret)) { document.getElementById('preview-card').style.display='none'; return; }
-
-  const net = ret - bet;
-  const roi = bet>0?(net/bet*100).toFixed(1):0;
-  const goesAgainSameWeek = selectedResult==='Win' && ret >= DOUBLE_MIN;
-  const nextIdx = (PUNTERS.indexOf(punter)+1)%PUNTERS.length;
-  let nextMsg = '';
-  if (selectedResult==='Win') {
-    nextMsg = goesAgainSameWeek
-      ? `🔥 BIG WIN (≥$${DOUBLE_MIN}) — ${punter} can go again the same week!`
-      : `✅ Any profit = Win · ${punter} bets again next week`;
-  } else {
-    nextMsg = `🔄 Loss · rotation moves to ${PUNTERS[nextIdx]} next week`;
-  }
-
-  document.getElementById('preview-card').style.display = 'block';
-  document.getElementById('preview-grid').innerHTML = `
-    <div class="preview-item"><div class="preview-lbl">Punter</div><div class="preview-val">${punter}</div></div>
-    <div class="preview-item"><div class="preview-lbl">Result</div><div class="preview-val" style="color:${selectedResult==='Win'?'var(--green)':'var(--red)'}">${selectedResult}</div></div>
-    <div class="preview-item"><div class="preview-lbl">Bet</div><div class="preview-val">$${bet.toFixed(2)}</div></div>
-    <div class="preview-item"><div class="preview-lbl">Return</div><div class="preview-val">$${ret.toFixed(2)}</div></div>
-    <div class="preview-item" style="grid-column:span 2">
-      <div class="preview-lbl">Net P&L</div>
-      <div class="preview-val" style="font-size:20px;color:${net>=0?'var(--green)':'var(--red)'}">${net>=0?'+':'-'}$${Math.abs(net).toFixed(2)} <span style="font-size:12px;font-weight:600">(${roi>0?'+':''}${roi}%)</span></div>
-    </div>`;
-  document.getElementById('preview-next').textContent = nextMsg;
+  const ret=parseFloat(document.getElementById('entry-return').value);
+  const bet=parseFloat(document.getElementById('entry-bet').value)||getPoolSize();
+  const punter=document.getElementById('entry-punter').value;
+  if(!selectedResult||isNaN(ret)){document.getElementById('preview-card').style.display='none';return;}
+  const net=ret-bet,roi=bet>0?(net/bet*100).toFixed(1):0;
+  const nextIdx=(PUNTERS.indexOf(punter)+1)%PUNTERS.length;
+  const goesAgain=selectedResult==='Win'&&ret>=DOUBLE_MIN;
+  const nextMsg=selectedResult==='Win'?(goesAgain?`🔥 BIG WIN (≥$${DOUBLE_MIN}) — ${punter} can go again same week!`:`✅ Any profit = Win · ${punter} bets again next week`):`🔄 Loss · rotation moves to ${PUNTERS[nextIdx]} next week`;
+  document.getElementById('preview-card').style.display='block';
+  document.getElementById('preview-grid').innerHTML=`<div class="preview-item"><div class="preview-lbl">Punter</div><div class="preview-val">${punter}</div></div><div class="preview-item"><div class="preview-lbl">Result</div><div class="preview-val" style="color:${selectedResult==='Win'?'var(--green)':'var(--red)'}">${selectedResult}</div></div><div class="preview-item"><div class="preview-lbl">Bet</div><div class="preview-val">$${bet.toFixed(2)}</div></div><div class="preview-item"><div class="preview-lbl">Return</div><div class="preview-val">$${ret.toFixed(2)}</div></div><div class="preview-item" style="grid-column:span 2"><div class="preview-lbl">Net P&L</div><div class="preview-val" style="font-size:20px;color:${net>=0?'var(--green)':'var(--red)'}">${net>=0?'+':'-'}$${Math.abs(net).toFixed(2)} <span style="font-size:12px;font-weight:600">(${roi>0?'+':''}${roi}%)</span></div></div>`;
+  document.getElementById('preview-next').textContent=nextMsg;
 }
-
-function submitBet() {
-  const week   = parseInt(document.getElementById('entry-week').value);
-  const dateRaw= document.getElementById('entry-date').value;
-  const punter = document.getElementById('entry-punter').value;
-  const bet    = parseFloat(document.getElementById('entry-bet').value);
-  const ret    = parseFloat(document.getElementById('entry-return').value);
-
-  if (!punter)            { showToast('⚠️ Select a punter'); return; }
-  if (!week||isNaN(week)) { showToast('⚠️ Enter week number'); return; }
-  if (!bet||isNaN(bet))   { showToast('⚠️ Enter bet amount'); return; }
-  if (isNaN(ret)||ret<0)  { showToast('⚠️ Enter return amount (0 if lost all)'); return; }
-  if (!selectedResult)    { showToast('⚠️ Select Win or Loss'); return; }
-
-  const date = dateRaw
-    ? new Date(dateRaw).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'})
-    : new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'});
-
-  // Clear override once a bet is submitted
-  state.override = null;
-  state.bets.push({ week, date, punter, bet, returnAmt: ret, result: selectedResult });
-  saveState();
-
-  showToast(selectedResult==='Win' ? `✅ ${punter} WIN saved!` : `❌ ${punter} LOSS saved`);
-  switchTab('home');
-}
-
-// ═══════════════════ LEADERBOARD ═══════════════════
-function renderBoard() {
-  const stats = getPunterStats().sort((a,b)=>b.net-a.net);
-  const maxAbsRoi = Math.max(...stats.map(s=>Math.abs(s.roi)),1);
-
-  document.getElementById('lb-list').innerHTML = stats.map((s,i) => {
-    const netStr = s.net===0?'$0.00':(s.net>0?'+$':'-$')+Math.abs(s.net).toFixed(2);
-    const roiStr = s.bets===0?'–':(s.roi>=0?'+':'')+s.roi.toFixed(1)+'%';
-    const barPct = Math.min(Math.abs(s.roi)/maxAbsRoi*100,100);
-    const barCol = s.roi>=0?'var(--green)':'var(--red)';
-    const streakTxt = s.streak>1 ? `${s.streak}× ${s.streakType==='Win'?'🔥':'❄️'}` : '';
-    return `<div class="lb-row">
-      <div class="lb-rank">${MEDALS[i]}</div>
-      <div class="lb-avatar">${INI(s.name)}</div>
-      <div class="lb-info">
-        <div class="lb-name">${s.name} ${streakTxt}</div>
-        <div class="lb-detail">${s.wins}W / ${s.losses}L · $${s.totalBet.toFixed(0)} staked</div>
-        <div class="lb-bar-track"><div class="lb-bar-fill" style="width:${barPct}%;background:${barCol}"></div></div>
-      </div>
-      <div class="lb-right">
-        <div class="lb-net" style="color:${s.net>=0?'var(--green)':'var(--red)'}">${netStr}</div>
-        <div class="lb-roi">${roiStr} ROI</div>
-      </div>
-    </div>`;
-  }).join('');
-
-  document.getElementById('roi-bars').innerHTML = stats.map(s => {
-    const pct = Math.min(Math.abs(s.roi)/maxAbsRoi*100,100);
-    const col = s.roi>=0?'var(--green)':'var(--red)';
-    const label = s.bets===0?'No bets':(s.roi>=0?'+':'')+s.roi.toFixed(1)+'%';
-    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-      <div style="width:48px;font-size:12px;font-weight:800;color:var(--dark)">${s.name}</div>
-      <div style="flex:1;background:var(--gray);border-radius:6px;height:20px;overflow:hidden">
-        <div style="width:${pct}%;height:100%;background:${col};border-radius:6px;transition:width 0.7s"></div>
-      </div>
-      <div style="width:52px;font-size:11px;font-weight:800;color:${col};text-align:right">${label}</div>
-    </div>`;
-  }).join('');
-
-  const allValid = state.bets.filter(b=>b.result!=='Void');
-  if (!allValid.length) { document.getElementById('fun-stats').innerHTML='<div class="empty">Stats appear once bets are logged</div>'; return; }
-  const best  = allValid.reduce((a,b)=>b.returnAmt-b.bet>a.returnAmt-a.bet?b:a);
-  const worst = allValid.reduce((a,b)=>b.returnAmt-b.bet<a.returnAmt-a.bet?b:a);
-  const funItems = [
-    ['💰 Biggest Win',   `+$${(best.returnAmt-best.bet).toFixed(2)} — ${best.punter} Wk${best.week}`],
-    ['💸 Biggest Loss',  `-$${Math.abs(worst.returnAmt-worst.bet).toFixed(2)} — ${worst.punter} Wk${worst.week}`],
-    ['📈 Group W/L',     `${allValid.filter(b=>b.result==='Win').length}W / ${allValid.filter(b=>b.result==='Loss').length}L`],
-    ['💵 Total Staked',  `$${allValid.reduce((a,b)=>a+b.bet,0).toFixed(2)}`],
-    ['🏆 Most Wins',     (()=>{const s=getPunterStats().sort((a,b)=>b.wins-a.wins)[0];return s.wins>0?`${s.name} (${s.wins}W)`:'–';})()],
-    ['🔥 Hot Streak',    (()=>{const s=getPunterStats().filter(p=>p.streakType==='Win').sort((a,b)=>b.streak-a.streak)[0];return s&&s.streak>1?`${s.name} ${s.streak}× Win`:'No active streak';})()],
-  ];
-  document.getElementById('fun-stats').innerHTML = funItems.map(([lbl,val])=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--gray)">
-      <span style="font-size:12px;color:var(--muted)">${lbl}</span>
-      <span style="font-size:12px;font-weight:800;color:var(--dark)">${val}</span>
-    </div>`).join('');
-}
-
-// ═══════════════════ ADMIN ═══════════════════
-function renderAdmin() {
-  const account = getAccountTotal();
-  const opening = state.openingBalance;
-  const split = account / state.numPunters;
-  const pnl = split - (opening / state.numPunters);
-
-  const bigEl = document.getElementById('acct-big');
-  bigEl.textContent = '$'+account.toFixed(2);
-  bigEl.style.color = account>=opening?'var(--green)':'var(--red)';
-  document.getElementById('acct-big-sub').textContent = (account>=opening?'Up':'Down')+' $'+Math.abs(account-opening).toFixed(2)+' from opening $'+opening.toFixed(2);
-  document.getElementById('acct-split2').textContent = '$'+split.toFixed(2);
-  const pnlEl = document.getElementById('acct-pnl2');
-  pnlEl.textContent = (pnl>=0?'+$':'-$')+Math.abs(pnl).toFixed(2);
-  pnlEl.style.color = pnl>=0?'var(--green)':'var(--red)';
-
-  // Settings
-  document.getElementById('settings-opening').value = opening;
-  document.getElementById('settings-punters').value = state.numPunters;
-  document.getElementById('settings-pool').value = getPoolSize();
-
-  // Override dropdowns
-  const { week: curWeek, punter: curPunter } = computeCurrentState();
-  const overrideSel = document.getElementById('override-punter');
-  overrideSel.innerHTML = PUNTERS.map(p=>`<option value="${p}" ${p===curPunter?'selected':''}>${p}</option>`).join('');
-  document.getElementById('override-week').value = curWeek;
-
-  // Override status
-  const ovEl = document.getElementById('override-status');
-  if (state.override) {
-    ovEl.style.display = 'block';
-    ovEl.style.background = '#FFF7ED';
-    ovEl.style.color = 'var(--orange)';
-    ovEl.textContent = `⚠️ Manual override active: ${state.override.punter} · Week ${state.override.week} — will clear after next bet is saved`;
-  } else {
-    ovEl.style.display = 'block';
-    ovEl.style.background = 'var(--off)';
-    ovEl.style.color = 'var(--muted)';
-    ovEl.textContent = `Auto rotation: ${curPunter} · Week ${curWeek}`;
-  }
-
-  // Last bet preview
-  if (state.bets.length > 0) {
-    const last = state.bets[state.bets.length-1];
-    const net = last.returnAmt - last.bet;
-    document.getElementById('last-bet-preview').textContent =
-      `${last.punter} · Wk${last.week} · ${last.result} · ${net>=0?'+':''}$${net.toFixed(2)}`;
-  } else {
-    document.getElementById('last-bet-preview').textContent = 'No bets yet';
-  }
-
-  // Full history
-  const histEl = document.getElementById('acct-history');
-  if (!state.bets.length) { histEl.innerHTML='<div class="empty">No bets yet</div>'; return; }
-  histEl.innerHTML = [...state.bets].reverse().map((b,ri)=>{
-    const i = state.bets.length-1-ri; // actual index
-    const net = b.returnAmt-b.bet;
-    const cls = b.result==='Win'?'win':b.result==='Loss'?'loss':'void';
-    return `<div class="hist-row">
-      <span class="hist-wk">Wk${b.week}</span>
-      <span class="hist-name">${b.punter}</span>
-      <span class="pill pill-${cls}">${b.result}</span>
-      <span class="hist-net" style="color:${net>=0?'var(--green)':'var(--red)'}">${net>=0?'+':'-'}$${Math.abs(net).toFixed(2)}</span>
-      <button class="hist-del" onclick="deleteBetAt(${i})">🗑</button>
-    </div>`;
-  }).join('');
-}
-
-function applyOverride() {
-  const punter = document.getElementById('override-punter').value;
-  const week = parseInt(document.getElementById('override-week').value);
-  if (!punter || !week || isNaN(week)) { showToast('⚠️ Select punter and week'); return; }
-  state.override = { punter, week };
-  saveState();
-  showToast(`✅ Override set: ${punter} · Week ${week}`);
-  renderAdmin();
-}
-
-function saveSettings() {
-  state.openingBalance = parseFloat(document.getElementById('settings-opening').value)||600;
-  state.numPunters = parseInt(document.getElementById('settings-punters').value)||6;
-  state.poolSize = parseFloat(document.getElementById('settings-pool').value)||(state.numPunters*10);
-  saveState();
-  showToast('✅ Settings saved');
-  renderAdmin();
-}
-
-function deleteLastBet() {
-  if (!state.bets.length) { showToast('No bets to delete'); return; }
-  if (!confirm('Delete the last bet?')) return;
-  state.bets.pop();
-  saveState();
-  showToast('🗑 Last bet deleted');
-  renderAdmin();
-}
-
-function deleteBetAt(i) {
-  if (!confirm(`Delete this bet?`)) return;
-  state.bets.splice(i, 1);
-  saveState();
-  showToast('🗑 Bet deleted');
-  renderAdmin();
-}
-
-function clearHistory() {
-  if (!confirm('Delete ALL bet history? This cannot be undone.')) return;
-  state.bets = [];
-  state.override = null;
-  saveState();
-  showToast('🗑 History cleared');
-  renderAdmin();
-}
-
-// ═══════════════════ AI INSIGHT ═══════════════════
-async function getAIInsight() {
-  const el = document.getElementById('ai-insight');
-  el.innerHTML = '<span class="ai-loading">🔮 Generating…</span>';
-  const { week, punter } = computeCurrentState();
-  const stats = getPunterStats();
-  const account = getAccountTotal();
-
-  const prompt = `You're the cheeky stats analyst for "Bus Bois Betting", an Aussie horse racing group. 6 mates: Cass, Hoops, Pedro, Benji, Billy, CC. $${getPoolSize()}/week pool, rotate who bets, any profit = Win & stays on, loss = next person.
-
-Week: ${week} | Next up: ${punter} | Account: $${account.toFixed(2)} | Opening: $${state.openingBalance}
-
-Stats:
-${stats.map(s=>`${s.name}: ${s.wins}W/${s.losses}L, Net $${s.net.toFixed(2)}, ROI ${s.roi.toFixed(1)}%${s.streak>1?`, ${s.streak}× ${s.streakType} streak`:''}`).join('\n')}
-
-Recent: ${state.bets.slice(-6).map(b=>`${b.punter} Wk${b.week} ${b.result} ($${(b.returnAmt-b.bet>=0?'+':'')+(b.returnAmt-b.bet).toFixed(0)})`).join(', ')||'none yet'}
-
-2-3 sentences. Cheeky Aussie tone. Name names. Who's hot, who's cold. Short punchy sentences.`;
-
+ 
+async function submitBet() {
+  const week=parseInt(document.getElementById('entry-week').value);
+  const dateRaw=document.getElementById('entry-date').value;
+  const punter=document.getElementById('entry-punter').value;
+  const bet=parseFloat(document.getElementById('entry-bet').value);
+  const ret=parseFloat(document.getElementById('entry-return').value);
+ 
+  if(!punter){showToast('⚠️ Select a punter');return;}
+  if(!week||isNaN(week)){showToast('⚠️ Enter week number');return;}
+  if(!bet||isNaN(bet)){showToast('⚠️ Enter bet amount');return;}
+  if(isNaN(ret)||ret<0){showToast('⚠️ Enter return amount (0 if lost all)');return;}
+  if(!selectedResult){showToast('⚠️ Select Win or Loss');return;}
+ 
+  const btn=document.getElementById('save-btn');
+  btn.disabled=true; btn.textContent='⏳ Saving…';
+ 
+  const date=dateRaw?new Date(dateRaw).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'}):new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'});
+ 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
-    });
-    const data = await res.json();
-    el.textContent = data.content?.map(c=>c.text||'').join('')||'Could not generate insight.';
-  } catch(e) { el.textContent = "Couldn't connect. Check your internet."; }
+    // Clear override in DB if set
+    if (state.override) {
+      state.override = null;
+      await saveSettingsToSupabase();
+    }
+    const newBet = { week, date, punter, bet, returnAmt: ret, result: selectedResult };
+    const id = await saveBetToSupabase(newBet);
+    newBet.id = id;
+    state.bets.push(newBet);
+    showToast(selectedResult==='Win'?`✅ ${punter} WIN saved!`:`❌ ${punter} LOSS saved`);
+    switchTab('home');
+  } catch(e) {
+    console.error(e);
+    showToast('❌ Save failed — check connection');
+  } finally {
+    btn.disabled=false; btn.textContent='💾 Save Bet';
+  }
 }
-
-// ═══════════════════ WEEKLY REPORT ═══════════════════
-function generateReport() {
-  const inputWeek = document.getElementById('report-week').value;
-  const { week: currentWeek, punter: nextPunter } = computeCurrentState();
-  const reportWeek = inputWeek ? parseInt(inputWeek) : currentWeek - 1 || currentWeek;
-
-  if (reportWeek < 1) { showToast('⚠️ Enter a valid week number'); return; }
-
-  const weekBets = state.bets.filter(b => b.week === reportWeek);
-  if (!weekBets.length) { showToast(`⚠️ No bets found for Week ${reportWeek}`); return; }
-
-  const account   = getAccountTotal();
-  const split     = account / state.numPunters;
-  const opening   = state.openingBalance;
-  const openSplit = opening / state.numPunters;
-  const pnl       = split - openSplit;
-  const allStats  = getPunterStats().sort((a,b) => b.net - a.net);
-  const allValid  = state.bets.filter(b => b.result !== 'Void');
-  const gWins     = allValid.filter(b => b.result === 'Win').length;
-  const gLosses   = allValid.filter(b => b.result === 'Loss').length;
-  const totalBet  = allValid.reduce((a,b) => a+b.bet, 0);
-  const totalRet  = allValid.reduce((a,b) => a+b.returnAmt, 0);
-  const groupNet  = totalRet - totalBet;
-  const groupRoi  = totalBet > 0 ? (groupNet/totalBet*100).toFixed(1) : '0.0';
-
-  // Week's bets table rows
-  const weekBetsSorted = [...weekBets].sort((a,b) => b.returnAmt - a.returnAmt);
-  const weekNet = weekBets.reduce((a,b) => a + (b.returnAmt - b.bet), 0);
-  const weekBetRows = weekBetsSorted.map(b => {
-    const net = b.returnAmt - b.bet;
-    const roi = b.bet > 0 ? (net/b.bet*100).toFixed(0) : 0;
-    const isWin = b.result === 'Win';
-    return `<tr>
-      <td style="font-weight:700">${b.punter}</td>
-      <td>$${b.bet.toFixed(2)}</td>
-      <td>$${b.returnAmt.toFixed(2)}</td>
-      <td style="font-weight:800;color:${net>=0?'#16A34A':'#DC2626'}">${net>=0?'+':'-'}$${Math.abs(net).toFixed(2)}</td>
-      <td style="font-weight:700;color:${net>=0?'#16A34A':'#DC2626'}">${roi>0?'+':''}${roi}%</td>
-      <td><span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;background:${isWin?'#DCFCE7':'#FEE2E2'};color:${isWin?'#16A34A':'#DC2626'}">${b.result}</span></td>
-    </tr>`;
+ 
+// ═══════════════ LEADERBOARD ═══════════════
+function renderBoard() {
+  const stats=getPunterStats().sort((a,b)=>b.net-a.net);
+  const maxRoi=Math.max(...stats.map(s=>Math.abs(s.roi)),1);
+  document.getElementById('lb-list').innerHTML=stats.map((s,i)=>{
+    const netStr=s.net===0?'$0.00':(s.net>0?'+$':'-$')+Math.abs(s.net).toFixed(2);
+    const roiStr=s.bets===0?'–':(s.roi>=0?'+':'')+s.roi.toFixed(1)+'%';
+    const barPct=Math.min(Math.abs(s.roi)/maxRoi*100,100);
+    const barCol=s.roi>=0?'var(--green)':'var(--red)';
+    const strk=s.streak>1?` ${s.streak}× ${s.streakType==='Win'?'🔥':'❄️'}`:'';
+    return `<div class="lb-row"><div class="lb-rank">${MEDALS[i]}</div><div class="lb-avatar">${INI(s.name)}</div><div class="lb-info"><div class="lb-name">${s.name}${strk}</div><div class="lb-detail">${s.wins}W / ${s.losses}L · $${s.totalBet.toFixed(0)} staked</div><div class="lb-bar-track"><div class="lb-bar-fill" style="width:${barPct}%;background:${barCol}"></div></div></div><div class="lb-right"><div class="lb-net" style="color:${s.net>=0?'var(--green)':'var(--red)'}">${netStr}</div><div class="lb-roi">${roiStr} ROI</div></div></div>`;
   }).join('');
-
-  // Season leaderboard rows
-  const maxAbsRoi = Math.max(...allStats.map(s => Math.abs(s.roi)), 1);
-  const lbRows = allStats.map((s, i) => {
-    const medals = ['🥇','🥈','🥉','4','5','6'];
-    const netStr = s.net === 0 ? '$0.00' : (s.net>0?'+$':'-$')+Math.abs(s.net).toFixed(2);
-    const roiStr = s.bets===0?'–':(s.roi>=0?'+':'')+s.roi.toFixed(1)+'%';
-    const barPct = Math.min(Math.abs(s.roi)/maxAbsRoi*100, 100);
-    const barCol = s.roi>=0?'#16A34A':'#DC2626';
-    const streakTxt = s.streak>1 ? ` · ${s.streak}× ${s.streakType==='Win'?'🔥':'❄️'}` : '';
-    return `<tr style="background:${i%2===0?'#F8FAFC':'#FFFFFF'}">
-      <td style="text-align:center;font-size:16px">${medals[i]}</td>
-      <td style="font-weight:800">${s.name}${streakTxt}</td>
-      <td style="text-align:center">${s.wins}W / ${s.losses}L</td>
-      <td style="text-align:right;font-weight:800;color:${s.net>=0?'#16A34A':'#DC2626'}">${netStr}</td>
-      <td style="text-align:right;font-weight:800;color:${s.roi>=0?'#16A34A':'#DC2626'}">${roiStr}</td>
-      <td style="padding:0 8px 0 4px">
-        <div style="background:#E2E8F0;border-radius:4px;height:10px;overflow:hidden">
-          <div style="width:${barPct}%;height:100%;background:${barCol};border-radius:4px"></div>
-        </div>
-      </td>
-    </tr>`;
+  document.getElementById('roi-bars').innerHTML=stats.map(s=>{
+    const pct=Math.min(Math.abs(s.roi)/maxRoi*100,100),col=s.roi>=0?'var(--green)':'var(--red)';
+    const lbl=s.bets===0?'No bets':(s.roi>=0?'+':'')+s.roi.toFixed(1)+'%';
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div style="width:48px;font-size:12px;font-weight:800;color:var(--dark)">${s.name}</div><div style="flex:1;background:var(--gray);border-radius:6px;height:20px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${col};border-radius:6px;transition:width 0.7s"></div></div><div style="width:52px;font-size:11px;font-weight:800;color:${col};text-align:right">${lbl}</div></div>`;
   }).join('');
-
-  const reportDate = weekBets[0]?.date || new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'});
-  const generatedAt = new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-
-  const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Bus Bois Betting — Week ${reportWeek} Report</title>
-<style>
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; background:#F1F5F9; color:#1E293B; }
-  @media print {
-    body { background:white; }
-    .no-print { display:none; }
-    @page { margin:10mm; size:A4; }
-  }
-
-  .page-wrap { max-width:720px; margin:0 auto; padding:16px; }
-
-  /* ── HEADER ── */
-  .report-header {
-    background:linear-gradient(135deg,#0A1628 0%,#163356 60%,#1B3A5C 100%);
-    border-radius:16px;
-    padding:22px 24px 18px;
-    color:white;
-    margin-bottom:14px;
-    position:relative;
-    overflow:hidden;
-  }
-  .report-header::before { content:'🏇'; position:absolute; right:16px; top:10px; font-size:64px; opacity:0.08; }
-  .rh-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; }
-  .rh-title { font-size:22px; font-weight:900; color:#D4A017; letter-spacing:0.3px; }
-  .rh-sub { font-size:12px; color:rgba(255,255,255,0.5); margin-top:2px; }
-  .rh-week { text-align:right; }
-  .rh-week-num { font-size:36px; font-weight:900; color:white; line-height:1; }
-  .rh-week-lbl { font-size:10px; font-weight:700; color:rgba(212,160,23,0.7); text-transform:uppercase; letter-spacing:1px; }
-  .rh-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
-  .rh-stat { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 8px; text-align:center; }
-  .rh-stat-val { font-size:18px; font-weight:800; color:white; line-height:1; }
-  .rh-stat-lbl { font-size:9px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.5px; margin-top:3px; }
-
-  /* ── ACCOUNT BANNER ── */
-  .acct-banner {
-    background:linear-gradient(135deg,${account>=opening?'#14532D,#16A34A':'#7F1D1D,#DC2626'});
-    border-radius:14px;
-    padding:14px 18px;
-    color:white;
-    margin-bottom:14px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-  }
-  .ab-left .ab-lbl { font-size:9px; font-weight:800; opacity:0.6; text-transform:uppercase; letter-spacing:1px; margin-bottom:2px; }
-  .ab-bal { font-size:28px; font-weight:900; line-height:1; }
-  .ab-right { text-align:right; }
-  .ab-split { font-size:20px; font-weight:800; }
-  .ab-split-lbl { font-size:9px; opacity:0.6; text-transform:uppercase; letter-spacing:0.5px; }
-  .ab-pnl { font-size:13px; font-weight:700; margin-top:3px; opacity:0.85; }
-
-  /* ── SECTIONS ── */
-  .section { background:white; border-radius:14px; padding:16px; margin-bottom:14px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
-  .section-title { font-size:11px; font-weight:800; color:#2563A8; text-transform:uppercase; letter-spacing:1px; padding-bottom:8px; border-bottom:1px solid #E2E8F0; margin-bottom:12px; }
-
-  /* ── TABLES ── */
-  table { width:100%; border-collapse:collapse; font-size:13px; }
-  th { background:#F8FAFC; font-size:10px; font-weight:800; color:#64748B; text-transform:uppercase; letter-spacing:0.5px; padding:7px 10px; text-align:left; border-bottom:2px solid #E2E8F0; }
-  td { padding:9px 10px; border-bottom:1px solid #F1F5F9; vertical-align:middle; }
-  tr:last-child td { border-bottom:none; }
-
-  /* ── NEXT UP ── */
-  .next-up {
-    background:linear-gradient(135deg,#0F2040,#163356);
-    border-radius:12px;
-    padding:14px 18px;
-    color:white;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:14px;
-  }
-  .nu-lbl { font-size:10px; font-weight:800; color:rgba(212,160,23,0.7); text-transform:uppercase; letter-spacing:1px; margin-bottom:3px; }
-  .nu-name { font-size:22px; font-weight:900; color:white; }
-  .nu-sub { font-size:11px; color:rgba(255,255,255,0.45); margin-top:2px; }
-  .nu-right { text-align:right; font-size:11px; color:rgba(255,255,255,0.4); }
-
-  /* ── WEEK RESULT HERO ── */
-  .week-result {
-    text-align:center;
-    padding:10px 0 4px;
-  }
-  .wr-label { font-size:10px; font-weight:800; color:#64748B; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
-  .wr-net { font-size:32px; font-weight:900; color:${weekNet>=0?'#16A34A':'#DC2626'}; }
-  .wr-sub { font-size:12px; color:#64748B; margin-top:2px; }
-
-  /* ── FOOTER ── */
-  .footer { text-align:center; font-size:10px; color:#94A3B8; padding:8px 0 4px; }
-
-  /* ── PRINT BUTTON ── */
-  .print-btn {
-    display:block; width:100%; padding:14px; background:linear-gradient(135deg,#163356,#2563A8);
-    color:white; border:none; border-radius:12px; font-size:15px; font-weight:800; cursor:pointer;
-    margin-bottom:14px; text-align:center;
-  }
-</style>
-</head>
-<body>
-<div class="page-wrap">
-
-  <button class="print-btn no-print" onclick="window.print()">🖨️ Save as PDF / Print</button>
-
-  <!-- HEADER -->
-  <div class="report-header">
-    <div class="rh-top">
-      <div>
-        <div class="rh-title">🏇 Bus Bois Betting</div>
-        <div class="rh-sub">2026 Season · Generated ${generatedAt}</div>
-      </div>
-      <div class="rh-week">
-        <div class="rh-week-lbl">Week</div>
-        <div class="rh-week-num">${reportWeek}</div>
-      </div>
-    </div>
-    <div class="rh-stats">
-      <div class="rh-stat">
-        <div class="rh-stat-val">${gWins}/${gLosses}</div>
-        <div class="rh-stat-lbl">Group W/L</div>
-      </div>
-      <div class="rh-stat">
-        <div class="rh-stat-val">${groupRoi}%</div>
-        <div class="rh-stat-lbl">Season ROI</div>
-      </div>
-      <div class="rh-stat">
-        <div class="rh-stat-val">$${Math.abs(groupNet).toFixed(0)}</div>
-        <div class="rh-stat-lbl">${groupNet>=0?'Group Profit':'Group Loss'}</div>
-      </div>
-      <div class="rh-stat">
-        <div class="rh-stat-val">${state.bets.length}</div>
-        <div class="rh-stat-lbl">Total Bets</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ACCOUNT BANNER -->
-  <div class="acct-banner">
-    <div class="ab-left">
-      <div class="ab-lbl">Account Balance</div>
-      <div class="ab-bal">$${account.toFixed(2)}</div>
-    </div>
-    <div class="ab-right">
-      <div class="ab-split">$${split.toFixed(2)}</div>
-      <div class="ab-split-lbl">split per person</div>
-      <div class="ab-pnl">${pnl>=0?'+':'-'}$${Math.abs(pnl).toFixed(2)} each vs opening</div>
-    </div>
-  </div>
-
-  <!-- THIS WEEK'S BET -->
-  <div class="section">
-    <div class="section-title">📅 Week ${reportWeek} — ${reportDate}</div>
-    <div class="week-result">
-      <div class="wr-label">Week Net Result</div>
-      <div class="wr-net">${weekNet>=0?'+':'-'}$${Math.abs(weekNet).toFixed(2)}</div>
-      <div class="wr-sub">${weekBets.length} bet${weekBets.length!==1?'s':''} · ${weekBets.filter(b=>b.result==='Win').length}W / ${weekBets.filter(b=>b.result==='Loss').length}L</div>
-    </div>
-    <table style="margin-top:12px">
-      <thead>
-        <tr>
-          <th>Punter</th>
-          <th>Bet</th>
-          <th>Return</th>
-          <th>Net</th>
-          <th>ROI</th>
-          <th>Result</th>
-        </tr>
-      </thead>
-      <tbody>${weekBetRows}</tbody>
-    </table>
-  </div>
-
-  <!-- SEASON LEADERBOARD -->
-  <div class="section">
-    <div class="section-title">🏆 Season Leaderboard</div>
-    <table>
-      <thead>
-        <tr>
-          <th style="width:32px"></th>
-          <th>Punter</th>
-          <th style="text-align:center">W / L</th>
-          <th style="text-align:right">Net P&amp;L</th>
-          <th style="text-align:right">ROI</th>
-          <th style="width:100px">ROI Bar</th>
-        </tr>
-      </thead>
-      <tbody>${lbRows}</tbody>
-    </table>
-  </div>
-
-  <!-- NEXT UP -->
-  <div class="next-up">
-    <div>
-      <div class="nu-lbl">Up Next — Week ${reportWeek + 1}</div>
-      <div class="nu-name">${nextPunter}</div>
-      <div class="nu-sub">$${getPoolSize()} pool · rotation continues</div>
-    </div>
-    <div class="nu-right">
-      ${(() => {
-        const ps = allStats.find(s=>s.name===nextPunter);
-        return ps && ps.bets>0
-          ? `${ps.wins}W / ${ps.losses}L season<br>${ps.roi>=0?'+':''}${ps.roi.toFixed(1)}% ROI`
-          : 'First bet coming up';
-      })()}
-    </div>
-  </div>
-
-  <div class="footer">Bus Bois Betting 2026 · Week ${reportWeek} Report · Generated ${generatedAt}</div>
-</div>
-</body>
-</html>`;
-
-  const win = window.open('', '_blank');
-  win.document.write(html);
-  win.document.close();
+  const allValid=state.bets.filter(b=>b.result!=='Void');
+  if(!allValid.length){document.getElementById('fun-stats').innerHTML='<div class="empty">Stats appear once bets are logged</div>';return;}
+  const best=allValid.reduce((a,b)=>b.returnAmt-b.bet>a.returnAmt-a.bet?b:a);
+  const worst=allValid.reduce((a,b)=>b.returnAmt-b.bet<a.returnAmt-a.bet?b:a);
+  document.getElementById('fun-stats').innerHTML=[
+    ['💰 Biggest Win',`+$${(best.returnAmt-best.bet).toFixed(2)} — ${best.punter} Wk${best.week}`],
+    ['💸 Biggest Loss',`-$${Math.abs(worst.returnAmt-worst.bet).toFixed(2)} — ${worst.punter} Wk${worst.week}`],
+    ['📈 Group W/L',`${allValid.filter(b=>b.result==='Win').length}W / ${allValid.filter(b=>b.result==='Loss').length}L`],
+    ['💵 Total Staked',`$${allValid.reduce((a,b)=>a+b.bet,0).toFixed(2)}`],
+    ['🏆 Most Wins',(()=>{const s=getPunterStats().sort((a,b)=>b.wins-a.wins)[0];return s.wins>0?`${s.name} (${s.wins}W)`:'–';})()],
+    ['🔥 Hot Streak',(()=>{const s=getPunterStats().filter(p=>p.streakType==='Win').sort((a,b)=>b.streak-a.streak)[0];return s&&s.streak>1?`${s.name} ${s.streak}× Win`:'No active streak';})()],
+  ].map(([l,v])=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--gray)"><span style="font-size:12px;color:var(--muted)">${l}</span><span style="font-size:12px;font-weight:800;color:var(--dark)">${v}</span></div>`).join('');
 }
-
-// ═══════════════════ EXPORT / IMPORT ═══════════════════
-function exportJSON() {
-  if (!state.bets.length) { showToast('⚠️ No bets to export yet'); return; }
-  const payload = JSON.stringify(state, null, 2);
-  const blob = new Blob([payload], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const date = new Date().toISOString().slice(0,10);
-  a.href = url;
-  a.download = `BusBois_Backup_${date}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('✅ JSON backup downloaded!');
+ 
+// ═══════════════ ADMIN ═══════════════
+function renderAdmin() {
+  const account=getAccountTotal(),opening=state.openingBalance,split=account/state.numPunters,pnl=split-(opening/state.numPunters);
+  const bigEl=document.getElementById('acct-big');
+  bigEl.textContent='$'+account.toFixed(2);bigEl.style.color=account>=opening?'var(--green)':'var(--red)';
+  document.getElementById('acct-big-sub').textContent=(account>=opening?'Up':'Down')+' $'+Math.abs(account-opening).toFixed(2)+' from $'+opening.toFixed(2)+' opening';
+  document.getElementById('acct-split2').textContent='$'+split.toFixed(2);
+  const pe=document.getElementById('acct-pnl2');pe.textContent=(pnl>=0?'+$':'-$')+Math.abs(pnl).toFixed(2);pe.style.color=pnl>=0?'var(--green)':'var(--red)';
+  document.getElementById('settings-opening').value=opening;
+  document.getElementById('settings-punters').value=state.numPunters;
+  document.getElementById('settings-pool').value=getPoolSize();
+  const {week:cw,punter:cp}=computeCurrentState();
+  document.getElementById('override-punter').innerHTML=PUNTERS.map(p=>`<option value="${p}" ${p===cp?'selected':''}>${p}</option>`).join('');
+  document.getElementById('override-week').value=cw;
+  const ov=document.getElementById('override-status');
+  ov.style.display='block';
+  if(state.override){ov.style.background='#FFF7ED';ov.style.color='var(--orange)';ov.textContent=`⚠️ Override active: ${state.override.punter} · Week ${state.override.week}`;}
+  else{ov.style.background='var(--off)';ov.style.color='var(--muted)';ov.textContent=`Auto rotation: ${cp} · Week ${cw}`;}
+  if(state.bets.length>0){const last=state.bets[state.bets.length-1];const n=last.returnAmt-last.bet;document.getElementById('last-bet-preview').textContent=`${last.punter} · Wk${last.week} · ${last.result} · ${n>=0?'+':''}$${n.toFixed(2)}`;}
+  const histEl=document.getElementById('acct-history');
+  if(!state.bets.length){histEl.innerHTML='<div class="empty">No bets yet</div>';return;}
+  histEl.innerHTML=[...state.bets].reverse().map(b=>{
+    const net=b.returnAmt-b.bet,cls=b.result==='Win'?'win':b.result==='Loss'?'loss':'void';
+    return `<div class="hist-row"><span class="hist-wk">Wk${b.week}</span><span class="hist-name">${b.punter}</span><span class="pill pill-${cls}">${b.result}</span><span class="hist-net" style="color:${net>=0?'var(--green)':'var(--red)'}">${net>=0?'+':'-'}$${Math.abs(net).toFixed(2)}</span><button class="hist-del" onclick="deleteBetById('${b.id}')">🗑</button></div>`;
+  }).join('');
 }
-
+ 
+async function applyOverride() {
+  const punter=document.getElementById('override-punter').value;
+  const week=parseInt(document.getElementById('override-week').value);
+  if(!punter||!week||isNaN(week)){showToast('⚠️ Select punter and week');return;}
+  state.override={punter,week};
+  try{await saveSettingsToSupabase();showToast(`✅ Override set: ${punter} · Week ${week}`);renderAdmin();}
+  catch(e){showToast('❌ Failed to save override');}
+}
+ 
+async function saveSettings() {
+  state.openingBalance=parseFloat(document.getElementById('settings-opening').value)||600;
+  state.numPunters=parseInt(document.getElementById('settings-punters').value)||6;
+  state.poolSize=parseFloat(document.getElementById('settings-pool').value)||60;
+  try{await saveSettingsToSupabase();showToast('✅ Settings saved');renderAdmin();}
+  catch(e){showToast('❌ Failed to save settings');}
+}
+ 
+async function deleteLastBet() {
+  if(!state.bets.length){showToast('No bets to delete');return;}
+  if(!confirm('Delete the last bet?'))return;
+  const last=state.bets[state.bets.length-1];
+  try{await deleteBetFromSupabase(last.id);state.bets.pop();showToast('🗑 Last bet deleted');renderAdmin();}
+  catch(e){showToast('❌ Delete failed');}
+}
+ 
+async function deleteBetById(id) {
+  if(!confirm('Delete this bet?'))return;
+  try{await deleteBetFromSupabase(id);state.bets=state.bets.filter(b=>b.id!==id);showToast('🗑 Bet deleted');renderAdmin();}
+  catch(e){showToast('❌ Delete failed');}
+}
+ 
+async function clearHistory() {
+  if(!confirm('Delete ALL bets from the live database? This cannot be undone.'))return;
+  try{
+    setSyncStatus('syncing','Clearing…');
+    await supa.from('bets').delete().neq('id','00000000-0000-0000-0000-000000000000');
+    state.bets=[];state.override=null;
+    await saveSettingsToSupabase();
+    showToast('🗑 All data cleared');renderAdmin();
+    setSyncStatus('connected','Live · 0 bets');
+  }catch(e){showToast('❌ Clear failed');}
+}
+ 
+// ═══════════════ EXPORT CSV ═══════════════
 function exportCSV() {
-  if (!state.bets.length) { showToast('⚠️ No bets to export yet'); return; }
-  const headers = ['Week','Date','Punter','Bet ($)','Return ($)','Net ($)','ROI (%)','Result'];
-  const rows = state.bets.map(b => {
-    const net = b.returnAmt - b.bet;
-    const roi = b.bet > 0 ? (net / b.bet * 100).toFixed(1) : '0';
-    return [b.week, b.date, b.punter, b.bet.toFixed(2), b.returnAmt.toFixed(2), net.toFixed(2), roi, b.result];
-  });
-  // Summary rows at bottom
-  const allValid = state.bets.filter(b=>b.result!=='Void');
-  const totalBet = allValid.reduce((a,b)=>a+b.bet,0);
-  const totalRet = allValid.reduce((a,b)=>a+b.returnAmt,0);
-  const totalNet = totalRet - totalBet;
-  rows.push([]);
-  rows.push(['SUMMARY','','','Total Staked','Total Return','Net P&L','ROI %','']);
-  rows.push(['','','',totalBet.toFixed(2),totalRet.toFixed(2),totalNet.toFixed(2),(totalBet>0?(totalNet/totalBet*100).toFixed(1):'0'),'']);
-  rows.push(['Account Balance','','',state.openingBalance.toFixed(2),'','',getAccountTotal().toFixed(2),'']);
-
-  const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const date = new Date().toISOString().slice(0,10);
-  a.href = url;
-  a.download = `BusBois_Bets_${date}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  if(!state.bets.length){showToast('⚠️ No bets to export');return;}
+  const hdrs=['Week','Date','Punter','Bet ($)','Return ($)','Net ($)','ROI (%)','Result'];
+  const rows=state.bets.map(b=>{const net=b.returnAmt-b.bet,roi=b.bet>0?(net/b.bet*100).toFixed(1):'0';return[b.week,b.date,b.punter,b.bet.toFixed(2),b.returnAmt.toFixed(2),net.toFixed(2),roi,b.result];});
+  const csv=[hdrs,...rows].map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`BusBois_${new Date().toISOString().slice(0,10)}.csv`;a.click();
   showToast('✅ CSV downloaded!');
 }
-
-function importJSON(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const statusEl = document.getElementById('import-status');
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const imported = JSON.parse(e.target.result);
-
-      // Validate it looks like our data
-      if (!imported.bets || !Array.isArray(imported.bets)) {
-        throw new Error('Invalid backup file — no bets array found');
-      }
-
-      const betCount = imported.bets.length;
-      const confirm1 = confirm(`Found ${betCount} bet${betCount!==1?'s':''} in this backup.\n\nThis will REPLACE your current data (${state.bets.length} bets).\n\nContinue?`);
-      if (!confirm1) {
-        event.target.value = '';
-        return;
-      }
-
-      // Merge imported state, keeping current defaults for missing keys
-      state = { ...state, ...imported };
-      saveState();
-
-      statusEl.style.display = 'block';
-      statusEl.style.background = 'var(--green-lt)';
-      statusEl.style.color = 'var(--green)';
-      statusEl.textContent = `✅ Imported ${betCount} bet${betCount!==1?'s':''} successfully!`;
-
-      showToast(`✅ ${betCount} bets restored!`);
-      renderAdmin();
-    } catch(err) {
-      statusEl.style.display = 'block';
-      statusEl.style.background = 'var(--red-lt)';
-      statusEl.style.color = 'var(--red)';
-      statusEl.textContent = `❌ Import failed: ${err.message}`;
-      showToast('❌ Import failed — invalid file');
-    }
-    event.target.value = ''; // reset so same file can be re-selected
-  };
-  reader.readAsText(file);
+ 
+// ═══════════════ AI INSIGHT ═══════════════
+async function getAIInsight() {
+  const el=document.getElementById('ai-insight');
+  el.innerHTML='<span class="ai-loading">🔮 Generating…</span>';
+  const{week,punter}=computeCurrentState(),stats=getPunterStats(),account=getAccountTotal();
+  const prompt=`You're the cheeky stats analyst for "Bus Bois Betting", an Aussie horse racing group. 6 mates: Cass, Hoops, Pedro, Benji, Billy, CC. $${getPoolSize()}/week pool, rotate who bets, any profit = Win & stays on, loss = next person.\n\nWeek: ${week} | Next up: ${punter} | Account: $${account.toFixed(2)} | Opening: $${state.openingBalance}\n\nStats:\n${stats.map(s=>`${s.name}: ${s.wins}W/${s.losses}L, Net $${s.net.toFixed(2)}, ROI ${s.roi.toFixed(1)}%${s.streak>1?`, ${s.streak}× ${s.streakType} streak`:''}`).join('\n')}\n\nRecent: ${state.bets.slice(-6).map(b=>`${b.punter} Wk${b.week} ${b.result} ($${(b.returnAmt-b.bet>=0?'+':"")+(b.returnAmt-b.bet).toFixed(0)})`).join(', ')||'none yet'}\n\n2-3 sentences. Cheeky Aussie tone. Name names. Short punchy sentences.`;
+  try{const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});const data=await res.json();el.textContent=data.content?.map(c=>c.text||'').join('')||'Could not generate.';}
+  catch(e){el.textContent="Couldn't connect.";}
 }
-
-// ═══════════════════ TOAST ═══════════════════
+ 
+// ═══════════════ WEEKLY REPORT ═══════════════
+function generateReport() {
+  const inputWeek=document.getElementById('report-week').value;
+  const{week:currentWeek,punter:nextPunter}=computeCurrentState();
+  const reportWeek=inputWeek?parseInt(inputWeek):currentWeek-1||currentWeek;
+  if(reportWeek<1){showToast('⚠️ Enter a valid week number');return;}
+  const weekBets=state.bets.filter(b=>b.week===reportWeek);
+  if(!weekBets.length){showToast(`⚠️ No bets found for Week ${reportWeek}`);return;}
+  const account=getAccountTotal(),split=account/state.numPunters,opening=state.openingBalance,pnl=split-(opening/state.numPunters);
+  const allStats=getPunterStats().sort((a,b)=>b.net-a.net);
+  const allValid=state.bets.filter(b=>b.result!=='Void');
+  const gW=allValid.filter(b=>b.result==='Win').length,gL=allValid.filter(b=>b.result==='Loss').length;
+  const tBet=allValid.reduce((a,b)=>a+b.bet,0),tRet=allValid.reduce((a,b)=>a+b.returnAmt,0);
+  const gNet=tRet-tBet,gRoi=tBet>0?(gNet/tBet*100).toFixed(1):'0.0';
+  const weekNet=weekBets.reduce((a,b)=>a+(b.returnAmt-b.bet),0);
+  const maxRoi=Math.max(...allStats.map(s=>Math.abs(s.roi)),1);
+  const reportDate=weekBets[0]?.date||'';
+  const gen=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const weekRows=[...weekBets].sort((a,b)=>b.returnAmt-a.returnAmt).map(b=>{const net=b.returnAmt-b.bet,roi=b.bet>0?(net/b.bet*100).toFixed(0):0,win=b.result==='Win';return`<tr><td style="font-weight:700">${b.punter}</td><td>$${b.bet.toFixed(2)}</td><td>$${b.returnAmt.toFixed(2)}</td><td style="font-weight:800;color:${net>=0?'#16A34A':'#DC2626'}">${net>=0?'+':'-'}$${Math.abs(net).toFixed(2)}</td><td style="font-weight:700;color:${net>=0?'#16A34A':'#DC2626'}">${roi>0?'+':''}${roi}%</td><td><span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;background:${win?'#DCFCE7':'#FEE2E2'};color:${win?'#16A34A':'#DC2626'}">${b.result}</span></td></tr>`;}).join('');
+  const lbRows=allStats.map((s,i)=>{const m=['🥇','🥈','🥉','4','5','6'];const net=s.net===0?'$0.00':(s.net>0?'+$':'-$')+Math.abs(s.net).toFixed(2);const roi=s.bets===0?'–':(s.roi>=0?'+':'')+s.roi.toFixed(1)+'%';const bp=Math.min(Math.abs(s.roi)/maxRoi*100,100),bc=s.roi>=0?'#16A34A':'#DC2626';const st=s.streak>1?` · ${s.streak}× ${s.streakType==='Win'?'🔥':'❄️'}`:'';return`<tr style="background:${i%2===0?'#F8FAFC':'#FFF'}"><td style="text-align:center;font-size:16px">${m[i]}</td><td style="font-weight:800">${s.name}${st}</td><td style="text-align:center">${s.wins}W / ${s.losses}L</td><td style="text-align:right;font-weight:800;color:${s.net>=0?'#16A34A':'#DC2626'}">${net}</td><td style="text-align:right;font-weight:800;color:${s.roi>=0?'#16A34A':'#DC2626'}">${roi}</td><td style="padding:0 8px 0 4px"><div style="background:#E2E8F0;border-radius:4px;height:10px;overflow:hidden"><div style="width:${bp}%;height:100%;background:${bc};border-radius:4px"></div></div></td></tr>`;}).join('');
+  const ps=allStats.find(s=>s.name===nextPunter);const psStr=ps&&ps.bets>0?`${ps.wins}W / ${ps.losses}L · ${ps.roi>=0?'+':''}${ps.roi.toFixed(1)}% ROI`:'First bet coming up';
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Bus Bois Betting — Week ${reportWeek}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#F1F5F9;color:#1E293B}@media print{body{background:white}.no-print{display:none}@page{margin:10mm;size:A4}}.wrap{max-width:720px;margin:0 auto;padding:16px}.hdr{background:linear-gradient(135deg,#0A1628 0%,#163356 60%,#1B3A5C 100%);border-radius:16px;padding:22px 24px 18px;color:white;margin-bottom:14px;position:relative;overflow:hidden}.hdr::before{content:'🏇';position:absolute;right:16px;top:10px;font-size:64px;opacity:.08}.hdr-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}.rh-title{font-size:22px;font-weight:900;color:#D4A017}.rh-sub{font-size:12px;color:rgba(255,255,255,.5);margin-top:2px}.rh-wn{font-size:36px;font-weight:900;color:white;line-height:1;text-align:right}.rh-wl{font-size:10px;font-weight:700;color:rgba(212,160,23,.7);text-transform:uppercase;letter-spacing:1px}.rh-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.rh-stat{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 8px;text-align:center}.rh-sv{font-size:18px;font-weight:800;color:white;line-height:1}.rh-sl{font-size:9px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}.acct{background:linear-gradient(135deg,${account>=opening?'#14532D,#16A34A':'#7F1D1D,#DC2626'});border-radius:14px;padding:14px 18px;color:white;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}.ab-lbl{font-size:9px;font-weight:800;opacity:.6;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}.ab-bal{font-size:28px;font-weight:900;line-height:1}.ab-split{font-size:20px;font-weight:800;text-align:right}.ab-sl{font-size:9px;opacity:.6;text-transform:uppercase;letter-spacing:.5px}.ab-pnl{font-size:13px;font-weight:700;margin-top:3px;opacity:.85}.sec{background:white;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.06)}.sec-title{font-size:11px;font-weight:800;color:#2563A8;text-transform:uppercase;letter-spacing:1px;padding-bottom:8px;border-bottom:1px solid #E2E8F0;margin-bottom:12px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#F8FAFC;font-size:10px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:.5px;padding:7px 10px;text-align:left;border-bottom:2px solid #E2E8F0}td{padding:9px 10px;border-bottom:1px solid #F1F5F9;vertical-align:middle}tr:last-child td{border-bottom:none}.wk-res{text-align:center;padding:10px 0 4px}.wr-lbl{font-size:10px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}.wr-net{font-size:32px;font-weight:900;color:${weekNet>=0?'#16A34A':'#DC2626'}}.wr-sub{font-size:12px;color:#64748B;margin-top:2px}.nu{background:linear-gradient(135deg,#0F2040,#163356);border-radius:12px;padding:14px 18px;color:white;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.nu-lbl{font-size:10px;font-weight:800;color:rgba(212,160,23,.7);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}.nu-name{font-size:22px;font-weight:900;color:white}.nu-sub{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px}.footer{text-align:center;font-size:10px;color:#94A3B8;padding:8px 0 4px}.pbtn{display:block;width:100%;padding:14px;background:linear-gradient(135deg,#163356,#2563A8);color:white;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:14px;text-align:center}</style></head><body><div class="wrap"><button class="pbtn no-print" onclick="window.print()">🖨️ Save as PDF / Print</button><div class="hdr"><div class="hdr-top"><div><div class="rh-title">🏇 Bus Bois Betting</div><div class="rh-sub">2026 Season · Generated ${gen}</div></div><div><div class="rh-wl">Week</div><div class="rh-wn">${reportWeek}</div></div></div><div class="rh-stats"><div class="rh-stat"><div class="rh-sv">${gW}/${gL}</div><div class="rh-sl">Group W/L</div></div><div class="rh-stat"><div class="rh-sv">${gRoi}%</div><div class="rh-sl">Season ROI</div></div><div class="rh-stat"><div class="rh-sv">$${Math.abs(gNet).toFixed(0)}</div><div class="rh-sl">${gNet>=0?'Profit':'Loss'}</div></div><div class="rh-stat"><div class="rh-sv">${state.bets.length}</div><div class="rh-sl">Total Bets</div></div></div></div><div class="acct"><div><div class="ab-lbl">Account Balance</div><div class="ab-bal">$${account.toFixed(2)}</div></div><div><div class="ab-split">$${split.toFixed(2)}</div><div class="ab-sl">split per person</div><div class="ab-pnl">${pnl>=0?'+':'-'}$${Math.abs(pnl).toFixed(2)} each vs opening</div></div></div><div class="sec"><div class="sec-title">📅 Week ${reportWeek} — ${reportDate}</div><div class="wk-res"><div class="wr-lbl">Week Net Result</div><div class="wr-net">${weekNet>=0?'+':'-'}$${Math.abs(weekNet).toFixed(2)}</div><div class="wr-sub">${weekBets.length} bet${weekBets.length!==1?'s':''} · ${weekBets.filter(b=>b.result==='Win').length}W / ${weekBets.filter(b=>b.result==='Loss').length}L</div></div><table style="margin-top:12px"><thead><tr><th>Punter</th><th>Bet</th><th>Return</th><th>Net</th><th>ROI</th><th>Result</th></tr></thead><tbody>${weekRows}</tbody></table></div><div class="sec"><div class="sec-title">🏆 Season Leaderboard</div><table><thead><tr><th style="width:32px"></th><th>Punter</th><th style="text-align:center">W/L</th><th style="text-align:right">Net P&L</th><th style="text-align:right">ROI</th><th style="width:100px">Bar</th></tr></thead><tbody>${lbRows}</tbody></table></div><div class="nu"><div><div class="nu-lbl">Up Next — Week ${reportWeek+1}</div><div class="nu-name">${nextPunter}</div><div class="nu-sub">$${getPoolSize()} pool</div></div><div style="text-align:right;font-size:11px;color:rgba(255,255,255,.4)">${psStr}</div></div><div class="footer">Bus Bois Betting 2026 · Week ${reportWeek} · ${gen}</div></div></body></html>`;
+  const w=window.open('','_blank');w.document.write(html);w.document.close();
+}
+ 
+// ═══════════════ TOAST ═══════════════
 function showToast(msg) {
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2500);
 }
-
-// ═══════════════════ INIT ═══════════════════
-loadState();
-renderHome();
+ 
+// ═══════════════ INIT ═══════════════
+async function init() {
+  const overlay=document.getElementById('loading-overlay');
+  document.getElementById('loading-msg').textContent='Connecting to live database…';
+  const ok = await loadFromSupabase();
+  if (ok) {
+    overlay.classList.add('hidden');
+    setTimeout(()=>overlay.style.display='none',400);
+    renderHome();
+    subscribeToRealtime();
+  } else {
+    document.getElementById('loading-msg').textContent='Connection failed. Tap to retry.';
+    overlay.onclick=()=>init();
+    document.querySelector('.loading-spinner').style.display='none';
+  }
+}
+ 
+init();
 </script>
 </body>
 </html>
+ 
