@@ -17,7 +17,7 @@
 * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
 html,body { height:100%; overflow:hidden; }
 body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif; background:var(--navy); color:var(--dark); display:flex; flex-direction:column; }
- 
+
 /* ── SYNC STATUS BAR ── */
 .sync-bar { flex-shrink:0; display:flex; align-items:center; justify-content:center; gap:6px; padding:4px 12px; font-size:10px; font-weight:700; transition:all 0.3s; }
 .sync-bar.connected    { background:#064E3B; color:#6EE7B7; }
@@ -27,7 +27,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',
 .sync-dot { width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; }
 .sync-dot.pulse { animation:pulse 1.5s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
- 
+
 /* ── HEADER ── */
 .hdr { flex-shrink:0; background:linear-gradient(160deg,var(--navy) 0%,var(--navy2) 50%,var(--mid) 100%); padding:11px 16px 8px; border-bottom:1.5px solid rgba(212,160,23,0.4); position:relative; overflow:hidden; }
 .hdr::before { content:'🏇'; position:absolute; right:-10px; top:-10px; font-size:80px; opacity:0.06; }
@@ -35,22 +35,22 @@ body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',
 .hdr-title { color:var(--gold); font-size:18px; font-weight:900; letter-spacing:0.3px; }
 .hdr-badge { background:linear-gradient(135deg,var(--gold-dim),var(--gold)); color:var(--navy); font-size:10px; font-weight:800; padding:3px 9px; border-radius:20px; letter-spacing:0.5px; }
 .hdr-sub { color:rgba(255,255,255,0.45); font-size:11px; margin-top:2px; }
- 
+
 /* ── TABS ── */
 .tabs { flex-shrink:0; display:flex; background:var(--navy2); border-bottom:1px solid rgba(255,255,255,0.07); }
 .tab { flex:1; padding:9px 2px 8px; text-align:center; font-size:10px; font-weight:700; color:rgba(255,255,255,0.38); cursor:pointer; border-bottom:2.5px solid transparent; transition:all 0.2s; }
 .tab.active { color:var(--gold); border-bottom-color:var(--gold); }
- 
+
 /* ── SCROLL ── */
 .scroll-area { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .page { display:none; padding:10px 12px 80px; }
 .page.active { display:block; }
- 
+
 /* ── CARDS ── */
 .card { background:var(--white); border-radius:14px; padding:14px; margin-bottom:10px; box-shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.08); }
 .card-dark { background:linear-gradient(135deg,var(--navy2),var(--mid)); border-radius:14px; padding:14px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.08); }
 .card-title { font-size:10px; font-weight:800; color:var(--steel); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; padding-bottom:7px; border-bottom:1px solid var(--gray); display:flex; align-items:center; gap:5px; }
- 
+
 /* ── ROTATION STRIP ── */
 .rotation-strip { display:flex; align-items:center; justify-content:center; gap:3px; padding:8px 12px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:12px; margin-bottom:8px; overflow-x:auto; scrollbar-width:none; }
 .rotation-strip::-webkit-scrollbar { display:none; }
@@ -62,7 +62,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',
 .rs-label { font-size:7px; font-weight:700; color:rgba(255,255,255,0.35); }
 .rs-label.current-lbl { color:var(--gold); }
 .rs-arrow { color:rgba(255,255,255,0.15); font-size:10px; margin-bottom:8px; flex-shrink:0; }
- 
+
 /* ── HERO ── */
 .hero { background:linear-gradient(135deg,var(--navy2) 0%,#1a3a6b 50%,var(--mid) 100%); border-radius:16px; padding:14px 16px; margin-bottom:8px; border:1px solid rgba(212,160,23,0.25); position:relative; overflow:hidden; }
 .hero::after { content:''; position:absolute; top:-40px; right:-40px; width:130px; height:130px; background:radial-gradient(circle,rgba(212,160,23,0.1) 0%,transparent 70%); border-radius:50%; }
@@ -81,7 +81,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',
 .hero-stat { background:rgba(255,255,255,0.06); border-radius:9px; padding:7px 4px; text-align:center; border:1px solid rgba(255,255,255,0.07); }
 .hero-stat-val { font-size:15px; font-weight:800; color:var(--white); line-height:1; }
 .hero-stat-lbl { font-size:8px; font-weight:700; color:rgba(255,255,255,0.38); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
- 
+
 /* ── ACCOUNT BAR ── */
 .acct-bar-card { background:linear-gradient(135deg,var(--green-dim),#15803D); border-radius:14px; padding:12px 14px; margin-bottom:8px; color:white; }
 .acct-bar-card.losing { background:linear-gradient(135deg,var(--red-dim),#B91C1C); }
@@ -93,14 +93,14 @@ body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',
 .acct-track { background:rgba(255,255,255,0.2); border-radius:4px; height:5px; margin-bottom:5px; overflow:hidden; }
 .acct-fill { height:100%; background:rgba(255,255,255,0.85); border-radius:4px; transition:width 0.8s; }
 .acct-labels { display:flex; justify-content:space-between; font-size:9px; opacity:0.5; }
- 
+
 /* ── STAT TILES ── */
 .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
 .stat-tile { background:var(--white); border-radius:12px; padding:11px 10px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
 .stat-tile-val { font-size:18px; font-weight:800; color:var(--dark); line-height:1; }
 .stat-tile-lbl { font-size:9px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:3px; }
 .stat-tile-sub { font-size:10px; color:var(--muted); margin-top:2px; }
- 
+
 /* ── BET ROWS ── */
 .bet-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--gray); }
 .bet-row:last-child { border-bottom:none; }
@@ -118,7 +118,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',
 .pill-win  { background:var(--green-lt); color:var(--green); }
 .pill-loss { background:var(--red-lt); color:var(--red); }
 .pill-void { background:var(--gray); color:var(--muted); }
- 
+
 /* ── LEADERBOARD ── */
 .lb-row { display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid var(--gray); }
 .lb-row:last-child { border-bottom:none; }
@@ -132,7 +132,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',
 .lb-right { text-align:right; flex-shrink:0; }
 .lb-net { font-size:15px; font-weight:900; }
 .lb-roi { font-size:10px; color:var(--muted); margin-top:1px; }
- 
+
 /* ── FORM ── */
 .form-group { margin-bottom:12px; }
 .form-label { display:block; font-size:10px; font-weight:800; color:var(--steel); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:5px; }
@@ -143,7 +143,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',
 .form-control.editable-auto { background:#FFF7ED; border-color:#FED7AA; }
 .form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%2364748B' d='M5 7L0 2h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; }
- 
+
 /* ── BUTTONS ── */
 .btn { width:100%; padding:14px; border:none; border-radius:12px; font-size:15px; font-weight:800; cursor:pointer; letter-spacing:0.2px; transition:all 0.15s; -webkit-appearance:none; }
 .btn:active { transform:scale(0.98); }
@@ -153,12 +153,12 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .btn-warn  { background:linear-gradient(135deg,#92400E,var(--orange)); color:white; }
 .btn-group { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
 .btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
- 
+
 /* ── PREVIEW ── */
 .preview-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
 .preview-lbl { font-size:9px; color:var(--muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px; }
 .preview-val { font-size:14px; font-weight:800; color:var(--dark); }
- 
+
 /* ── HISTORY ── */
 .hist-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--gray); font-size:12px; }
 .hist-row:last-child { border-bottom:none; }
@@ -166,7 +166,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .hist-name { font-weight:700; flex:1; }
 .hist-net { font-weight:700; font-size:12px; }
 .hist-del { background:none; border:none; color:var(--muted); font-size:14px; cursor:pointer; padding:2px 4px; border-radius:4px; flex-shrink:0; }
- 
+
 /* ── AI ── */
 .ai-card { background:linear-gradient(135deg,#1e0a3c,#2D1B69,#1a3a6b); border-radius:14px; padding:14px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.08); }
 .ai-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
@@ -174,13 +174,13 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .ai-refresh { background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.15); border-radius:20px; padding:4px 12px; font-size:10px; font-weight:700; cursor:pointer; }
 .ai-text { font-size:13px; line-height:1.55; color:rgba(255,255,255,0.88); min-height:40px; }
 .ai-loading { color:rgba(255,255,255,0.4); font-style:italic; }
- 
+
 /* ── ADMIN ── */
 .admin-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--gray); }
 .admin-row:last-child { border-bottom:none; }
 .admin-lbl { font-size:13px; font-weight:600; color:var(--dark); }
 .admin-sub { font-size:11px; color:var(--muted); margin-top:1px; }
- 
+
 /* ── LOADING OVERLAY ── */
 .loading-overlay { position:fixed; inset:0; background:var(--navy); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:999; transition:opacity 0.4s; }
 .loading-overlay.hidden { opacity:0; pointer-events:none; }
@@ -189,17 +189,70 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .loading-msg { color:rgba(255,255,255,0.4); font-size:12px; }
 .loading-spinner { width:32px; height:32px; border:3px solid rgba(255,255,255,0.1); border-top-color:var(--gold); border-radius:50%; animation:spin 0.8s linear infinite; margin-top:20px; }
 @keyframes spin { to { transform:rotate(360deg); } }
- 
+
 /* ── TOAST ── */
 .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--dark); color:white; padding:11px 22px; border-radius:24px; font-size:13px; font-weight:700; z-index:998; transition:transform 0.3s ease; white-space:nowrap; box-shadow:0 4px 20px rgba(0,0,0,0.3); }
 .toast.show { transform:translateX(-50%) translateY(0); }
- 
+
 .section-label { font-size:10px; font-weight:800; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; padding-top:4px; }
 .empty { color:var(--muted); font-size:13px; padding:16px 0; text-align:center; }
+
+/* ── DRAG & DROP ROTATION ORDER ── */
+.drag-list { list-style:none; padding:0; margin:0; }
+.drag-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--off);
+  border: 1.5px solid var(--gray);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  cursor: grab;
+  user-select: none;
+  transition: box-shadow 0.15s, transform 0.15s, background 0.15s;
+  touch-action: none;
+}
+.drag-item:active { cursor: grabbing; }
+.drag-item.dragging {
+  opacity: 0.4;
+  transform: scale(0.98);
+}
+.drag-item.drag-over {
+  border-color: var(--steel);
+  background: #EFF6FF;
+  box-shadow: 0 0 0 2px rgba(37,99,168,0.2);
+}
+.drag-handle {
+  color: var(--gray2);
+  font-size: 18px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.drag-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--steel);
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.drag-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--dark);
+  flex: 1;
+}
+.drag-medal { font-size: 16px; flex-shrink: 0; }
 </style>
 </head>
 <body>
- 
+
 <!-- LOADING OVERLAY -->
 <div class="loading-overlay" id="loading-overlay">
   <div class="loading-logo">🏇</div>
@@ -207,13 +260,13 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   <div class="loading-msg" id="loading-msg">Connecting to live data…</div>
   <div class="loading-spinner"></div>
 </div>
- 
+
 <!-- SYNC STATUS -->
 <div class="sync-bar syncing" id="sync-bar">
   <div class="sync-dot pulse" id="sync-dot"></div>
   <span id="sync-label">Connecting…</span>
 </div>
- 
+
 <!-- HEADER -->
 <div class="hdr">
   <div class="hdr-top">
@@ -222,7 +275,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   </div>
   <div class="hdr-sub" id="hdr-sub">2026 Season · Loading…</div>
 </div>
- 
+
 <!-- TABS -->
 <div class="tabs">
   <div class="tab active" onclick="switchTab('home')">🏠 Home</div>
@@ -230,9 +283,9 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   <div class="tab" onclick="switchTab('board')">🏆 Board</div>
   <div class="tab" onclick="switchTab('account')">⚙️ Admin</div>
 </div>
- 
+
 <div class="scroll-area">
- 
+
 <!-- HOME -->
 <div class="page active" id="tab-home">
   <div class="rotation-strip" id="home-rotation-strip"></div>
@@ -256,7 +309,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
       <div class="hero-stat"><div class="hero-stat-val" id="hs-net">–</div><div class="hero-stat-lbl">Net P&L</div></div>
     </div>
   </div>
- 
+
   <div class="acct-bar-card" id="acct-bar-card">
     <div class="acct-bar-top">
       <div>
@@ -272,19 +325,19 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div class="acct-track"><div class="acct-fill" id="home-acct-fill" style="width:50%"></div></div>
     <div class="acct-labels"><span>$0</span><span id="home-acct-open-label">Opening: $–</span></div>
   </div>
- 
+
   <div class="stat-grid">
     <div class="stat-tile"><div class="stat-tile-val" id="st-bets">0</div><div class="stat-tile-lbl">Total Bets</div><div class="stat-tile-sub" id="st-winrate-sub">–% win rate</div></div>
     <div class="stat-tile"><div class="stat-tile-val" id="st-wl">–/–</div><div class="stat-tile-lbl">Group W / L</div><div class="stat-tile-sub" id="st-streak-sub">–</div></div>
     <div class="stat-tile"><div class="stat-tile-val" id="st-bestwin" style="font-size:15px">$–</div><div class="stat-tile-lbl">Best Return</div><div class="stat-tile-sub" id="st-bestwin-who">–</div></div>
     <div class="stat-tile"><div class="stat-tile-val" id="st-leader" style="font-size:15px">–</div><div class="stat-tile-lbl">Leading Punter</div><div class="stat-tile-sub" id="st-leader-net">by net P&L</div></div>
   </div>
- 
+
   <div class="card">
     <div class="card-title">📅 Recent Bets</div>
     <div id="home-recent"><div class="empty">No bets yet</div></div>
   </div>
- 
+
   <div class="ai-card">
     <div class="ai-header">
       <div class="ai-title">✨ AI Weekly Insight</div>
@@ -293,7 +346,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div class="ai-text" id="ai-insight"><span class="ai-loading">Tap Generate for this week's analysis…</span></div>
   </div>
 </div>
- 
+
 <!-- LOG BET -->
 <div class="page" id="tab-enter">
   <div class="card-dark" style="margin-top:2px">
@@ -346,7 +399,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div class="rotation-strip" id="enter-rotation-strip" style="margin-bottom:0;background:none;border:none;padding:0;justify-content:flex-start;"></div>
   </div>
 </div>
- 
+
 <!-- LEADERBOARD -->
 <div class="page" id="tab-board">
   <div class="card" style="margin-top:2px">
@@ -362,7 +415,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div id="fun-stats"></div>
   </div>
 </div>
- 
+
 <!-- ADMIN -->
 <div class="page" id="tab-account">
   <div class="stat-grid" style="margin-top:2px">
@@ -374,7 +427,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div class="stat-tile"><div class="stat-tile-val" id="acct-split2" style="font-size:17px">$–</div><div class="stat-tile-lbl">Split/Person</div></div>
     <div class="stat-tile"><div class="stat-tile-val" id="acct-pnl2" style="font-size:17px">$–</div><div class="stat-tile-lbl">P&L Each</div></div>
   </div>
- 
+
   <div class="card">
     <div class="card-title">📄 Weekly Group Report</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Generate a one-page summary to share with the group.</div>
@@ -384,7 +437,14 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     </div>
     <button class="btn btn-primary" onclick="generateReport()">📄 Generate Report</button>
   </div>
- 
+
+  <div class="card">
+    <div class="card-title">🔀 Betting Order</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Drag to reorder. Saves to the live database — updates for everyone instantly.</div>
+    <ul class="drag-list" id="drag-order-list"></ul>
+    <button class="btn btn-primary" onclick="savePunterOrder()" style="margin-top:4px">💾 Save Order</button>
+  </div>
+
   <div class="card">
     <div class="card-title">🎯 Override Rotation</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Manually set who's betting next if auto-rotation is wrong.</div>
@@ -403,7 +463,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     </div>
     <div id="override-status" style="font-size:11px;color:var(--muted);margin-top:8px;padding:6px 8px;background:var(--off);border-radius:8px;display:none"></div>
   </div>
- 
+
   <div class="card">
     <div class="card-title">⚙️ Settings</div>
     <div class="form-group">
@@ -420,7 +480,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     </div>
     <button class="btn btn-primary" onclick="saveSettings()" style="margin-bottom:0">💾 Save Settings</button>
   </div>
- 
+
   <div class="card">
     <div class="card-title">🔧 Bet Management</div>
     <div class="admin-row">
@@ -436,40 +496,44 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
       <button onclick="clearHistory()" style="background:var(--red-lt);color:var(--red);border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer">⚠️ Clear</button>
     </div>
   </div>
- 
+
   <div class="card">
     <div class="card-title">📜 Full History</div>
     <div id="acct-history"><div class="empty">No bets yet</div></div>
   </div>
 </div>
- 
+
 </div><!-- scroll area -->
 <div class="toast" id="toast"></div>
- 
+
 <script>
 // ═══════════════ SUPABASE CONFIG ═══════════════
 const SUPA_URL = 'https://dxgfdjqwdgjlvcdgxcvn.supabase.co';
 const SUPA_KEY = 'sb_publishable_sqN6esaChuCE1cfRc7O1Gw_yvA1hPMD';
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
- 
+
 // ═══════════════ CONSTANTS ═══════════════
-const PUNTERS    = ["Cass","Hoops","Pedro","Benji","Billy","CC"];
+const DEFAULT_PUNTERS = ["Cass","Hoops","Pedro","Benji","Billy","CC"];
 const MEDALS     = ["🥇","🥈","🥉","4️⃣","5️⃣","6️⃣"];
 const INI        = p => p.slice(0,2).toUpperCase();
 const START_WEEK = 2;
 const START_PUNTER = "Hoops";
 const DOUBLE_MIN = 120;
- 
+
+// Dynamic punter list — always read from state.punterOrder
+function getPunters() { return state.punterOrder; }
+
 // ═══════════════ STATE ═══════════════
 let state = {
   bets: [],
   openingBalance: 600,
   numPunters: 6,
   poolSize: 60,
-  override: null
+  override: null,
+  punterOrder: [...DEFAULT_PUNTERS]
 };
 let syncChannel = null;
- 
+
 // ═══════════════ SUPABASE HELPERS ═══════════════
 function setSyncStatus(status, msg) {
   const bar = document.getElementById('sync-bar');
@@ -479,7 +543,7 @@ function setSyncStatus(status, msg) {
   dot.className = 'sync-dot' + (status === 'syncing' ? ' pulse' : '');
   lbl.textContent = msg;
 }
- 
+
 async function loadFromSupabase() {
   setSyncStatus('syncing', 'Loading data…');
   try {
@@ -494,13 +558,16 @@ async function loadFromSupabase() {
       state.override       = settingsData.override_punter
         ? { punter: settingsData.override_punter, week: settingsData.override_week }
         : null;
+      if (settingsData.punter_order) {
+        try { state.punterOrder = JSON.parse(settingsData.punter_order); } catch(e) {}
+      }
     }
- 
+
     // Load bets ordered by created_at
     const { data: betsData, error: be } = await supa
       .from('bets').select('*').order('created_at', { ascending: true });
     if (be) throw be;
- 
+
     state.bets = (betsData || []).map(b => ({
       id:        b.id,
       week:      b.week,
@@ -510,7 +577,7 @@ async function loadFromSupabase() {
       returnAmt: parseFloat(b.return_amt),
       result:    b.result
     }));
- 
+
     setSyncStatus('connected', `Live · ${state.bets.length} bet${state.bets.length!==1?'s':''}`);
     return true;
   } catch(e) {
@@ -520,7 +587,7 @@ async function loadFromSupabase() {
     return false;
   }
 }
- 
+
 async function saveBetToSupabase(bet) {
   setSyncStatus('syncing', 'Saving…');
   const { data, error } = await supa.from('bets').insert({
@@ -535,14 +602,14 @@ async function saveBetToSupabase(bet) {
   setSyncStatus('connected', `Live · ${state.bets.length} bets`);
   return data.id;
 }
- 
+
 async function deleteBetFromSupabase(id) {
   setSyncStatus('syncing', 'Deleting…');
   const { error } = await supa.from('bets').delete().eq('id', id);
   if (error) throw error;
   setSyncStatus('connected', `Live · ${state.bets.length} bets`);
 }
- 
+
 async function saveSettingsToSupabase() {
   const { error } = await supa.from('settings').upsert({
     id:               1,
@@ -550,11 +617,12 @@ async function saveSettingsToSupabase() {
     num_punters:      state.numPunters,
     pool_size:        state.poolSize,
     override_punter:  state.override?.punter || null,
-    override_week:    state.override?.week || null
+    override_week:    state.override?.week || null,
+    punter_order:     JSON.stringify(state.punterOrder)
   });
   if (error) throw error;
 }
- 
+
 function subscribeToRealtime() {
   if (syncChannel) supa.removeChannel(syncChannel);
   syncChannel = supa.channel('bbb-live')
@@ -573,7 +641,7 @@ function subscribeToRealtime() {
       }
     });
 }
- 
+
 function refreshCurrentTab() {
   const active = document.querySelector('.page.active')?.id?.replace('tab-','');
   if (active === 'home')    renderHome();
@@ -581,31 +649,31 @@ function refreshCurrentTab() {
   if (active === 'account') renderAdmin();
   if (active === 'enter')   populateEntryForm();
 }
- 
+
 // ═══════════════ GAME LOGIC ═══════════════
 function getPoolSize() { return state.poolSize || 60; }
- 
+
 function computeCurrentState() {
   if (state.override) return { week: state.override.week, punter: state.override.punter, overridden: true };
   if (state.bets.length === 0) return { week: START_WEEK, punter: START_PUNTER };
   const last = state.bets[state.bets.length - 1];
   if (last.result === 'Win') return { week: last.week, punter: last.punter };
-  const nextIdx = (PUNTERS.indexOf(last.punter) + 1) % PUNTERS.length;
-  return { week: last.week + 1, punter: PUNTERS[nextIdx] };
+  const nextIdx = (getPunters().indexOf(last.punter) + 1) % getPunters().length;
+  return { week: last.week + 1, punter: getPunters()[nextIdx] };
 }
- 
+
 function punterAlreadyBetThisWeek(punter, week) {
   return state.bets.some(b => b.punter === punter && b.week === week);
 }
- 
+
 function getAccountTotal() {
   let bal = state.openingBalance;
   for (const b of state.bets) { if (b.result !== 'Void') bal += (b.returnAmt - b.bet); }
   return bal;
 }
- 
+
 function getPunterStats() {
-  return PUNTERS.map(name => {
+  return getPunters().map(name => {
     const pb = state.bets.filter(b => b.punter === name && b.result !== 'Void');
     const wins = pb.filter(b => b.result === 'Win').length;
     const losses = pb.filter(b => b.result === 'Loss').length;
@@ -623,7 +691,7 @@ function getPunterStats() {
     return { name, bets:pb.length, wins, losses, totalBet, totalRet, net, roi, streak, streakType };
   });
 }
- 
+
 // ═══════════════ TABS ═══════════════
 const TAB_NAMES = ['home','enter','board','account'];
 function switchTab(tab) {
@@ -635,21 +703,21 @@ function switchTab(tab) {
   if(tab==='board')   renderBoard();
   if(tab==='account') renderAdmin();
 }
- 
+
 // ═══════════════ ROTATION STRIP ═══════════════
 function renderRotationStrip(elId, currentPunter, currentWeek) {
   const el = document.getElementById(elId);
   if (!el) return;
   const betPunters = new Set(state.bets.filter(b=>b.week===currentWeek).map(b=>b.punter));
-  el.innerHTML = PUNTERS.map((p,i) => {
+  el.innerHTML = getPunters().map((p,i) => {
     const isCur = p===currentPunter;
     const cls = isCur ? 'current' : betPunters.has(p) ? 'done-bet' : 'upcoming';
     const lCls = isCur ? 'current-lbl' : '';
-    const arrow = i<PUNTERS.length-1 ? '<div class="rs-arrow">›</div>' : '';
+    const arrow = i<getPunters().length-1 ? '<div class="rs-arrow">›</div>' : '';
     return `<div class="rs-item"><div class="rs-bubble ${cls}">${INI(p)}</div><div class="rs-label ${lCls}">${p}</div></div>${arrow}`;
   }).join('');
 }
- 
+
 // ═══════════════ HOME ═══════════════
 function renderHome() {
   const { week, punter, overridden } = computeCurrentState();
@@ -658,57 +726,57 @@ function renderHome() {
   const split = account / state.numPunters;
   const opening = state.openingBalance;
   const pnl = split - (opening / state.numPunters);
- 
+
   document.getElementById('hdr-week-badge').textContent = 'WK ' + week;
   document.getElementById('hdr-sub').textContent = `2026 Season · ${state.bets.length} bet${state.bets.length!==1?'s':''} · Live`;
   renderRotationStrip('home-rotation-strip', punter, week);
- 
+
   const alreadyBet = punterAlreadyBetThisWeek(punter, week) && !overridden;
   document.getElementById('hero-eyebrow').textContent = alreadyBet ? `WEEK ${week} · UP NEXT` : `WEEK ${week} · UP NOW`;
   document.getElementById('hero-punter-name').textContent = punter;
   document.getElementById('hero-punter-sub').textContent = alreadyBet ? `Waiting on result · $${pool} pool` : overridden ? `⚠️ Manually set · $${pool} pool` : `Ready to bet · $${pool} pool`;
- 
+
   const pStats = getPunterStats().find(s=>s.name===punter);
   document.getElementById('hs-wl').textContent = pStats.bets>0 ? `${pStats.wins}/${pStats.losses}` : '–/–';
   document.getElementById('hs-roi').textContent = pStats.bets>0 ? (pStats.roi>=0?'+':'')+pStats.roi.toFixed(1)+'%' : '–';
   document.getElementById('hs-net').textContent = pStats.bets>0 ? (pStats.net>=0?'+$':'-$')+Math.abs(pStats.net).toFixed(0) : '–';
- 
+
   const sb=document.getElementById('streak-badge'),sv=document.getElementById('streak-val'),sl=document.getElementById('streak-lbl');
   if(pStats.streak>0){const hot=pStats.streakType==='Win';sb.className='streak-badge '+(hot?'hot':'cold');sv.textContent=pStats.streak+(hot?'🔥':'❄️');sl.textContent=hot?'Win Streak':'Loss Streak';}
   else{sb.className='streak-badge';sv.textContent='–';sl.textContent='No bets yet';}
- 
+
   document.getElementById('acct-bar-card').className='acct-bar-card'+(account<opening?' losing':'');
   document.getElementById('home-acct-bal').textContent='$'+account.toFixed(2);
   document.getElementById('home-split-val').textContent='$'+split.toFixed(2);
   document.getElementById('home-pnl-label').textContent=(pnl>=0?'+':'-')+'$'+Math.abs(pnl).toFixed(2)+' each vs opening';
   document.getElementById('home-acct-fill').style.width=Math.min(account/opening*100,100)+'%';
   document.getElementById('home-acct-open-label').textContent='Opening: $'+opening.toFixed(2);
- 
+
   const allValid=state.bets.filter(b=>b.result!=='Void');
   const gW=allValid.filter(b=>b.result==='Win').length,gL=allValid.filter(b=>b.result==='Loss').length;
   document.getElementById('st-bets').textContent=state.bets.length;
   document.getElementById('st-winrate-sub').textContent=(allValid.length>0?Math.round(gW/allValid.length*100):0)+'% win rate';
   document.getElementById('st-wl').textContent=gW+'/'+gL;
- 
+
   let gs=0,gt=null;
   for(let i=state.bets.length-1;i>=0;i--){const b=state.bets[i];if(b.result==='Void')continue;if(gt===null){gt=b.result;gs=1;}else if(b.result===gt)gs++;else break;}
   document.getElementById('st-streak-sub').textContent=gs>1?`${gs}× ${gt} streak`:'No streak';
- 
+
   if(state.bets.length>0){const best=state.bets.reduce((a,b)=>b.returnAmt>a.returnAmt?b:a,state.bets[0]);document.getElementById('st-bestwin').textContent='$'+best.returnAmt.toFixed(0);document.getElementById('st-bestwin-who').textContent=best.punter+' Wk'+best.week;}
- 
+
   const ranked=getPunterStats().filter(s=>s.bets>0).sort((a,b)=>b.net-a.net);
   if(ranked.length>0){document.getElementById('st-leader').textContent=ranked[0].name;document.getElementById('st-leader-net').textContent=(ranked[0].net>=0?'+$':'-$')+Math.abs(ranked[0].net).toFixed(2);}
- 
+
   const recent=[...state.bets].reverse().slice(0,8);
   document.getElementById('home-recent').innerHTML = recent.length ? recent.map(b=>{
     const net=b.returnAmt-b.bet,roi=b.bet>0?(net/b.bet*100).toFixed(0):0,cls=b.result==='Win'?'win':b.result==='Loss'?'loss':'void';
     return `<div class="bet-row"><div class="bet-avatar ${cls}">${INI(b.punter)}</div><div class="bet-info"><div class="bet-name">${b.punter} <span class="pill pill-${cls}">${b.result}</span></div><div class="bet-meta">Wk${b.week} · ${b.date} · $${b.bet.toFixed(0)} staked</div></div><div class="bet-amount"><div class="bet-net" style="color:${net>=0?'var(--green)':'var(--red)'}">${net>=0?'+':'-'}$${Math.abs(net).toFixed(2)}</div><div class="bet-roi">${roi>0?'+':''}${roi}% ROI</div></div></div>`;
   }).join('') : '<div class="empty">No bets yet</div>';
 }
- 
+
 // ═══════════════ ENTRY FORM ═══════════════
 let selectedResult = null;
- 
+
 function populateEntryForm() {
   const {week,punter} = computeCurrentState();
   const pool = getPoolSize();
@@ -716,7 +784,7 @@ function populateEntryForm() {
   document.getElementById('entry-bet').value = pool.toFixed(2);
   document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
   const sel = document.getElementById('entry-punter');
-  sel.innerHTML = PUNTERS.map(p=>`<option value="${p}" ${p===punter?'selected':''}>${p}${p===punter?' 👈 auto':''}</option>`).join('');
+  sel.innerHTML = getPunters().map(p=>`<option value="${p}" ${p===punter?'selected':''}>${p}${p===punter?' 👈 auto':''}</option>`).join('');
   selectedResult=null;
   document.getElementById('result-display').textContent='No result selected yet';
   document.getElementById('result-display').style.color='var(--muted)';
@@ -725,9 +793,9 @@ function populateEntryForm() {
   document.getElementById('enter-auto-label').textContent=`${punter} is up · Week ${week} · $${pool} pool`;
   renderRotationStrip('enter-rotation-strip', punter, week);
 }
- 
+
 function onPunterChange() { updatePreview(); }
- 
+
 function setResult(r) {
   selectedResult=r;
   const disp=document.getElementById('result-display');
@@ -736,39 +804,39 @@ function setResult(r) {
     :'<div style="background:var(--red-lt);border:2px solid var(--red);border-radius:10px;padding:7px;text-align:center;color:var(--red);font-weight:800;font-size:13px">❌ LOSS selected</div>';
   updatePreview();
 }
- 
+
 function updatePreview() {
   const ret=parseFloat(document.getElementById('entry-return').value);
   const bet=parseFloat(document.getElementById('entry-bet').value)||getPoolSize();
   const punter=document.getElementById('entry-punter').value;
   if(!selectedResult||isNaN(ret)){document.getElementById('preview-card').style.display='none';return;}
   const net=ret-bet,roi=bet>0?(net/bet*100).toFixed(1):0;
-  const nextIdx=(PUNTERS.indexOf(punter)+1)%PUNTERS.length;
+  const nextIdx=(getPunters().indexOf(punter)+1)%getPunters().length;
   const goesAgain=selectedResult==='Win'&&ret>=DOUBLE_MIN;
-  const nextMsg=selectedResult==='Win'?(goesAgain?`🔥 BIG WIN (≥$${DOUBLE_MIN}) — ${punter} can go again same week!`:`✅ Any profit = Win · ${punter} bets again next week`):`🔄 Loss · rotation moves to ${PUNTERS[nextIdx]} next week`;
+  const nextMsg=selectedResult==='Win'?(goesAgain?`🔥 BIG WIN (≥$${DOUBLE_MIN}) — ${punter} can go again same week!`:`✅ Any profit = Win · ${punter} bets again next week`):`🔄 Loss · rotation moves to ${getPunters()[nextIdx]} next week`;
   document.getElementById('preview-card').style.display='block';
   document.getElementById('preview-grid').innerHTML=`<div class="preview-item"><div class="preview-lbl">Punter</div><div class="preview-val">${punter}</div></div><div class="preview-item"><div class="preview-lbl">Result</div><div class="preview-val" style="color:${selectedResult==='Win'?'var(--green)':'var(--red)'}">${selectedResult}</div></div><div class="preview-item"><div class="preview-lbl">Bet</div><div class="preview-val">$${bet.toFixed(2)}</div></div><div class="preview-item"><div class="preview-lbl">Return</div><div class="preview-val">$${ret.toFixed(2)}</div></div><div class="preview-item" style="grid-column:span 2"><div class="preview-lbl">Net P&L</div><div class="preview-val" style="font-size:20px;color:${net>=0?'var(--green)':'var(--red)'}">${net>=0?'+':'-'}$${Math.abs(net).toFixed(2)} <span style="font-size:12px;font-weight:600">(${roi>0?'+':''}${roi}%)</span></div></div>`;
   document.getElementById('preview-next').textContent=nextMsg;
 }
- 
+
 async function submitBet() {
   const week=parseInt(document.getElementById('entry-week').value);
   const dateRaw=document.getElementById('entry-date').value;
   const punter=document.getElementById('entry-punter').value;
   const bet=parseFloat(document.getElementById('entry-bet').value);
   const ret=parseFloat(document.getElementById('entry-return').value);
- 
+
   if(!punter){showToast('⚠️ Select a punter');return;}
   if(!week||isNaN(week)){showToast('⚠️ Enter week number');return;}
   if(!bet||isNaN(bet)){showToast('⚠️ Enter bet amount');return;}
   if(isNaN(ret)||ret<0){showToast('⚠️ Enter return amount (0 if lost all)');return;}
   if(!selectedResult){showToast('⚠️ Select Win or Loss');return;}
- 
+
   const btn=document.getElementById('save-btn');
   btn.disabled=true; btn.textContent='⏳ Saving…';
- 
+
   const date=dateRaw?new Date(dateRaw).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'}):new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'});
- 
+
   try {
     // Clear override in DB if set
     if (state.override) {
@@ -788,7 +856,7 @@ async function submitBet() {
     btn.disabled=false; btn.textContent='💾 Save Bet';
   }
 }
- 
+
 // ═══════════════ LEADERBOARD ═══════════════
 function renderBoard() {
   const stats=getPunterStats().sort((a,b)=>b.net-a.net);
@@ -819,7 +887,7 @@ function renderBoard() {
     ['🔥 Hot Streak',(()=>{const s=getPunterStats().filter(p=>p.streakType==='Win').sort((a,b)=>b.streak-a.streak)[0];return s&&s.streak>1?`${s.name} ${s.streak}× Win`:'No active streak';})()],
   ].map(([l,v])=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--gray)"><span style="font-size:12px;color:var(--muted)">${l}</span><span style="font-size:12px;font-weight:800;color:var(--dark)">${v}</span></div>`).join('');
 }
- 
+
 // ═══════════════ ADMIN ═══════════════
 function renderAdmin() {
   const account=getAccountTotal(),opening=state.openingBalance,split=account/state.numPunters,pnl=split-(opening/state.numPunters);
@@ -828,11 +896,12 @@ function renderAdmin() {
   document.getElementById('acct-big-sub').textContent=(account>=opening?'Up':'Down')+' $'+Math.abs(account-opening).toFixed(2)+' from $'+opening.toFixed(2)+' opening';
   document.getElementById('acct-split2').textContent='$'+split.toFixed(2);
   const pe=document.getElementById('acct-pnl2');pe.textContent=(pnl>=0?'+$':'-$')+Math.abs(pnl).toFixed(2);pe.style.color=pnl>=0?'var(--green)':'var(--red)';
+  renderDragList();
   document.getElementById('settings-opening').value=opening;
   document.getElementById('settings-punters').value=state.numPunters;
   document.getElementById('settings-pool').value=getPoolSize();
   const {week:cw,punter:cp}=computeCurrentState();
-  document.getElementById('override-punter').innerHTML=PUNTERS.map(p=>`<option value="${p}" ${p===cp?'selected':''}>${p}</option>`).join('');
+  document.getElementById('override-punter').innerHTML=getPunters().map(p=>`<option value="${p}" ${p===cp?'selected':''}>${p}</option>`).join('');
   document.getElementById('override-week').value=cw;
   const ov=document.getElementById('override-status');
   ov.style.display='block';
@@ -846,7 +915,7 @@ function renderAdmin() {
     return `<div class="hist-row"><span class="hist-wk">Wk${b.week}</span><span class="hist-name">${b.punter}</span><span class="pill pill-${cls}">${b.result}</span><span class="hist-net" style="color:${net>=0?'var(--green)':'var(--red)'}">${net>=0?'+':'-'}$${Math.abs(net).toFixed(2)}</span><button class="hist-del" onclick="deleteBetById('${b.id}')">🗑</button></div>`;
   }).join('');
 }
- 
+
 async function applyOverride() {
   const punter=document.getElementById('override-punter').value;
   const week=parseInt(document.getElementById('override-week').value);
@@ -855,7 +924,7 @@ async function applyOverride() {
   try{await saveSettingsToSupabase();showToast(`✅ Override set: ${punter} · Week ${week}`);renderAdmin();}
   catch(e){showToast('❌ Failed to save override');}
 }
- 
+
 async function saveSettings() {
   state.openingBalance=parseFloat(document.getElementById('settings-opening').value)||600;
   state.numPunters=parseInt(document.getElementById('settings-punters').value)||6;
@@ -863,7 +932,7 @@ async function saveSettings() {
   try{await saveSettingsToSupabase();showToast('✅ Settings saved');renderAdmin();}
   catch(e){showToast('❌ Failed to save settings');}
 }
- 
+
 async function deleteLastBet() {
   if(!state.bets.length){showToast('No bets to delete');return;}
   if(!confirm('Delete the last bet?'))return;
@@ -871,13 +940,13 @@ async function deleteLastBet() {
   try{await deleteBetFromSupabase(last.id);state.bets.pop();showToast('🗑 Last bet deleted');renderAdmin();}
   catch(e){showToast('❌ Delete failed');}
 }
- 
+
 async function deleteBetById(id) {
   if(!confirm('Delete this bet?'))return;
   try{await deleteBetFromSupabase(id);state.bets=state.bets.filter(b=>b.id!==id);showToast('🗑 Bet deleted');renderAdmin();}
   catch(e){showToast('❌ Delete failed');}
 }
- 
+
 async function clearHistory() {
   if(!confirm('Delete ALL bets from the live database? This cannot be undone.'))return;
   try{
@@ -889,7 +958,7 @@ async function clearHistory() {
     setSyncStatus('connected','Live · 0 bets');
   }catch(e){showToast('❌ Clear failed');}
 }
- 
+
 // ═══════════════ EXPORT CSV ═══════════════
 function exportCSV() {
   if(!state.bets.length){showToast('⚠️ No bets to export');return;}
@@ -899,7 +968,7 @@ function exportCSV() {
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`BusBois_${new Date().toISOString().slice(0,10)}.csv`;a.click();
   showToast('✅ CSV downloaded!');
 }
- 
+
 // ═══════════════ AI INSIGHT ═══════════════
 async function getAIInsight() {
   const el=document.getElementById('ai-insight');
@@ -909,7 +978,7 @@ async function getAIInsight() {
   try{const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});const data=await res.json();el.textContent=data.content?.map(c=>c.text||'').join('')||'Could not generate.';}
   catch(e){el.textContent="Couldn't connect.";}
 }
- 
+
 // ═══════════════ WEEKLY REPORT ═══════════════
 function generateReport() {
   const inputWeek=document.getElementById('report-week').value;
@@ -934,13 +1003,142 @@ function generateReport() {
   const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Bus Bois Betting — Week ${reportWeek}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#F1F5F9;color:#1E293B}@media print{body{background:white}.no-print{display:none}@page{margin:10mm;size:A4}}.wrap{max-width:720px;margin:0 auto;padding:16px}.hdr{background:linear-gradient(135deg,#0A1628 0%,#163356 60%,#1B3A5C 100%);border-radius:16px;padding:22px 24px 18px;color:white;margin-bottom:14px;position:relative;overflow:hidden}.hdr::before{content:'🏇';position:absolute;right:16px;top:10px;font-size:64px;opacity:.08}.hdr-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}.rh-title{font-size:22px;font-weight:900;color:#D4A017}.rh-sub{font-size:12px;color:rgba(255,255,255,.5);margin-top:2px}.rh-wn{font-size:36px;font-weight:900;color:white;line-height:1;text-align:right}.rh-wl{font-size:10px;font-weight:700;color:rgba(212,160,23,.7);text-transform:uppercase;letter-spacing:1px}.rh-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.rh-stat{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 8px;text-align:center}.rh-sv{font-size:18px;font-weight:800;color:white;line-height:1}.rh-sl{font-size:9px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}.acct{background:linear-gradient(135deg,${account>=opening?'#14532D,#16A34A':'#7F1D1D,#DC2626'});border-radius:14px;padding:14px 18px;color:white;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}.ab-lbl{font-size:9px;font-weight:800;opacity:.6;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}.ab-bal{font-size:28px;font-weight:900;line-height:1}.ab-split{font-size:20px;font-weight:800;text-align:right}.ab-sl{font-size:9px;opacity:.6;text-transform:uppercase;letter-spacing:.5px}.ab-pnl{font-size:13px;font-weight:700;margin-top:3px;opacity:.85}.sec{background:white;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.06)}.sec-title{font-size:11px;font-weight:800;color:#2563A8;text-transform:uppercase;letter-spacing:1px;padding-bottom:8px;border-bottom:1px solid #E2E8F0;margin-bottom:12px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#F8FAFC;font-size:10px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:.5px;padding:7px 10px;text-align:left;border-bottom:2px solid #E2E8F0}td{padding:9px 10px;border-bottom:1px solid #F1F5F9;vertical-align:middle}tr:last-child td{border-bottom:none}.wk-res{text-align:center;padding:10px 0 4px}.wr-lbl{font-size:10px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}.wr-net{font-size:32px;font-weight:900;color:${weekNet>=0?'#16A34A':'#DC2626'}}.wr-sub{font-size:12px;color:#64748B;margin-top:2px}.nu{background:linear-gradient(135deg,#0F2040,#163356);border-radius:12px;padding:14px 18px;color:white;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.nu-lbl{font-size:10px;font-weight:800;color:rgba(212,160,23,.7);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}.nu-name{font-size:22px;font-weight:900;color:white}.nu-sub{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px}.footer{text-align:center;font-size:10px;color:#94A3B8;padding:8px 0 4px}.pbtn{display:block;width:100%;padding:14px;background:linear-gradient(135deg,#163356,#2563A8);color:white;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:14px;text-align:center}</style></head><body><div class="wrap"><button class="pbtn no-print" onclick="window.print()">🖨️ Save as PDF / Print</button><div class="hdr"><div class="hdr-top"><div><div class="rh-title">🏇 Bus Bois Betting</div><div class="rh-sub">2026 Season · Generated ${gen}</div></div><div><div class="rh-wl">Week</div><div class="rh-wn">${reportWeek}</div></div></div><div class="rh-stats"><div class="rh-stat"><div class="rh-sv">${gW}/${gL}</div><div class="rh-sl">Group W/L</div></div><div class="rh-stat"><div class="rh-sv">${gRoi}%</div><div class="rh-sl">Season ROI</div></div><div class="rh-stat"><div class="rh-sv">$${Math.abs(gNet).toFixed(0)}</div><div class="rh-sl">${gNet>=0?'Profit':'Loss'}</div></div><div class="rh-stat"><div class="rh-sv">${state.bets.length}</div><div class="rh-sl">Total Bets</div></div></div></div><div class="acct"><div><div class="ab-lbl">Account Balance</div><div class="ab-bal">$${account.toFixed(2)}</div></div><div><div class="ab-split">$${split.toFixed(2)}</div><div class="ab-sl">split per person</div><div class="ab-pnl">${pnl>=0?'+':'-'}$${Math.abs(pnl).toFixed(2)} each vs opening</div></div></div><div class="sec"><div class="sec-title">📅 Week ${reportWeek} — ${reportDate}</div><div class="wk-res"><div class="wr-lbl">Week Net Result</div><div class="wr-net">${weekNet>=0?'+':'-'}$${Math.abs(weekNet).toFixed(2)}</div><div class="wr-sub">${weekBets.length} bet${weekBets.length!==1?'s':''} · ${weekBets.filter(b=>b.result==='Win').length}W / ${weekBets.filter(b=>b.result==='Loss').length}L</div></div><table style="margin-top:12px"><thead><tr><th>Punter</th><th>Bet</th><th>Return</th><th>Net</th><th>ROI</th><th>Result</th></tr></thead><tbody>${weekRows}</tbody></table></div><div class="sec"><div class="sec-title">🏆 Season Leaderboard</div><table><thead><tr><th style="width:32px"></th><th>Punter</th><th style="text-align:center">W/L</th><th style="text-align:right">Net P&L</th><th style="text-align:right">ROI</th><th style="width:100px">Bar</th></tr></thead><tbody>${lbRows}</tbody></table></div><div class="nu"><div><div class="nu-lbl">Up Next — Week ${reportWeek+1}</div><div class="nu-name">${nextPunter}</div><div class="nu-sub">$${getPoolSize()} pool</div></div><div style="text-align:right;font-size:11px;color:rgba(255,255,255,.4)">${psStr}</div></div><div class="footer">Bus Bois Betting 2026 · Week ${reportWeek} · ${gen}</div></div></body></html>`;
   const w=window.open('','_blank');w.document.write(html);w.document.close();
 }
- 
+
+
+// ═══════════════ DRAG & DROP ROTATION ORDER ═══════════════
+function renderDragList() {
+  const list = document.getElementById('drag-order-list');
+  if (!list) return;
+  const punters = getPunters();
+  list.innerHTML = punters.map((p, i) => `
+    <li class="drag-item" draggable="true" data-name="${p}"
+        ondragstart="onDragStart(event)"
+        ondragover="onDragOver(event)"
+        ondrop="onDrop(event)"
+        ondragend="onDragEnd(event)"
+        ontouchstart="onTouchStart(event)"
+        ontouchmove="onTouchMove(event)"
+        ontouchend="onTouchEnd(event)">
+      <span class="drag-handle">⠿</span>
+      <span class="drag-num">${i + 1}</span>
+      <span class="drag-name">${p}</span>
+      <span class="drag-medal">${MEDALS[i] || ''}</span>
+    </li>`).join('');
+}
+
+let dragSrc = null;
+
+function onDragStart(e) {
+  dragSrc = e.currentTarget;
+  dragSrc.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.drag-item').forEach(el => el.classList.remove('drag-over'));
+  if (e.currentTarget !== dragSrc) e.currentTarget.classList.add('drag-over');
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  const target = e.currentTarget;
+  if (!dragSrc || dragSrc === target) return;
+  const list = document.getElementById('drag-order-list');
+  const items = [...list.querySelectorAll('.drag-item')];
+  const srcIdx = items.indexOf(dragSrc);
+  const tgtIdx = items.indexOf(target);
+  if (srcIdx < tgtIdx) list.insertBefore(dragSrc, target.nextSibling);
+  else list.insertBefore(dragSrc, target);
+  refreshDragNumbers();
+}
+
+function onDragEnd(e) {
+  document.querySelectorAll('.drag-item').forEach(el => {
+    el.classList.remove('dragging', 'drag-over');
+  });
+  dragSrc = null;
+}
+
+// ── Touch support for mobile ──────────────────────────────
+let touchDragEl = null, touchClone = null, touchOffsetX = 0, touchOffsetY = 0;
+
+function onTouchStart(e) {
+  touchDragEl = e.currentTarget;
+  touchDragEl.classList.add('dragging');
+  const touch = e.touches[0];
+  const rect = touchDragEl.getBoundingClientRect();
+  touchOffsetX = touch.clientX - rect.left;
+  touchOffsetY = touch.clientY - rect.top;
+
+  // Create floating clone
+  touchClone = touchDragEl.cloneNode(true);
+  touchClone.style.cssText = `position:fixed;z-index:9999;width:${rect.width}px;pointer-events:none;opacity:0.9;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.25);background:white;`;
+  touchClone.style.left = (touch.clientX - touchOffsetX) + 'px';
+  touchClone.style.top  = (touch.clientY - touchOffsetY) + 'px';
+  document.body.appendChild(touchClone);
+}
+
+function onTouchMove(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+  if (touchClone) {
+    touchClone.style.left = (touch.clientX - touchOffsetX) + 'px';
+    touchClone.style.top  = (touch.clientY - touchOffsetY) + 'px';
+  }
+  // Highlight item under finger
+  document.querySelectorAll('.drag-item').forEach(el => el.classList.remove('drag-over'));
+  const el = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.drag-item');
+  if (el && el !== touchDragEl) el.classList.add('drag-over');
+}
+
+function onTouchEnd(e) {
+  const touch = e.changedTouches[0];
+  if (touchClone) { touchClone.remove(); touchClone = null; }
+  document.querySelectorAll('.drag-item').forEach(el => el.classList.remove('dragging', 'drag-over'));
+
+  const target = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.drag-item');
+  if (target && target !== touchDragEl) {
+    const list = document.getElementById('drag-order-list');
+    const items = [...list.querySelectorAll('.drag-item')];
+    const srcIdx = items.indexOf(touchDragEl);
+    const tgtIdx = items.indexOf(target);
+    if (srcIdx < tgtIdx) list.insertBefore(touchDragEl, target.nextSibling);
+    else list.insertBefore(touchDragEl, target);
+    refreshDragNumbers();
+  }
+  touchDragEl = null;
+}
+
+function refreshDragNumbers() {
+  document.querySelectorAll('#drag-order-list .drag-item').forEach((el, i) => {
+    el.querySelector('.drag-num').textContent = i + 1;
+    el.querySelector('.drag-medal').textContent = MEDALS[i] || '';
+  });
+}
+
+async function savePunterOrder() {
+  const items = document.querySelectorAll('#drag-order-list .drag-item');
+  const newOrder = [...items].map(el => el.dataset.name);
+  state.punterOrder = newOrder;
+  state.numPunters = newOrder.length;
+  try {
+    await saveSettingsToSupabase();
+    showToast('✅ Betting order saved!');
+    renderAdmin();
+    renderHome();
+  } catch(e) {
+    showToast('❌ Failed to save order');
+  }
+}
+
 // ═══════════════ TOAST ═══════════════
 function showToast(msg) {
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2500);
 }
- 
+
 // ═══════════════ INIT ═══════════════
 async function init() {
   const overlay=document.getElementById('loading-overlay');
@@ -957,9 +1155,8 @@ async function init() {
     document.querySelector('.loading-spinner').style.display='none';
   }
 }
- 
+
 init();
 </script>
 </body>
 </html>
- 
