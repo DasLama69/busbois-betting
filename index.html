@@ -472,7 +472,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
       </div>
     </div>
     <div style="margin-top:10px">
-      <label for="entry-is-bonus" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#ffffff;font-weight:600">
+      <label for="entry-is-bonus" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--dark);font-weight:600">
         <input type="checkbox" id="entry-is-bonus" onchange="onBonusChange()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--gold)">
         🎟️ Is this a bonus bet?
       </label>
@@ -481,7 +481,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
       </div>
     </div>
     <div style="margin-top:8px">
-      <label for="entry-is-void" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#ffffff;font-weight:600">
+      <label for="entry-is-void" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--dark);font-weight:600">
         <input type="checkbox" id="entry-is-void" style="width:16px;height:16px;cursor:pointer;accent-color:#94a3b8">
         🚫 Mark as void (refund — no P/L impact)
       </label>
@@ -1289,22 +1289,29 @@ function getBalanceHistory() {
   return allEvents.map(e => e.bal);
 }
 
+// ── Week-profitability helpers ────────────────────────────────────────────────
+function shouldCountWeek(s) {
+  // Count a week if: pool fully spent, OR any single bet >= pool (legacy), OR bonus-only week
+  return s.isComplete || s.realBets.some(b => b.bet >= getPoolSize()) || (s.realBets.length === 0 && s.bonusBets.length > 0);
+}
+function isWeekProfitable(s) {
+  return (s.totalReturn + s.bonusReturn) > s.totalStaked;
+}
+
 function getPunterStats() {
   const pool = getPoolSize();
   return getPunters().map(name => {
     const realBets  = state.bets.filter(b => b.punter === name && !b.isBonus && b.result !== 'Void');
     const bonusBets = state.bets.filter(b => b.punter === name && b.isBonus);
 
-    // Group real bets by week to count wins/losses
-    const weekNums = [...new Set(realBets.map(b => b.week))];
-    let wins = 0, losses = 0, successes = 0;
+    // All weeks (real + bonus) to count profitable vs unprofitable weeks
+    const allPunterBets = state.bets.filter(b => b.punter === name && b.result !== 'Void');
+    const weekNums = [...new Set(allPunterBets.map(b => b.week))];
+    let wins = 0, losses = 0;
     weekNums.forEach(w => {
       const s = getWeekSummary(name, w);
-      // Count week if: pool spent, OR any single bet >= pool (legacy bets)
-      const countIt = s.isComplete || s.realBets.some(b => b.bet >= getPoolSize());
-      if (!countIt) return;
-      if (s.goesAgain)  wins++;
-      else if (s.isSuccess) successes++;
+      if (!shouldCountWeek(s)) return;
+      if (isWeekProfitable(s)) wins++;
       else losses++;
     });
 
@@ -1314,16 +1321,15 @@ function getPunterStats() {
     // Net: real returns - real costs + bonus winnings (free)
     const net = (totalRet - totalBet) + bonusRet;
     const roi = totalBet > 0 ? net/totalBet*100 : 0;
-    const completedWeeks = wins + losses + successes;
+    const completedWeeks = wins + losses;
 
-    // Streak based on completed weeks
+    // Streak based on consecutive profitable / unprofitable weeks
     let streak=0, streakType=null;
     for (let i=weekNums.length-1;i>=0;i--) {
       const w = weekNums[i];
       const s = getWeekSummary(name, w);
-      if (!s.isComplete) continue;
-      const r = s.goesAgain ? 'Win' : s.isSuccess ? 'Success' : 'Loss';
-      const isPositive = s.isSuccess || s.goesAgain;
+      if (!shouldCountWeek(s)) continue;
+      const isPositive = isWeekProfitable(s);
       if (streakType===null) { streakType = isPositive ? 'Win' : 'Loss'; streak=1; }
       else if ((isPositive && streakType==='Win') || (!isPositive && streakType==='Loss')) streak++;
       else break;
@@ -1333,7 +1339,7 @@ function getPunterStats() {
       name,
       bets: realBets.length,
       weeks: completedWeeks,
-      wins, losses, successes,
+      wins, losses,
       totalBet, totalRet, bonusRet, net, roi,
       streak, streakType,
       bonusBets: bonusBets.length
@@ -1432,10 +1438,29 @@ function renderHome() {
   const gW=allValid.filter(b=>b.result==='Win').length,gL=allValid.filter(b=>b.result==='Loss').length;
   document.getElementById('st-bets').textContent=state.bets.length;
   document.getElementById('st-winrate-sub').textContent=(allValid.length>0?Math.round(gW/allValid.length*100):0)+'% win rate';
-  document.getElementById('st-wl').textContent=gW+'/'+gL;
+
+  // Group W/L: count profitable weeks (total return > total staked for that week across all punters)
+  const allWeeks = [...new Set(state.bets.filter(b=>b.result!=='Void').map(b=>b.week))];
+  let gwWins=0, gwLosses=0;
+  allWeeks.forEach(w => {
+    const weekBets = state.bets.filter(b=>b.week===w && b.result!=='Void');
+    const wStaked = weekBets.filter(b=>!b.isBonus).reduce((a,b)=>a+b.bet,0);
+    const wReturn = weekBets.reduce((a,b)=>a+b.returnAmt,0);
+    if (wReturn > wStaked) gwWins++; else gwLosses++;
+  });
+  document.getElementById('st-wl').textContent=gwWins+'/'+gwLosses;
 
   let gs=0,gt=null;
-  for(let i=state.bets.length-1;i>=0;i--){const b=state.bets[i];if(b.result==='Void')continue;if(gt===null){gt=b.result;gs=1;}else if(b.result===gt)gs++;else break;}
+  // Streak: consecutive profitable/unprofitable weeks (most recent week last)
+  const sortedWeeks=[...allWeeks].sort((a,b)=>a-b);
+  for(let i=sortedWeeks.length-1;i>=0;i--){
+    const w=sortedWeeks[i];
+    const weekBets=state.bets.filter(b=>b.week===w&&b.result!=='Void');
+    const wStaked=weekBets.filter(b=>!b.isBonus).reduce((a,b)=>a+b.bet,0);
+    const wReturn=weekBets.reduce((a,b)=>a+b.returnAmt,0);
+    const outcome=wReturn>wStaked?'Win':'Loss';
+    if(gt===null){gt=outcome;gs=1;}else if(outcome===gt)gs++;else break;
+  }
   document.getElementById('st-streak-sub').textContent=gs>1?`${gs}× ${gt} streak`:'No streak';
 
   if(state.bets.length>0){const best=state.bets.reduce((a,b)=>b.returnAmt>a.returnAmt?b:a,state.bets[0]);document.getElementById('st-bestwin').textContent='$'+best.returnAmt.toFixed(0);document.getElementById('st-bestwin-who').textContent=best.punter+' Wk'+best.week;}
