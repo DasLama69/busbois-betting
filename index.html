@@ -1499,7 +1499,7 @@ function setQuickOdds(val) {
   el.value = val;
   // Highlight selected preset
   document.querySelectorAll('.odds-preset-btn').forEach(b => {
-    b.classList.toggle('active', parseFloat(b.textContent) === val);
+    b.classList.toggle('active', Math.abs(parseFloat(b.textContent) - val) < 0.001);
   });
   updatePreview();
 }
@@ -1593,7 +1593,7 @@ async function submitBet() {
   const odds    = !isNaN(oddsRaw) && oddsRaw > 0 ? oddsRaw : null;
   const betType = document.getElementById('entry-bet-type')?.value || 'Multi';
   const sport   = document.getElementById('entry-sport')?.value || null;
-  const notes   = document.getElementById('entry-notes')?.value.trim() || null;
+  const notes   = document.getElementById('entry-notes')?.value?.trim() || null;
 
   if (!punter)                          { showToast('⚠️ Select a punter'); return; }
   if (!week || isNaN(week) || week <= 0){ showToast('⚠️ Week must be a positive number'); return; }
@@ -1947,7 +1947,7 @@ function addToQueue() {
   const odds    = !isNaN(oddsRaw) && oddsRaw > 0 ? oddsRaw : null;
   const betType = document.getElementById('entry-bet-type')?.value || 'Multi';
   const sport   = document.getElementById('entry-sport')?.value || null;
-  const notes   = document.getElementById('entry-notes')?.value.trim() || null;
+  const notes   = document.getElementById('entry-notes')?.value?.trim() || null;
 
   if (!punter)              { showToast('⚠️ Select a punter'); return; }
   if (!week || isNaN(week) || week <= 0) { showToast('⚠️ Week must be a positive number'); return; }
