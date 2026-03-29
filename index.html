@@ -823,8 +823,8 @@ let state = {
   bets: [],
   topups: [],
   openingBalance: 600,
-  numPunters: 6,
-  poolSize: 60,
+  numPunters: 5,  // default to 5 until loaded from DB
+  poolSize: 50,  // default to 50 until loaded from DB
   override: null,
   baselineWeek: null,
   baselinePunter: null,
@@ -852,14 +852,16 @@ async function loadFromSupabase() {
       .from('settings').select('*').eq('id', 1).single();
     if (se && se.code !== 'PGRST116') throw se;
     if (settingsData) {
-      state.openingBalance = parseFloat(settingsData.opening_balance) || 600;
-      state.numPunters     = parseInt(settingsData.num_punters) || 6;
-      state.poolSize       = parseInt(settingsData.pool_size) || 60;
+      state.openingBalance = parseFloat(settingsData.opening_balance) || 500;
+      state.numPunters     = parseInt(settingsData.num_punters) || state.punterOrder.length || 5;
+      state.poolSize       = parseInt(settingsData.pool_size) || 50;
       state.override       = settingsData.override_punter
         ? { punter: settingsData.override_punter, week: settingsData.override_week }
         : null;
       if (settingsData.punter_order) {
         try { state.punterOrder = JSON.parse(settingsData.punter_order); } catch(e) {}
+        // Sync numPunters with actual punter list length
+        if (state.punterOrder.length > 0) state.numPunters = state.punterOrder.length;
       }
       state.baselineWeek    = settingsData.baseline_week    || null;
       state.baselinePunter  = settingsData.baseline_punter  || null;
@@ -986,7 +988,7 @@ function refreshCurrentTab() {
 }
 
 // ═══════════════ GAME LOGIC ═══════════════
-function getPoolSize() { return state.poolSize || 60; }
+function getPoolSize() { return state.poolSize || 50; }
 
 // ── Week summary: aggregate all real (non-bonus) bets for a punter in a week ──
 function getWeekSummary(punter, week) {
@@ -1638,8 +1640,8 @@ function renderAdmin() {
 
 async function saveSettings() {
   state.openingBalance=parseFloat(document.getElementById('settings-opening').value)||600;
-  state.numPunters=parseInt(document.getElementById('settings-punters').value)||6;
-  state.poolSize=parseFloat(document.getElementById('settings-pool').value)||60;
+  state.numPunters=parseInt(document.getElementById('settings-punters').value)||state.punterOrder.length||5;
+  state.poolSize=parseFloat(document.getElementById('settings-pool').value)||50;
   try{await saveSettingsToSupabase();showToast('✅ Settings saved');renderAdmin();}
   catch(e){console.error(e);showToast('❌ Save failed — run the SQL migrations in Supabase first');}
 }
@@ -1758,8 +1760,7 @@ async function processBuyIn() {
 
     // Update punter count in settings
     state.numPunters = newPunters;
-    // Also update pool size to reflect new group
-    state.poolSize = newPunters * 10;
+    // Pool size stays the same per punter — don't auto-change it
     await saveSettingsToSupabase();
 
     showToast(`✅ ${punter} buy-in processed! Group is now ${newPunters} punters`);
@@ -2365,7 +2366,7 @@ function initTopUpCard() {
 
 function updateTopUpPreview() {
   const amt = parseFloat(document.getElementById('topup-amount')?.value) || 0;
-  const n = state.numPunters || 6;
+  const n = state.numPunters || state.punterOrder.length || 5;
   const total = amt * n;
   const el = document.getElementById('topup-total-preview');
   if (el) el.textContent = `$${total.toFixed(2)} ($${amt.toFixed(0)} × ${n} punters)`;
