@@ -408,6 +408,23 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div style="color:rgba(255,255,255,0.5);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Log a Bet</div>
     <div style="color:var(--gold-lt);font-size:13px;font-weight:700" id="enter-auto-label">Auto-filled from rotation · adjust if needed</div>
   </div>
+
+  <!-- Bet type toggle -->
+  <div style="display:flex;gap:8px;margin-bottom:10px">
+    <button id="btn-type-normal" onclick="setBetType('normal')"
+      style="flex:1;padding:10px;border-radius:10px;border:2px solid var(--steel);background:var(--steel);color:white;font-size:13px;font-weight:800;cursor:pointer">
+      💵 Normal Bet
+    </button>
+    <button id="btn-type-bonus" onclick="setBetType('bonus')"
+      style="flex:1;padding:10px;border-radius:10px;border:2px solid var(--gray2);background:transparent;color:rgba(255,255,255,0.5);font-size:13px;font-weight:800;cursor:pointer">
+      🎟️ Bonus Bet
+    </button>
+  </div>
+
+  <div id="bonus-notice" style="display:none;background:rgba(212,160,23,0.12);border:1px solid rgba(212,160,23,0.3);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:var(--gold-lt)">
+    🎟️ <strong>Bonus Bet</strong> — free token, $0 cost to the account. Only winnings count as real income.
+  </div>
+
   <div class="card">
     <div class="card-title">📋 Bet Details</div>
     <div class="form-row" style="margin-bottom:12px">
@@ -426,7 +443,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     </div>
     <div class="form-row">
       <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Bet ($) <span>(adjust ok)</span></label>
+        <label class="form-label" id="bet-amount-label">Bet ($) <span>(adjust ok)</span></label>
         <input type="number" id="entry-bet" class="form-control editable-auto" step="0.01" value="60" oninput="updatePreview()">
       </div>
       <div class="form-group" style="margin-bottom:0">
@@ -435,14 +452,12 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
       </div>
     </div>
   </div>
-  <div class="card">
-    <div class="card-title">🏁 Result</div>
-    <div class="btn-group">
-      <button class="btn btn-win" onclick="setResult('Win')">✅ WIN</button>
-      <button class="btn btn-loss" onclick="setResult('Loss')">❌ LOSS</button>
-    </div>
-    <div id="result-display" style="text-align:center;font-size:12px;color:var(--muted);padding:4px 0">No result selected yet</div>
+
+  <!-- Week status for this punter -->
+  <div id="week-status-card" class="card" style="padding:12px 14px">
+    <div id="week-status-content"></div>
   </div>
+
   <div class="card" id="preview-card" style="display:none">
     <div class="card-title">👁 Preview</div>
     <div class="preview-grid" id="preview-grid"></div>
@@ -481,6 +496,17 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     </div>
     <div class="stat-tile"><div class="stat-tile-val" id="acct-split2" style="font-size:17px">$–</div><div class="stat-tile-lbl">Split/Person</div></div>
     <div class="stat-tile"><div class="stat-tile-val" id="acct-pnl2" style="font-size:17px">$–</div><div class="stat-tile-lbl">P&L Each</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🏁 Week Management</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Manually close a week or revert if needed. The app auto-rotates based on bets logged, but use these controls if something is wrong.</div>
+    <div id="week-mgmt-status" style="background:var(--off);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--dark)"></div>
+    <div class="form-row" style="margin-bottom:10px">
+      <button class="btn btn-primary" onclick="forceAdvanceWeek()" style="font-size:13px">⏭ Force Next Week</button>
+      <button class="btn btn-warn" onclick="revertWeek()" style="font-size:13px">↩ Revert Week</button>
+    </div>
+    <div style="font-size:10px;color:var(--muted)">Force Next Week advances rotation regardless of current bets. Revert undoes the last rotation advance.</div>
   </div>
 
   <div class="card">
@@ -669,7 +695,9 @@ async function loadFromSupabase() {
       bet:       parseFloat(b.bet),
       returnAmt: parseFloat(b.return_amt),
       result:    b.result,
-      loggedBy:  b.logged_by || null
+      loggedBy:  b.logged_by || null,
+      isBonus:   b.is_bonus || false,
+      bonusStake: parseFloat(b.bonus_stake) || 0
     }));
 
     // Load top-ups
@@ -703,7 +731,9 @@ async function saveBetToSupabase(bet) {
     bet:        bet.bet,
     return_amt: bet.returnAmt,
     result:     bet.result,
-    logged_by:  state.whoAmI || null
+    logged_by:  state.whoAmI || null,
+    is_bonus:   bet.isBonus || false,
+    bonus_stake: bet.bonusStake || 0
   }).select().single();
   if (error) throw error;
   setSyncStatus('connected', `Live · ${state.bets.length} bets`);
@@ -768,22 +798,95 @@ function refreshCurrentTab() {
 // ═══════════════ GAME LOGIC ═══════════════
 function getPoolSize() { return state.poolSize || 60; }
 
+// ── Week summary: aggregate all real (non-bonus) bets for a punter in a week ──
+function getWeekSummary(punter, week) {
+  const realBets = state.bets.filter(b => b.punter === punter && b.week === week && !b.isBonus);
+  const totalStaked  = realBets.reduce((a, b) => a + b.bet, 0);
+  const totalReturn  = realBets.reduce((a, b) => a + b.returnAmt, 0);
+  // Bonus bets this week — winnings count as income but $0 cost
+  const bonusBets = state.bets.filter(b => b.punter === punter && b.week === week && b.isBonus);
+  const bonusReturn = bonusBets.reduce((a, b) => a + b.returnAmt, 0);
+  const pool = getPoolSize();
+  const isComplete  = totalStaked >= pool;          // spent their allocation
+  const isSuccess   = totalReturn >= pool;          // return ≥ pool = successful week
+  const goesAgain   = totalReturn >= pool * 2;      // return ≥ double = goes again
+  return { totalStaked, totalReturn, bonusReturn, isComplete, isSuccess, goesAgain, realBets, bonusBets };
+}
+
+// ── Derive implicit result for display purposes ───────────────────────────────
+function getImplicitResult(punter, week) {
+  const s = getWeekSummary(punter, week);
+  if (!s.isComplete) return 'pending';
+  if (s.goesAgain)   return 'Win';      // goes again next week
+  if (s.isSuccess)   return 'Success';  // profitable but doesn't go again
+  return 'Loss';
+}
+
+// ── Find the most recent completed week across all bets ──────────────────────
+function getLastCompletedWeek() {
+  if (state.bets.length === 0) return null;
+  // Group by week, find highest week where a punter has spent their pool
+  const pool = getPoolSize();
+  const weekPunters = {};
+  for (const b of state.bets) {
+    if (b.isBonus) continue;
+    const key = `${b.week}:${b.punter}`;
+    if (!weekPunters[key]) weekPunters[key] = { week: b.week, punter: b.punter, staked: 0, returned: 0 };
+    weekPunters[key].staked   += b.bet;
+    weekPunters[key].returned += b.returnAmt;
+  }
+  // Find completed entries sorted by week desc
+  const completed = Object.values(weekPunters)
+    .filter(e => e.staked >= pool)
+    .sort((a, b) => b.week - a.week);
+  return completed.length ? completed[0] : null;
+}
+
 function computeCurrentState() {
   if (state.override) return { week: state.override.week, punter: state.override.punter, overridden: true };
   if (state.bets.length === 0) return { week: START_WEEK, punter: START_PUNTER };
-  const last = state.bets[state.bets.length - 1];
-  if (last.result === 'Win') return { week: last.week, punter: last.punter };
-  const nextIdx = (getPunters().indexOf(last.punter) + 1) % getPunters().length;
-  return { week: last.week + 1, punter: getPunters()[nextIdx] };
+
+  const pool = getPoolSize();
+  // Find the most recent week that has a completed punter
+  const last = getLastCompletedWeek();
+  if (!last) {
+    // No completed week yet — use first bet's week/punter
+    const first = state.bets.filter(b => !b.isBonus)[0];
+    return first
+      ? { week: first.week, punter: first.punter }
+      : { week: START_WEEK, punter: START_PUNTER };
+  }
+
+  const goesAgain = last.returned >= pool * 2;
+  if (goesAgain) {
+    // Same punter, next week
+    return { week: last.week + 1, punter: last.punter };
+  } else {
+    // Rotate to next punter, next week
+    const nextIdx = (getPunters().indexOf(last.punter) + 1) % getPunters().length;
+    return { week: last.week + 1, punter: getPunters()[nextIdx] };
+  }
 }
 
 function punterAlreadyBetThisWeek(punter, week) {
-  return state.bets.some(b => b.punter === punter && b.week === week);
+  return state.bets.some(b => b.punter === punter && b.week === week && !b.isBonus);
+}
+
+function punterWeekComplete(punter, week) {
+  const s = getWeekSummary(punter, week);
+  return s.isComplete;
 }
 
 function getAccountTotal() {
   let bal = state.openingBalance;
-  for (const b of state.bets) { if (b.result !== 'Void') bal += (b.returnAmt - b.bet); }
+  for (const b of state.bets) {
+    if (b.isBonus) {
+      // Bonus bet: $0 cost, only winnings are real income
+      bal += b.returnAmt;
+    } else {
+      bal += (b.returnAmt - b.bet);
+    }
+  }
   for (const t of (state.topups||[])) { bal += t.totalAdded; }
   return bal;
 }
@@ -836,22 +939,52 @@ function getBalanceHistory() {
 }
 
 function getPunterStats() {
+  const pool = getPoolSize();
   return getPunters().map(name => {
-    const pb = state.bets.filter(b => b.punter === name && b.result !== 'Void');
-    const wins = pb.filter(b => b.result === 'Win').length;
-    const losses = pb.filter(b => b.result === 'Loss').length;
-    const totalBet = pb.reduce((a,b)=>a+b.bet,0);
-    const totalRet = pb.reduce((a,b)=>a+b.returnAmt,0);
-    const net = totalRet - totalBet;
+    const realBets  = state.bets.filter(b => b.punter === name && !b.isBonus);
+    const bonusBets = state.bets.filter(b => b.punter === name && b.isBonus);
+
+    // Group real bets by week to count wins/losses
+    const weekNums = [...new Set(realBets.map(b => b.week))];
+    let wins = 0, losses = 0, successes = 0;
+    weekNums.forEach(w => {
+      const s = getWeekSummary(name, w);
+      if (!s.isComplete) return; // pending — don't count
+      if (s.goesAgain)  wins++;
+      else if (s.isSuccess) successes++;
+      else losses++;
+    });
+
+    const totalBet = realBets.reduce((a,b)=>a+b.bet,0);
+    const totalRet = realBets.reduce((a,b)=>a+b.returnAmt,0);
+    const bonusRet = bonusBets.reduce((a,b)=>a+b.returnAmt,0);
+    // Net: real returns - real costs + bonus winnings (free)
+    const net = (totalRet - totalBet) + bonusRet;
     const roi = totalBet > 0 ? net/totalBet*100 : 0;
+    const completedWeeks = wins + losses + successes;
+
+    // Streak based on completed weeks
     let streak=0, streakType=null;
-    for (let i=state.bets.length-1;i>=0;i--) {
-      const b=state.bets[i]; if(b.punter!==name||b.result==='Void') continue;
-      if(streakType===null){streakType=b.result;streak=1;}
-      else if(b.result===streakType) streak++;
+    for (let i=weekNums.length-1;i>=0;i--) {
+      const w = weekNums[i];
+      const s = getWeekSummary(name, w);
+      if (!s.isComplete) continue;
+      const r = s.goesAgain ? 'Win' : s.isSuccess ? 'Success' : 'Loss';
+      const isPositive = s.isSuccess || s.goesAgain;
+      if (streakType===null) { streakType = isPositive ? 'Win' : 'Loss'; streak=1; }
+      else if ((isPositive && streakType==='Win') || (!isPositive && streakType==='Loss')) streak++;
       else break;
     }
-    return { name, bets:pb.length, wins, losses, totalBet, totalRet, net, roi, streak, streakType };
+
+    return {
+      name,
+      bets: realBets.length,
+      weeks: completedWeeks,
+      wins, losses, successes,
+      totalBet, totalRet, bonusRet, net, roi,
+      streak, streakType,
+      bonusBets: bonusBets.length
+    };
   });
 }
 
@@ -959,85 +1092,191 @@ function renderHome() {
   renderSparkline();
   const recent=[...state.bets].reverse().slice(0,8);
   document.getElementById('home-recent').innerHTML = recent.length ? recent.map(b=>{
-    const net=b.returnAmt-b.bet,roi=b.bet>0?(net/b.bet*100).toFixed(0):0,cls=b.result==='Win'?'win':b.result==='Loss'?'loss':'void';
+    const cost=b.isBonus?0:b.bet; const net=b.isBonus?b.returnAmt:(b.returnAmt-b.bet); const roi=cost>0?(net/cost*100).toFixed(0):0; const cls=b.result==='Win'?'win':b.result==='Loss'||b.result==='Loss'?'loss':b.result==='Success'?'win':'void';
     return `<div class="bet-row"><div class="bet-avatar ${cls}">${INI(b.punter)}</div><div class="bet-info"><div class="bet-name">${b.punter} <span class="pill pill-${cls}">${b.result}</span></div><div class="bet-meta">Wk${b.week} · ${b.date} · $${b.bet.toFixed(0)} staked</div></div><div class="bet-amount"><div class="bet-net" style="color:${net>=0?'var(--green)':'var(--red)'}">${net>=0?'+':'-'}$${Math.abs(net).toFixed(2)}</div><div class="bet-roi">${roi>0?'+':''}${roi}% ROI</div></div></div>`;
   }).join('') : '<div class="empty">No bets yet</div>';
 }
 
 // ═══════════════ ENTRY FORM ═══════════════
-let selectedResult = null;
+let currentBetType = 'normal';
 
-function populateEntryForm() {
-  const {week,punter} = computeCurrentState();
-  const pool = getPoolSize();
-  document.getElementById('entry-week').value = week;
-  document.getElementById('entry-bet').value = pool.toFixed(2);
-  document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
-  const sel = document.getElementById('entry-punter');
-  sel.innerHTML = getPunters().map(p=>`<option value="${p}" ${p===punter?'selected':''}>${p}${p===punter?' 👈 auto':''}</option>`).join('');
-  selectedResult=null;
-  document.getElementById('result-display').textContent='No result selected yet';
-  document.getElementById('result-display').style.color='var(--muted)';
-  document.getElementById('entry-return').value='';
-  document.getElementById('preview-card').style.display='none';
-  document.getElementById('enter-auto-label').textContent=`${punter} is up · Week ${week} · $${pool} pool`;
-  renderRotationStrip('enter-rotation-strip', punter, week);
-}
-
-function onPunterChange() { updatePreview(); }
-
-function setResult(r) {
-  selectedResult=r;
-  const disp=document.getElementById('result-display');
-  disp.innerHTML=r==='Win'
-    ?'<div style="background:var(--green-lt);border:2px solid var(--green);border-radius:10px;padding:7px;text-align:center;color:var(--green);font-weight:800;font-size:13px">✅ WIN selected</div>'
-    :'<div style="background:var(--red-lt);border:2px solid var(--red);border-radius:10px;padding:7px;text-align:center;color:var(--red);font-weight:800;font-size:13px">❌ LOSS selected</div>';
+function setBetType(type) {
+  currentBetType = type;
+  const btnN = document.getElementById('btn-type-normal');
+  const btnB = document.getElementById('btn-type-bonus');
+  const notice = document.getElementById('bonus-notice');
+  const betLabel = document.getElementById('bet-amount-label');
+  if (type === 'bonus') {
+    btnB.style.cssText += ';background:rgba(212,160,23,0.2);border-color:var(--gold);color:var(--gold-lt)';
+    btnN.style.cssText += ';background:transparent;border-color:var(--gray2);color:rgba(255,255,255,0.5)';
+    if (notice) notice.style.display = 'block';
+    if (betLabel) betLabel.innerHTML = 'Bonus Stake ($) <span>(token value)</span>';
+    const betEl = document.getElementById('entry-bet');
+    if (betEl) { betEl.value = '0'; betEl.style.background = '#FFF7ED'; }
+  } else {
+    btnN.style.cssText += ';background:var(--steel);border-color:var(--steel);color:white';
+    btnB.style.cssText += ';background:transparent;border-color:var(--gray2);color:rgba(255,255,255,0.5)';
+    if (notice) notice.style.display = 'none';
+    if (betLabel) betLabel.innerHTML = 'Bet ($) <span>(adjust ok)</span>';
+    const betEl = document.getElementById('entry-bet');
+    if (betEl) { betEl.value = getPoolSize().toFixed(2); betEl.style.background = ''; }
+  }
+  updateWeekStatus();
   updatePreview();
 }
 
+function populateEntryForm() {
+  const {week, punter} = computeCurrentState();
+  const pool = getPoolSize();
+  currentBetType = 'normal';
+  document.getElementById('entry-week').value = week;
+  document.getElementById('entry-bet').value = pool.toFixed(2);
+  document.getElementById('entry-bet').style.background = '';
+  document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+  const sel = document.getElementById('entry-punter');
+  sel.innerHTML = getPunters().map(p=>`<option value="${p}" ${p===punter?'selected':''}>${p}${p===punter?' 👈 auto':''}</option>`).join('');
+  document.getElementById('entry-return').value = '';
+  document.getElementById('preview-card').style.display = 'none';
+  document.getElementById('enter-auto-label').textContent = `${punter} is up · Week ${week} · $${pool} pool`;
+  // Reset bonus/normal toggle visuals
+  const btnN = document.getElementById('btn-type-normal');
+  const btnB = document.getElementById('btn-type-bonus');
+  if (btnN) { btnN.style.background='var(--steel)'; btnN.style.borderColor='var(--steel)'; btnN.style.color='white'; }
+  if (btnB) { btnB.style.background='transparent'; btnB.style.borderColor='var(--gray2)'; btnB.style.color='rgba(255,255,255,0.5)'; }
+  const notice = document.getElementById('bonus-notice');
+  if (notice) notice.style.display = 'none';
+  renderRotationStrip('enter-rotation-strip', punter, week);
+  updateWeekStatus();
+}
+
+function onPunterChange() { updateWeekStatus(); updatePreview(); }
+
+function updateWeekStatus() {
+  const week = parseInt(document.getElementById('entry-week')?.value) || computeCurrentState().week;
+  const punter = document.getElementById('entry-punter')?.value || computeCurrentState().punter;
+  const pool = getPoolSize();
+  const s = getWeekSummary(punter, week);
+  const el = document.getElementById('week-status-content');
+  if (!el) return;
+  const remaining = Math.max(0, pool - s.totalStaked);
+  const pct = Math.min(s.totalStaked / pool * 100, 100);
+  const barCol = s.isComplete ? (s.isSuccess ? 'var(--green)' : 'var(--red)') : 'var(--steel)';
+  let statusMsg = '';
+  if (!s.isComplete) {
+    statusMsg = `<span style="color:var(--steel);font-weight:700">$${remaining.toFixed(0)} remaining</span> to complete week`;
+  } else if (s.goesAgain) {
+    statusMsg = `<span style="color:var(--green);font-weight:700">🔥 Goes again next week!</span> (return ≥ $${(pool*2).toFixed(0)})`;
+  } else if (s.isSuccess) {
+    statusMsg = `<span style="color:var(--green);font-weight:700">✅ Successful week</span> — rotation moves on`;
+  } else {
+    statusMsg = `<span style="color:var(--red);font-weight:700">❌ Week complete</span> — rotation moves on`;
+  }
+  const bonusLine = s.bonusBets.length > 0
+    ? `<div style="font-size:10px;color:var(--muted);margin-top:4px">🎟️ ${s.bonusBets.length} bonus bet${s.bonusBets.length>1?'s':''} this week · +$${s.bonusReturn.toFixed(2)} winnings</div>`
+    : '';
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span style="font-size:10px;font-weight:800;color:var(--steel);text-transform:uppercase;letter-spacing:1px">${punter} · Week ${week}</span>
+      <span style="font-size:11px;color:var(--muted)">$${s.totalStaked.toFixed(0)} / $${pool} staked</span>
+    </div>
+    <div style="background:var(--gray);border-radius:4px;height:8px;overflow:hidden;margin-bottom:6px">
+      <div style="width:${pct}%;height:100%;background:${barCol};border-radius:4px;transition:width 0.5s"></div>
+    </div>
+    <div style="font-size:12px">${statusMsg}</div>
+    ${s.realBets.length > 0 ? `<div style="font-size:10px;color:var(--muted);margin-top:4px">${s.realBets.map(b=>`$${b.bet.toFixed(0)}→$${b.returnAmt.toFixed(0)}`).join(' · ')}</div>` : ''}
+    ${bonusLine}`;
+}
+
 function updatePreview() {
-  const ret=parseFloat(document.getElementById('entry-return').value);
-  const bet=parseFloat(document.getElementById('entry-bet').value)||getPoolSize();
-  const punter=document.getElementById('entry-punter').value;
-  if(!selectedResult||isNaN(ret)){document.getElementById('preview-card').style.display='none';return;}
-  const net=ret-bet,roi=bet>0?(net/bet*100).toFixed(1):0;
-  const nextIdx=(getPunters().indexOf(punter)+1)%getPunters().length;
-  const goesAgain=selectedResult==='Win'&&ret>=DOUBLE_MIN;
-  const nextMsg=selectedResult==='Win'?(goesAgain?`🔥 BIG WIN (≥$${DOUBLE_MIN}) — ${punter} can go again same week!`:`✅ Any profit = Win · ${punter} bets again next week`):`🔄 Loss · rotation moves to ${getPunters()[nextIdx]} next week`;
-  document.getElementById('preview-card').style.display='block';
-  document.getElementById('preview-grid').innerHTML=`<div class="preview-item"><div class="preview-lbl">Punter</div><div class="preview-val">${punter}</div></div><div class="preview-item"><div class="preview-lbl">Result</div><div class="preview-val" style="color:${selectedResult==='Win'?'var(--green)':'var(--red)'}">${selectedResult}</div></div><div class="preview-item"><div class="preview-lbl">Bet</div><div class="preview-val">$${bet.toFixed(2)}</div></div><div class="preview-item"><div class="preview-lbl">Return</div><div class="preview-val">$${ret.toFixed(2)}</div></div><div class="preview-item" style="grid-column:span 2"><div class="preview-lbl">Net P&L</div><div class="preview-val" style="font-size:20px;color:${net>=0?'var(--green)':'var(--red)'}">${net>=0?'+':'-'}$${Math.abs(net).toFixed(2)} <span style="font-size:12px;font-weight:600">(${roi>0?'+':''}${roi}%)</span></div></div>`;
-  document.getElementById('preview-next').textContent=nextMsg;
+  const ret = parseFloat(document.getElementById('entry-return').value);
+  const betVal = parseFloat(document.getElementById('entry-bet').value) || 0;
+  const punter = document.getElementById('entry-punter')?.value;
+  const week = parseInt(document.getElementById('entry-week')?.value) || computeCurrentState().week;
+  const pool = getPoolSize();
+  const isBonus = currentBetType === 'bonus';
+  if (!punter || isNaN(ret)) { document.getElementById('preview-card').style.display='none'; return; }
+  const cost = isBonus ? 0 : betVal;
+  const net = isBonus ? ret : ret - betVal;
+  const roi = cost > 0 ? (net/cost*100).toFixed(1) : (ret > 0 ? '∞' : '0');
+  const existingWeek = getWeekSummary(punter, week);
+  const projStaked = existingWeek.totalStaked + cost;
+  const projReturn = existingWeek.totalReturn + ret;
+  const projComplete = projStaked >= pool;
+  const projGoesAgain = projReturn >= pool * 2;
+  const projSuccess = projReturn >= pool;
+  let nextMsg = '';
+  if (!projComplete) {
+    nextMsg = `📊 Week still in progress — $${(pool - projStaked).toFixed(0)} more to spend`;
+  } else if (projGoesAgain) {
+    nextMsg = `🔥 Goes again next week! (total return $${projReturn.toFixed(0)} ≥ $${(pool*2).toFixed(0)})`;
+  } else if (projSuccess) {
+    nextMsg = `✅ Successful week — rotation moves to next punter`;
+  } else {
+    const nextIdx = (getPunters().indexOf(punter)+1) % getPunters().length;
+    nextMsg = `🔄 Week complete — rotation moves to ${getPunters()[nextIdx]}`;
+  }
+  document.getElementById('preview-card').style.display = 'block';
+  document.getElementById('preview-grid').innerHTML = `
+    <div class="preview-item"><div class="preview-lbl">Punter</div><div class="preview-val">${punter}</div></div>
+    <div class="preview-item"><div class="preview-lbl">Type</div><div class="preview-val" style="color:${isBonus?'var(--gold)':'var(--dark)'}">${isBonus?'🎟️ Bonus':'💵 Normal'}</div></div>
+    <div class="preview-item"><div class="preview-lbl">${isBonus?'Token Value':'Bet'}</div><div class="preview-val">${isBonus?'Free token':'$'+betVal.toFixed(2)}</div></div>
+    <div class="preview-item"><div class="preview-lbl">Return</div><div class="preview-val">$${ret.toFixed(2)}</div></div>
+    <div class="preview-item" style="grid-column:span 2"><div class="preview-lbl">Net ${isBonus?'(winnings only)':'P&L'}</div>
+      <div class="preview-val" style="font-size:20px;color:${net>=0?'var(--green)':'var(--red)'}">${net>=0?'+':'-'}$${Math.abs(net).toFixed(2)}</div>
+    </div>`;
+  document.getElementById('preview-next').textContent = nextMsg;
 }
 
 async function submitBet() {
-  const week=parseInt(document.getElementById('entry-week').value);
-  const dateRaw=document.getElementById('entry-date').value;
-  const punter=document.getElementById('entry-punter').value;
-  const bet=parseFloat(document.getElementById('entry-bet').value);
-  const ret=parseFloat(document.getElementById('entry-return').value);
+  const week   = parseInt(document.getElementById('entry-week').value);
+  const dateRaw= document.getElementById('entry-date').value;
+  const punter = document.getElementById('entry-punter').value;
+  const betVal = parseFloat(document.getElementById('entry-bet').value);
+  const ret    = parseFloat(document.getElementById('entry-return').value);
+  const isBonus = currentBetType === 'bonus';
 
-  if(!punter){showToast('⚠️ Select a punter');return;}
-  if(!week||isNaN(week)){showToast('⚠️ Enter week number');return;}
-  if(!bet||isNaN(bet)){showToast('⚠️ Enter bet amount');return;}
-  if(isNaN(ret)||ret<0){showToast('⚠️ Enter return amount (0 if lost all)');return;}
-  if(!selectedResult){showToast('⚠️ Select Win or Loss');return;}
+  if (!punter)             { showToast('⚠️ Select a punter'); return; }
+  if (!week || isNaN(week)){ showToast('⚠️ Enter week number'); return; }
+  if (!isBonus && (!betVal || isNaN(betVal))) { showToast('⚠️ Enter bet amount'); return; }
+  if (isNaN(ret) || ret < 0){ showToast('⚠️ Enter return amount (0 if lost)'); return; }
 
-  const btn=document.getElementById('save-btn');
-  btn.disabled=true; btn.textContent='⏳ Saving…';
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = '⏳ Saving…';
 
-  const date=dateRaw?new Date(dateRaw).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'}):new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'});
+  const date = dateRaw
+    ? new Date(dateRaw).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'})
+    : new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'});
+
+  // Derive implicit result for display
+  const pool = getPoolSize();
+  const existingWeek = getWeekSummary(punter, week);
+  const projStaked = existingWeek.totalStaked + (isBonus ? 0 : betVal);
+  const projReturn = existingWeek.totalReturn + ret;
+  const impliedResult = projStaked >= pool
+    ? (projReturn >= pool * 2 ? 'Win' : projReturn >= pool ? 'Success' : 'Loss')
+    : 'Pending';
 
   try {
-    // Clear override in DB if set
-    if (state.override) {
-      state.override = null;
-      await saveSettingsToSupabase();
-    }
-    const newBet = { week, date, punter, bet, returnAmt: ret, result: selectedResult };
+    if (state.override) { state.override = null; await saveSettingsToSupabase(); }
+    const newBet = {
+      week, date, punter,
+      bet:       isBonus ? 0 : betVal,
+      returnAmt: ret,
+      result:    impliedResult,
+      isBonus,
+      bonusStake: isBonus ? betVal : 0
+    };
     const id = await saveBetToSupabase(newBet);
     newBet.id = id;
     state.bets.push(newBet);
-    showToast(selectedResult==='Win'?`✅ ${punter} WIN saved!`:`❌ ${punter} LOSS saved`);
+
+    const msg = isBonus
+      ? `🎟️ Bonus bet saved for ${punter}!`
+      : impliedResult === 'Win' ? `🔥 ${punter} goes again next week!`
+      : impliedResult === 'Success' ? `✅ ${punter} successful week!`
+      : impliedResult === 'Pending' ? `📋 Bet logged — week still in progress`
+      : `❌ ${punter} week complete`;
+    showToast(msg);
     switchTab('home');
   } catch(e) {
     console.error(e);
@@ -1059,7 +1298,7 @@ function renderBoard() {
     const roiStr=s.bets===0?'–':(s.roi>=0?'+':'')+s.roi.toFixed(1)+'%';
     const barPct=Math.min(Math.abs(s.roi)/maxRoi*100,100);
     const barCol=s.roi>=0?'var(--green)':'var(--red)';
-    const strk=s.streak>1?` ${s.streak}× ${s.streakType==='Win'?'🔥':'❄️'}`:'';
+    const strk=s.streak>1?` ${s.streak}× ${s.streakType==='Win'?'🔥':'❄️'}`:''; const bonusBadge=s.bonusBets>0?` · 🎟️${s.bonusBets}`:'';
     return `<div class="lb-row"><div class="lb-rank">${MEDALS[i]}</div><div class="lb-avatar" style="overflow:hidden;padding:0">${state.punterAvatars?.[s.name] ? `<img src="${state.punterAvatars[s.name]}" style="width:36px;height:36px;border-radius:50%;object-fit:cover" onerror="this.parentElement.innerHTML='${INI(s.name)}'">` : INI(s.name)}</div><div class="lb-info"><div class="lb-name">${s.name}${strk}</div><div class="lb-detail">${s.wins}W / ${s.losses}L · $${s.totalBet.toFixed(0)} staked</div><div class="lb-bar-track"><div class="lb-bar-fill" style="width:${barPct}%;background:${barCol}"></div></div></div><div class="lb-right"><div class="lb-net" style="color:${s.net>=0?'var(--green)':'var(--red)'}">${netStr}</div><div class="lb-roi">${roiStr} ROI</div></div></div>`;
   }).join('');
   document.getElementById('roi-bars').innerHTML=stats.map(s=>{
@@ -1089,6 +1328,7 @@ function renderAdmin() {
   document.getElementById('acct-big-sub').textContent=(account>=opening?'Up':'Down')+' $'+Math.abs(account-opening).toFixed(2)+' from $'+opening.toFixed(2)+' opening';
   document.getElementById('acct-split2').textContent='$'+split.toFixed(2);
   const pe=document.getElementById('acct-pnl2');pe.textContent=(pnl>=0?'+$':'-$')+Math.abs(pnl).toFixed(2);pe.style.color=pnl>=0?'var(--green)':'var(--red)';
+  renderWeekMgmtStatus();
   renderManagePunters();
   renderDragList();
   initTopUpCard();
@@ -1108,7 +1348,7 @@ function renderAdmin() {
   if(!state.bets.length){histEl.innerHTML='<div class="empty">No bets yet</div>';return;}
   histEl.innerHTML=[...state.bets].reverse().map(b=>{
     const net=b.returnAmt-b.bet,cls=b.result==='Win'?'win':b.result==='Loss'?'loss':'void';
-    return `<div class="hist-row"><span class="hist-wk">Wk${b.week}</span><span class="hist-name">${b.punter}</span><span class="pill pill-${cls}">${b.result}</span><span class="hist-net" style="color:${net>=0?'var(--green)':'var(--red)'}">${net>=0?'+':'-'}$${Math.abs(net).toFixed(2)}</span><button class="hist-del" onclick="deleteBetById('${b.id}')">🗑</button></div>`;
+    return `<div class="hist-row"><span class="hist-wk">Wk${b.week}</span><span class="hist-name">${b.punter}${b.isBonus?' 🎟️':''}</span><span class="pill pill-${cls}">${b.isBonus?'Bonus':b.result}</span><span class="hist-net" style="color:${net>=0?'var(--green)':'var(--red)'}">${net>=0?'+':'-'}$${Math.abs(net).toFixed(2)}</span><button class="hist-del" onclick="deleteBetById('${b.id}')">🗑</button></div>`;
   }).join('');
 }
 
@@ -1153,6 +1393,57 @@ async function clearHistory() {
     showToast('🗑 All data cleared');renderAdmin();
     setSyncStatus('connected','Live · 0 bets');
   }catch(e){showToast('❌ Clear failed');}
+}
+
+// ═══════════════ WEEK MANAGEMENT ═══════════════
+function renderWeekMgmtStatus() {
+  const el = document.getElementById('week-mgmt-status');
+  if (!el) return;
+  const { week, punter, overridden } = computeCurrentState();
+  const pool = getPoolSize();
+  const s = getWeekSummary(punter, week);
+  const last = getLastCompletedWeek();
+  el.innerHTML = `
+    <div style="margin-bottom:6px"><strong>Current:</strong> Week ${week} · ${punter} is up</div>
+    <div style="margin-bottom:4px"><strong>Week status:</strong> $${s.totalStaked.toFixed(0)}/$${pool} staked · ${s.isComplete ? (s.goesAgain?'🔥 Goes again':s.isSuccess?'✅ Success':'❌ Loss') : '⏳ In progress'}</div>
+    ${overridden ? `<div style="color:var(--orange);font-size:11px">⚠️ Manual override active</div>` : ''}
+    ${last ? `<div style="font-size:11px;color:var(--muted)">Last completed: ${last.punter} Wk${last.week} · $${last.returned.toFixed(0)} return</div>` : ''}`;
+}
+
+async function forceAdvanceWeek() {
+  const { week, punter } = computeCurrentState();
+  const nextIdx = (getPunters().indexOf(punter) + 1) % getPunters().length;
+  const nextPunter = getPunters()[nextIdx];
+  const nextWeek = week + 1;
+  if (!confirm(`Force advance to Week ${nextWeek} · ${nextPunter}?
+
+This overrides the auto-rotation.`)) return;
+  state.override = { punter: nextPunter, week: nextWeek };
+  try {
+    await saveSettingsToSupabase();
+    showToast(`✅ Advanced to Week ${nextWeek} · ${nextPunter}`);
+    renderAdmin();
+    renderHome();
+  } catch(e) { showToast('❌ Failed to save'); }
+}
+
+async function revertWeek() {
+  const { week, punter } = computeCurrentState();
+  // Revert to previous punter, previous week
+  const curIdx = getPunters().indexOf(punter);
+  const prevIdx = (curIdx - 1 + getPunters().length) % getPunters().length;
+  const prevPunter = getPunters()[prevIdx];
+  const prevWeek = Math.max(1, week - 1);
+  if (!confirm(`Revert to Week ${prevWeek} · ${prevPunter}?
+
+This sets a manual override.`)) return;
+  state.override = { punter: prevPunter, week: prevWeek };
+  try {
+    await saveSettingsToSupabase();
+    showToast(`↩ Reverted to Week ${prevWeek} · ${prevPunter}`);
+    renderAdmin();
+    renderHome();
+  } catch(e) { showToast('❌ Failed to save'); }
 }
 
 // ═══════════════ EXPORT CSV ═══════════════
@@ -1379,6 +1670,7 @@ function addPunter() {
   const newName = 'New Punter';
   state.punterOrder.push(newName);
   state.numPunters = state.punterOrder.length;
+  renderWeekMgmtStatus();
   renderManagePunters();
   renderDragList();
   // Focus the new name input
