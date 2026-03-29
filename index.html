@@ -476,6 +476,65 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div class="card-title">🏆 Season Leaderboard</div>
     <div id="lb-list"><div class="empty">No bets yet</div></div>
   </div>
+
+  <!-- YOUR STATS — only shown when logged in -->
+  <div id="my-stats-card" style="display:none">
+    <div style="background:linear-gradient(135deg,var(--navy2),#1a3a6b,var(--mid));border-radius:14px;padding:14px;margin-bottom:10px;border:1.5px solid rgba(212,160,23,0.35);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div id="my-stats-avatar" style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--mid),var(--steel));display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:800;border:2px solid rgba(212,160,23,0.5);overflow:hidden;flex-shrink:0"></div>
+          <div>
+            <div style="color:var(--gold);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px">Your Stats</div>
+            <div id="my-stats-name" style="color:white;font-size:18px;font-weight:900;line-height:1.1"></div>
+          </div>
+        </div>
+        <div id="my-stats-rank" style="background:var(--gold);color:var(--navy);border-radius:10px;padding:6px 12px;font-size:13px;font-weight:900;text-align:center"></div>
+      </div>
+
+      <!-- Big stat row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+        <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:10px 6px;text-align:center">
+          <div id="my-net" style="font-size:18px;font-weight:900;color:white;line-height:1">–</div>
+          <div style="font-size:8px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px">Net P&L</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:10px 6px;text-align:center">
+          <div id="my-roi" style="font-size:18px;font-weight:900;color:white;line-height:1">–</div>
+          <div style="font-size:8px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px">ROI</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:10px 6px;text-align:center">
+          <div id="my-wl" style="font-size:18px;font-weight:900;color:white;line-height:1">–</div>
+          <div style="font-size:8px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px">W / L</div>
+        </div>
+      </div>
+
+      <!-- Secondary stats -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px">
+          <div style="font-size:9px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Weeks Played</div>
+          <div id="my-weeks" style="font-size:14px;font-weight:800;color:white">–</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px">
+          <div style="font-size:9px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Best Return</div>
+          <div id="my-best" style="font-size:14px;font-weight:800;color:white">–</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px">
+          <div style="font-size:9px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Total Staked</div>
+          <div id="my-staked" style="font-size:14px;font-weight:800;color:white">–</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px">
+          <div style="font-size:9px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Current Streak</div>
+          <div id="my-streak" style="font-size:14px;font-weight:800;color:white">–</div>
+        </div>
+      </div>
+
+      <!-- vs leader bar -->
+      <div id="my-vs-leader" style="background:rgba(255,255,255,0.06);border-radius:8px;padding:8px 10px;font-size:11px;color:rgba(255,255,255,0.6)"></div>
+
+      <!-- Bonus bets row if any -->
+      <div id="my-bonus-row" style="display:none;margin-top:8px;background:rgba(212,160,23,0.1);border:1px solid rgba(212,160,23,0.25);border-radius:8px;padding:8px 10px;font-size:11px;color:rgba(212,160,23,0.8)"></div>
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-title">📊 ROI Comparison</div>
     <div id="roi-bars"></div>
@@ -1291,9 +1350,81 @@ async function submitBet() {
 }
 
 // ═══════════════ LEADERBOARD ═══════════════
+function renderMyStats(stats, sortedStats) {
+  const name = state.whoAmI;
+  const card = document.getElementById('my-stats-card');
+  if (!name || !card) { if(card) card.style.display='none'; return; }
+
+  const s = stats.find(x => x.name === name);
+  if (!s) { card.style.display='none'; return; }
+  card.style.display = 'block';
+
+  // Rank
+  const rank = sortedStats.findIndex(x => x.name === name) + 1;
+  const medals = ['🥇','🥈','🥉'];
+  document.getElementById('my-stats-rank').textContent = rank <= 3 ? medals[rank-1] : `#${rank}`;
+
+  // Avatar
+  const avEl = document.getElementById('my-stats-avatar');
+  const av = state.punterAvatars?.[name];
+  avEl.innerHTML = av ? `<img src="${av}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : name.slice(0,2).toUpperCase();
+
+  document.getElementById('my-stats-name').textContent = name;
+
+  // Big stats
+  const netEl = document.getElementById('my-net');
+  netEl.textContent = s.net === 0 ? '$0' : (s.net > 0 ? '+$' : '-$') + Math.abs(s.net).toFixed(2);
+  netEl.style.color = s.net >= 0 ? '#6EE7B7' : '#FCA5A5';
+
+  const roiEl = document.getElementById('my-roi');
+  roiEl.textContent = s.bets === 0 ? '–' : (s.roi >= 0 ? '+' : '') + s.roi.toFixed(1) + '%';
+  roiEl.style.color = s.roi >= 0 ? '#6EE7B7' : '#FCA5A5';
+
+  document.getElementById('my-wl').textContent = `${s.wins}W/${s.losses}L`;
+
+  // Secondary stats
+  document.getElementById('my-weeks').textContent = s.weeks > 0 ? `${s.weeks} week${s.weeks!==1?'s':''}` : 'No weeks yet';
+  const myBets = state.bets.filter(b => b.punter === name && !b.isBonus);
+  const bestRet = myBets.length ? Math.max(...myBets.map(b => b.returnAmt)) : 0;
+  document.getElementById('my-best').textContent = bestRet > 0 ? '$' + bestRet.toFixed(2) : '–';
+  document.getElementById('my-staked').textContent = '$' + s.totalBet.toFixed(2);
+
+  const streakEl = document.getElementById('my-streak');
+  if (s.streak > 1) {
+    streakEl.textContent = s.streak + '× ' + (s.streakType === 'Win' ? '🔥 Win' : '❄️ Loss');
+    streakEl.style.color = s.streakType === 'Win' ? '#6EE7B7' : '#FCA5A5';
+  } else {
+    streakEl.textContent = '–';
+    streakEl.style.color = 'white';
+  }
+
+  // vs leader
+  const vsEl = document.getElementById('my-vs-leader');
+  const leader = sortedStats[0];
+  if (leader && leader.name !== name) {
+    const diff = Math.abs(s.net - leader.net);
+    vsEl.textContent = `${diff > 0 ? '$' + diff.toFixed(2) + ' behind ' : 'Leading! '} ${leader.name} · ${rank === 1 ? 'You are top 🏆' : rank <= 3 ? 'Podium position 🎖️' : `${rank - 1} place${rank-1!==1?'s':''} to climb`}`;
+  } else if (leader && leader.name === name) {
+    vsEl.textContent = '🏆 You are leading the group!';
+  } else {
+    vsEl.style.display = 'none';
+  }
+
+  // Bonus bets
+  const bonusRow = document.getElementById('my-bonus-row');
+  if (s.bonusBets > 0) {
+    bonusRow.style.display = 'block';
+    const bonusWinnings = state.bets.filter(b=>b.punter===name&&b.isBonus).reduce((a,b)=>a+b.returnAmt,0);
+    bonusRow.textContent = `🎟️ ${s.bonusBets} bonus bet${s.bonusBets!==1?'s':''} — +$${bonusWinnings.toFixed(2)} free winnings counted in ROI`;
+  } else {
+    bonusRow.style.display = 'none';
+  }
+}
+
 function renderBoard() {
   const stats=getPunterStats().sort((a,b)=>b.net-a.net);
   const maxRoi=Math.max(...stats.map(s=>Math.abs(s.roi)),1);
+  renderMyStats(stats, stats);
   document.getElementById('lb-list').innerHTML=stats.map((s,i)=>{
     const pb = state.bets.filter(b=>b.punter===s.name&&b.result!=='Void');
     const bestRet = pb.length ? Math.max(...pb.map(b=>b.returnAmt-b.bet)) : null;
@@ -1303,7 +1434,8 @@ function renderBoard() {
     const barPct=Math.min(Math.abs(s.roi)/maxRoi*100,100);
     const barCol=s.roi>=0?'var(--green)':'var(--red)';
     const strk=s.streak>1?` ${s.streak}× ${s.streakType==='Win'?'🔥':'❄️'}`:''; const bonusBadge=s.bonusBets>0?` · 🎟️${s.bonusBets}`:'';
-    return `<div class="lb-row"><div class="lb-rank">${MEDALS[i]}</div><div class="lb-avatar" style="overflow:hidden;padding:0">${state.punterAvatars?.[s.name] ? `<img src="${state.punterAvatars[s.name]}" style="width:36px;height:36px;border-radius:50%;object-fit:cover" onerror="this.parentElement.innerHTML='${INI(s.name)}'">` : INI(s.name)}</div><div class="lb-info"><div class="lb-name">${s.name}${strk}</div><div class="lb-detail">${s.wins}W / ${s.losses}L · $${s.totalBet.toFixed(0)} staked</div><div class="lb-bar-track"><div class="lb-bar-fill" style="width:${barPct}%;background:${barCol}"></div></div></div><div class="lb-right"><div class="lb-net" style="color:${s.net>=0?'var(--green)':'var(--red)'}">${netStr}</div><div class="lb-roi">${roiStr} ROI</div></div></div>`;
+    const isMe = state.whoAmI && s.name === state.whoAmI;
+    return `<div class="lb-row" style="${isMe?'background:rgba(212,160,23,0.06);border-radius:10px;padding:11px 8px;margin:0 -8px;':''}"><div class="lb-rank">${MEDALS[i]}</div><div class="lb-avatar" style="overflow:hidden;padding:0">${state.punterAvatars?.[s.name] ? `<img src="${state.punterAvatars[s.name]}" style="width:36px;height:36px;border-radius:50%;object-fit:cover" onerror="this.parentElement.innerHTML='${INI(s.name)}'">` : INI(s.name)}</div><div class="lb-info"><div class="lb-name">${s.name}${strk}</div><div class="lb-detail">${s.wins}W / ${s.losses}L · $${s.totalBet.toFixed(0)} staked</div><div class="lb-bar-track"><div class="lb-bar-fill" style="width:${barPct}%;background:${barCol}"></div></div></div><div class="lb-right"><div class="lb-net" style="color:${s.net>=0?'var(--green)':'var(--red)'}">${netStr}</div><div class="lb-roi">${roiStr} ROI</div></div></div>`;
   }).join('');
   document.getElementById('roi-bars').innerHTML=stats.map(s=>{
     const pct=Math.min(Math.abs(s.roi)/maxRoi*100,100),col=s.roi>=0?'var(--green)':'var(--red)';
