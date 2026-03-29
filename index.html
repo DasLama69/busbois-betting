@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Bus Bois Betting 🏇</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js" onerror="console.warn('config.js not found — credentials required, see config.example.js')"></script>
 <style>
 :root {
   --navy: #0A1628; --navy2: #0F2040; --mid: #163356; --steel: #2563A8;
@@ -803,8 +804,14 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 
 <script>
 // ═══════════════ SUPABASE CONFIG ═══════════════
-const SUPA_URL = 'https://dxgfdjqwdgjlvcdgxcvn.supabase.co';
-const SUPA_KEY = 'sb_publishable_sqN6esaChuCE1cfRc7O1Gw_yvA1hPMD';
+// Credentials are loaded from config.js (not committed to git).
+// Copy config.example.js to config.js and fill in your Supabase project details.
+const _cfg = (typeof window !== 'undefined' && window.BBB_CONFIG) || {};
+const SUPA_URL = _cfg.SUPABASE_URL || '';
+const SUPA_KEY = _cfg.SUPABASE_ANON_KEY || '';
+if (!SUPA_URL || !SUPA_KEY) {
+  console.error('Supabase credentials missing — create config.js from config.example.js');
+}
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 // ═══════════════ CONSTANTS ═══════════════
@@ -912,66 +919,81 @@ async function loadFromSupabase() {
 
 async function saveBetToSupabase(bet) {
   setSyncStatus('syncing', 'Saving...');
-  const { data, error } = await supa.from('bets').insert({
-    week:       bet.week,
-    date:       bet.date,
-    punter:     bet.punter,
-    bet:        bet.bet,
-    return_amt: bet.returnAmt,
-    result:     bet.result,
-    logged_by:  state.whoAmI || null,
-    is_bonus:   bet.isBonus || false,
-    bonus_stake: bet.bonusStake || 0
-  }).select().single();
-  if (error) throw error;
-  setSyncStatus('connected', `Live · ${state.bets.length} bets`);
-  return data.id;
+  try {
+    const { data, error } = await supa.from('bets').insert({
+      week:       bet.week,
+      date:       bet.date,
+      punter:     bet.punter,
+      bet:        bet.bet,
+      return_amt: bet.returnAmt,
+      result:     bet.result,
+      logged_by:  state.whoAmI || null,
+      is_bonus:   bet.isBonus || false,
+      bonus_stake: bet.bonusStake || 0
+    }).select().single();
+    if (error) throw error;
+    setSyncStatus('connected', `Live · ${state.bets.length} bet${state.bets.length !== 1 ? 's' : ''}`);
+    return data.id;
+  } catch(e) {
+    setSyncStatus('error', 'Save failed — tap to retry');
+    throw e;
+  }
 }
 
 async function deleteBetFromSupabase(id) {
   setSyncStatus('syncing', 'Deleting...');
-  const { error } = await supa.from('bets').delete().eq('id', id);
-  if (error) throw error;
-  setSyncStatus('connected', `Live · ${state.bets.length} bets`);
+  try {
+    const { error } = await supa.from('bets').delete().eq('id', id);
+    if (error) throw error;
+    setSyncStatus('connected', `Live · ${state.bets.length} bet${state.bets.length !== 1 ? 's' : ''}`);
+  } catch(e) {
+    setSyncStatus('error', 'Delete failed — tap to retry');
+    throw e;
+  }
 }
 
-// Run in Supabase SQL:
+// Run in Supabase SQL if columns are missing:
 // alter table settings add column if not exists punter_avatars text;
 // alter table settings add column if not exists baseline_week integer;
 // alter table settings add column if not exists baseline_punter text;
 async function saveSettingsToSupabase() {
-  const { error } = await supa.from('settings').upsert({
-    id:               1,
-    opening_balance:  state.openingBalance,
-    num_punters:      state.numPunters,
-    pool_size:        state.poolSize,
-    override_punter:  state.override?.punter || null,
-    override_week:    state.override?.week || null,
-    punter_order:     JSON.stringify(state.punterOrder),
-    baseline_week:    state.baselineWeek   || null,
-    baseline_punter:  state.baselinePunter || null,
-    punter_avatars:   JSON.stringify(state.punterAvatars || {})
-  });
-  if (error) throw error;
+  setSyncStatus('syncing', 'Saving settings...');
+  try {
+    const { error } = await supa.from('settings').upsert({
+      id:               1,
+      opening_balance:  state.openingBalance,
+      num_punters:      state.numPunters,
+      pool_size:        state.poolSize,
+      override_punter:  state.override?.punter || null,
+      override_week:    state.override?.week || null,
+      punter_order:     JSON.stringify(state.punterOrder),
+      baseline_week:    state.baselineWeek   || null,
+      baseline_punter:  state.baselinePunter || null,
+      punter_avatars:   JSON.stringify(state.punterAvatars || {})
+    });
+    if (error) throw error;
+    setSyncStatus('connected', `Live · ${state.bets.length} bet${state.bets.length !== 1 ? 's' : ''}`);
+  } catch(e) {
+    setSyncStatus('error', 'Settings save failed — tap to retry');
+    throw e;
+  }
 }
 
 function subscribeToRealtime() {
   if (syncChannel) supa.removeChannel(syncChannel);
+  let realtimeTimer = null;
+  const debouncedReload = () => {
+    clearTimeout(realtimeTimer);
+    realtimeTimer = setTimeout(async () => {
+      setSyncStatus('syncing', 'Syncing...');
+      await loadFromSupabase();
+      refreshCurrentTab();
+    }, 300);
+  };
   syncChannel = supa.channel('bbb-live')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'bets' }, async () => {
-      setSyncStatus('syncing', 'Syncing...');
-      await loadFromSupabase();
-      refreshCurrentTab();
-    })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, async () => {
-      await loadFromSupabase();
-      refreshCurrentTab();
-    })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'topups' }, async () => {
-      setSyncStatus('syncing', 'Syncing...');
-      await loadFromSupabase();
-      refreshCurrentTab();
-    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'bets' }, debouncedReload)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, debouncedReload)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'topups' }, debouncedReload)
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         setSyncStatus('connected', `Live · ${state.bets.length} bets`);
@@ -1060,16 +1082,16 @@ function computeCurrentState() {
     // No completed week since baseline — use baseline as starting point
     const firstAfter = state.bets.filter(b => !b.isBonus && b.week >= baseWeek)[0];
     return firstAfter
-      ? { week: firstAfter.week, punter: firstAfter.punter }
-      : { week: baseWeek, punter: basePunter };
+      ? { week: firstAfter.week, punter: firstAfter.punter, overridden: false }
+      : { week: baseWeek, punter: basePunter, overridden: false };
   }
 
   const goesAgain = last.returned >= pool * 2;
   if (goesAgain) {
-    return { week: last.week + 1, punter: last.punter };
+    return { week: last.week + 1, punter: last.punter, overridden: false };
   } else {
     const nextIdx = (getPunters().indexOf(last.punter) + 1) % getPunters().length;
-    return { week: last.week + 1, punter: getPunters()[nextIdx] };
+    return { week: last.week + 1, punter: getPunters()[nextIdx], overridden: false };
   }
 }
 
@@ -1445,10 +1467,15 @@ async function submitBet() {
   const ret    = parseFloat(document.getElementById('entry-return').value);
   const isBonus = currentBetType === 'bonus';
 
-  if (!punter)             { showToast('⚠️ Select a punter'); return; }
-  if (!week || isNaN(week)){ showToast('⚠️ Enter week number'); return; }
-  if (!isBonus && (!betVal || isNaN(betVal))) { showToast('⚠️ Enter bet amount'); return; }
-  if (isNaN(ret) || ret < 0){ showToast('⚠️ Enter return amount (0 if lost)'); return; }
+  if (!punter)                          { showToast('⚠️ Select a punter'); return; }
+  if (!week || isNaN(week) || week <= 0){ showToast('⚠️ Week must be a positive number'); return; }
+  if (!isBonus && (isNaN(betVal) || betVal <= 0)) { showToast('⚠️ Bet amount must be greater than $0'); return; }
+  if (isNaN(ret) || ret < 0)            { showToast('⚠️ Enter return amount (0 if lost)'); return; }
+  if (dateRaw) {
+    const d = new Date(dateRaw);
+    if (isNaN(d.getTime()))             { showToast('⚠️ Invalid date'); return; }
+    if (d > new Date())                 { showToast('⚠️ Date cannot be in the future'); return; }
+  }
 
   const btn = document.getElementById('save-btn');
   btn.disabled = true; btn.textContent = '⏳ Saving...';
@@ -1788,9 +1815,14 @@ function addToQueue() {
   const isBonus = currentBetType === 'bonus';
 
   if (!punter)              { showToast('⚠️ Select a punter'); return; }
-  if (!week || isNaN(week)) { showToast('⚠️ Enter week number'); return; }
-  if (!isBonus && (!betVal || isNaN(betVal))) { showToast('⚠️ Enter bet amount'); return; }
+  if (!week || isNaN(week) || week <= 0) { showToast('⚠️ Week must be a positive number'); return; }
+  if (!isBonus && (isNaN(betVal) || betVal <= 0)) { showToast('⚠️ Bet amount must be greater than $0'); return; }
   if (isNaN(ret) || ret < 0){ showToast('⚠️ Enter return amount'); return; }
+  if (dateRaw) {
+    const d = new Date(dateRaw);
+    if (isNaN(d.getTime()))  { showToast('⚠️ Invalid date'); return; }
+    if (d > new Date())      { showToast('⚠️ Date cannot be in the future'); return; }
+  }
 
   const date = dateRaw
     ? new Date(dateRaw).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'})
