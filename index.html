@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -29,17 +30,17 @@ body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
 /* ── HEADER ── */
-.hdr { flex-shrink:0; background:linear-gradient(160deg,var(--navy) 0%,var(--navy2) 50%,var(--mid) 100%); padding:11px 16px 8px; border-bottom:1.5px solid rgba(212,160,23,0.4); position:relative; overflow:hidden; }
-.hdr::before { content:'🏇'; position:absolute; right:-10px; top:-10px; font-size:80px; opacity:0.06; }
+.hdr { flex-shrink:0; background:linear-gradient(160deg,var(–navy) 0%,var(–navy2) 50%,var(–mid) 100%); padding:11px 16px 8px; border-bottom:1.5px solid rgba(212,160,23,0.4); position:relative; overflow:hidden; }
+.hdr::before { content:‘🏇’; position:absolute; right:-10px; top:-10px; font-size:80px; opacity:0.06; }
 .hdr-top { display:flex; align-items:center; justify-content:space-between; }
-.hdr-title { color:var(--gold); font-size:18px; font-weight:900; letter-spacing:0.3px; }
-.hdr-badge { background:linear-gradient(135deg,var(--gold-dim),var(--gold)); color:var(--navy); font-size:10px; font-weight:800; padding:3px 9px; border-radius:20px; letter-spacing:0.5px; }
+.hdr-title { color:var(–gold); font-size:18px; font-weight:900; letter-spacing:0.3px; }
+.hdr-badge { background:linear-gradient(135deg,var(–gold-dim),var(–gold)); color:var(–navy); font-size:10px; font-weight:800; padding:3px 9px; border-radius:20px; letter-spacing:0.5px; }
 .hdr-sub { color:rgba(255,255,255,0.45); font-size:11px; margin-top:2px; }
 
 /* ── TABS ── */
-.tabs { flex-shrink:0; display:flex; background:var(--navy2); border-bottom:1px solid rgba(255,255,255,0.07); }
+.tabs { flex-shrink:0; display:flex; background:var(–navy2); border-bottom:1px solid rgba(255,255,255,0.07); }
 .tab { flex:1; padding:9px 2px 8px; text-align:center; font-size:10px; font-weight:700; color:rgba(255,255,255,0.38); cursor:pointer; border-bottom:2.5px solid transparent; transition:all 0.2s; }
-.tab.active { color:var(--gold); border-bottom-color:var(--gold); }
+.tab.active { color:var(–gold); border-bottom-color:var(–gold); }
 
 /* ── SCROLL ── */
 .scroll-area { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; touch-action:pan-y; }
@@ -47,44 +48,44 @@ body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',
 .page.active { display:block; }
 
 /* ── CARDS ── */
-.card { background:var(--white); border-radius:14px; padding:14px; margin-bottom:10px; box-shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.08); }
-.card-dark { background:linear-gradient(135deg,var(--navy2),var(--mid)); border-radius:14px; padding:14px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.08); }
-.card-title { font-size:10px; font-weight:800; color:var(--steel); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; padding-bottom:7px; border-bottom:1px solid var(--gray); display:flex; align-items:center; gap:5px; }
+.card { background:var(–white); border-radius:14px; padding:14px; margin-bottom:10px; box-shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.08); }
+.card-dark { background:linear-gradient(135deg,var(–navy2),var(–mid)); border-radius:14px; padding:14px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.08); }
+.card-title { font-size:10px; font-weight:800; color:var(–steel); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; padding-bottom:7px; border-bottom:1px solid var(–gray); display:flex; align-items:center; gap:5px; }
 
 /* ── ROTATION STRIP ── */
 .rotation-strip { display:flex; align-items:center; justify-content:center; gap:3px; padding:8px 12px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:12px; margin-bottom:8px; overflow-x:auto; scrollbar-width:none; }
 .rotation-strip::-webkit-scrollbar { display:none; }
 .rs-item { display:flex; flex-direction:column; align-items:center; gap:2px; flex-shrink:0; }
 .rs-bubble { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:800; border:1.5px solid transparent; }
-.rs-bubble.current { background:var(--gold); color:var(--navy); border-color:var(--gold-lt); box-shadow:0 0 0 2px rgba(212,160,23,0.3); }
-.rs-bubble.done-bet { background:rgba(22,163,74,0.18); color:var(--green); border-color:rgba(22,163,74,0.3); }
+.rs-bubble.current { background:var(–gold); color:var(–navy); border-color:var(–gold-lt); box-shadow:0 0 0 2px rgba(212,160,23,0.3); }
+.rs-bubble.done-bet { background:rgba(22,163,74,0.18); color:var(–green); border-color:rgba(22,163,74,0.3); }
 .rs-bubble.upcoming { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.4); border-color:rgba(255,255,255,0.1); }
 .rs-label { font-size:7px; font-weight:700; color:rgba(255,255,255,0.35); }
-.rs-label.current-lbl { color:var(--gold); }
+.rs-label.current-lbl { color:var(–gold); }
 .rs-arrow { color:rgba(255,255,255,0.15); font-size:10px; margin-bottom:8px; flex-shrink:0; }
 
 /* ── HERO ── */
-.hero { background:linear-gradient(135deg,var(--navy2) 0%,#1a3a6b 50%,var(--mid) 100%); border-radius:16px; padding:14px 16px; margin-bottom:8px; border:1px solid rgba(212,160,23,0.25); position:relative; overflow:hidden; }
-.hero::after { content:''; position:absolute; top:-40px; right:-40px; width:130px; height:130px; background:radial-gradient(circle,rgba(212,160,23,0.1) 0%,transparent 70%); border-radius:50%; }
+.hero { background:linear-gradient(135deg,var(–navy2) 0%,#1a3a6b 50%,var(–mid) 100%); border-radius:16px; padding:14px 16px; margin-bottom:8px; border:1px solid rgba(212,160,23,0.25); position:relative; overflow:hidden; }
+.hero::after { content:’’; position:absolute; top:-40px; right:-40px; width:130px; height:130px; background:radial-gradient(circle,rgba(212,160,23,0.1) 0%,transparent 70%); border-radius:50%; }
 .hero-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; }
 .hero-eyebrow { font-size:10px; font-weight:800; color:rgba(212,160,23,0.7); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:4px; }
-.hero-name { font-size:30px; font-weight:900; color:var(--white); line-height:1; }
+.hero-name { font-size:30px; font-weight:900; color:var(–white); line-height:1; }
 .hero-sub { font-size:11px; color:rgba(255,255,255,0.45); margin-top:3px; }
 .streak-badge { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:6px 10px; text-align:center; }
 .streak-badge.hot { background:rgba(22,163,74,0.2); border-color:rgba(22,163,74,0.4); }
 .streak-badge.cold { background:rgba(220,38,38,0.2); border-color:rgba(220,38,38,0.4); }
-.streak-val { font-size:18px; font-weight:900; color:var(--white); line-height:1; }
+.streak-val { font-size:18px; font-weight:900; color:var(–white); line-height:1; }
 .streak-lbl { font-size:8px; font-weight:700; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
 .streak-badge.hot .streak-lbl { color:rgba(134,239,172,0.8); }
 .streak-badge.cold .streak-lbl { color:rgba(252,165,165,0.8); }
 .hero-stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; }
 .hero-stat { background:rgba(255,255,255,0.06); border-radius:9px; padding:7px 4px; text-align:center; border:1px solid rgba(255,255,255,0.07); }
-.hero-stat-val { font-size:15px; font-weight:800; color:var(--white); line-height:1; }
+.hero-stat-val { font-size:15px; font-weight:800; color:var(–white); line-height:1; }
 .hero-stat-lbl { font-size:8px; font-weight:700; color:rgba(255,255,255,0.38); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
 
 /* ── ACCOUNT BAR ── */
-.acct-bar-card { background:linear-gradient(135deg,var(--green-dim),#15803D); border-radius:14px; padding:12px 14px; margin-bottom:8px; color:white; }
-.acct-bar-card.losing { background:linear-gradient(135deg,var(--red-dim),#B91C1C); }
+.acct-bar-card { background:linear-gradient(135deg,var(–green-dim),#15803D); border-radius:14px; padding:12px 14px; margin-bottom:8px; color:white; }
+.acct-bar-card.losing { background:linear-gradient(135deg,var(–red-dim),#B91C1C); }
 .acct-bar-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
 .acct-bal { font-size:28px; font-weight:900; }
 .acct-meta { text-align:right; }
@@ -96,201 +97,201 @@ body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',
 
 /* ── STAT TILES ── */
 .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
-.stat-tile { background:var(--white); border-radius:12px; padding:11px 10px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
-.stat-tile-val { font-size:18px; font-weight:800; color:var(--dark); line-height:1; }
-.stat-tile-lbl { font-size:9px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:3px; }
-.stat-tile-sub { font-size:10px; color:var(--muted); margin-top:2px; }
+.stat-tile { background:var(–white); border-radius:12px; padding:11px 10px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+.stat-tile-val { font-size:18px; font-weight:800; color:var(–dark); line-height:1; }
+.stat-tile-lbl { font-size:9px; font-weight:700; color:var(–muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:3px; }
+.stat-tile-sub { font-size:10px; color:var(–muted); margin-top:2px; }
 
 /* ── BET ROWS ── */
-.bet-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--gray); }
+.bet-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(–gray); }
 .bet-row:last-child { border-bottom:none; }
 .bet-avatar { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; flex-shrink:0; }
-.bet-avatar.win  { background:var(--green-lt); color:var(--green); }
-.bet-avatar.loss { background:var(--red-lt); color:var(--red); }
-.bet-avatar.void { background:var(--gray); color:var(--muted); }
+.bet-avatar.win  { background:var(–green-lt); color:var(–green); }
+.bet-avatar.loss { background:var(–red-lt); color:var(–red); }
+.bet-avatar.void { background:var(–gray); color:var(–muted); }
 .bet-info { flex:1; min-width:0; }
-.bet-name { font-size:13px; font-weight:700; color:var(--dark); }
-.bet-meta { font-size:10px; color:var(--muted); margin-top:1px; }
+.bet-name { font-size:13px; font-weight:700; color:var(–dark); }
+.bet-meta { font-size:10px; color:var(–muted); margin-top:1px; }
 .bet-amount { text-align:right; flex-shrink:0; }
 .bet-net { font-size:13px; font-weight:800; }
-.bet-roi { font-size:10px; color:var(--muted); }
+.bet-roi { font-size:10px; color:var(–muted); }
 .pill { display:inline-block; padding:2px 7px; border-radius:20px; font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; }
-.pill-win  { background:var(--green-lt); color:var(--green); }
-.pill-loss { background:var(--red-lt); color:var(--red); }
-.pill-void { background:var(--gray); color:var(--muted); }
+.pill-win  { background:var(–green-lt); color:var(–green); }
+.pill-loss { background:var(–red-lt); color:var(–red); }
+.pill-void { background:var(–gray); color:var(–muted); }
 
 /* ── LEADERBOARD ── */
-.lb-row { display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid var(--gray); }
+.lb-row { display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid var(–gray); }
 .lb-row:last-child { border-bottom:none; }
 .lb-rank { font-size:20px; width:28px; flex-shrink:0; text-align:center; }
-.lb-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--mid),var(--steel)); display:flex; align-items:center; justify-content:center; color:white; font-size:12px; font-weight:800; flex-shrink:0; }
+.lb-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(–mid),var(–steel)); display:flex; align-items:center; justify-content:center; color:white; font-size:12px; font-weight:800; flex-shrink:0; }
 .lb-info { flex:1; }
-.lb-name { font-size:14px; font-weight:800; color:var(--dark); }
-.lb-detail { font-size:10px; color:var(--muted); margin-top:2px; }
-.lb-bar-track { height:4px; background:var(--gray); border-radius:2px; overflow:hidden; margin-top:4px; }
+.lb-name { font-size:14px; font-weight:800; color:var(–dark); }
+.lb-detail { font-size:10px; color:var(–muted); margin-top:2px; }
+.lb-bar-track { height:4px; background:var(–gray); border-radius:2px; overflow:hidden; margin-top:4px; }
 .lb-bar-fill { height:100%; border-radius:2px; transition:width 0.7s; }
 .lb-right { text-align:right; flex-shrink:0; }
 .lb-net { font-size:15px; font-weight:900; }
-.lb-roi { font-size:10px; color:var(--muted); margin-top:1px; }
+.lb-roi { font-size:10px; color:var(–muted); margin-top:1px; }
 
 /* ── FORM ── */
 .form-group { margin-bottom:12px; }
-.form-label { display:block; font-size:10px; font-weight:800; color:var(--steel); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:5px; }
-.form-label span { font-weight:400; color:var(--muted); text-transform:none; letter-spacing:0; font-size:10px; }
-.form-control { width:100%; padding:12px 14px; border:1.5px solid var(--gray); border-radius:10px; font-size:15px; color:var(--dark); background:var(--off); -webkit-appearance:none; appearance:none; }
-.form-control:focus { outline:none; border-color:var(--steel); background:white; box-shadow:0 0 0 3px rgba(37,99,168,0.1); }
-.form-control.auto { background:#EFF6FF; border-color:#BFDBFE; color:var(--steel); font-weight:700; }
+.form-label { display:block; font-size:10px; font-weight:800; color:var(–steel); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:5px; }
+.form-label span { font-weight:400; color:var(–muted); text-transform:none; letter-spacing:0; font-size:10px; }
+.form-control { width:100%; padding:12px 14px; border:1.5px solid var(–gray); border-radius:10px; font-size:15px; color:var(–dark); background:var(–off); -webkit-appearance:none; appearance:none; }
+.form-control:focus { outline:none; border-color:var(–steel); background:white; box-shadow:0 0 0 3px rgba(37,99,168,0.1); }
+.form-control.auto { background:#EFF6FF; border-color:#BFDBFE; color:var(–steel); font-weight:700; }
 .form-control.editable-auto { background:#FFF7ED; border-color:#FED7AA; }
 .form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%2364748B' d='M5 7L0 2h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; }
+select.form-control { background-image:url(“data:image/svg+xml,%3Csvg xmlns=‘http://www.w3.org/2000/svg’ width=‘10’ height=‘10’ viewBox=‘0 0 10 10’%3E%3Cpath fill=’%2364748B’ d=‘M5 7L0 2h10z’/%3E%3C/svg%3E”); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; }
 
 /* ── BUTTONS ── */
 .btn { width:100%; padding:14px; border:none; border-radius:12px; font-size:15px; font-weight:800; cursor:pointer; letter-spacing:0.2px; transition:all 0.15s; -webkit-appearance:none; }
 .btn:active { transform:scale(0.98); }
-.btn-primary { background:linear-gradient(135deg,var(--mid),var(--steel)); color:white; box-shadow:0 4px 12px rgba(37,99,168,0.3); }
-.btn-win   { background:linear-gradient(135deg,var(--green-dim),var(--green)); color:white; }
-.btn-loss  { background:linear-gradient(135deg,var(--red-dim),var(--red)); color:white; }
-.btn-warn  { background:linear-gradient(135deg,#92400E,var(--orange)); color:white; }
+.btn-primary { background:linear-gradient(135deg,var(–mid),var(–steel)); color:white; box-shadow:0 4px 12px rgba(37,99,168,0.3); }
+.btn-win   { background:linear-gradient(135deg,var(–green-dim),var(–green)); color:white; }
+.btn-loss  { background:linear-gradient(135deg,var(–red-dim),var(–red)); color:white; }
+.btn-warn  { background:linear-gradient(135deg,#92400E,var(–orange)); color:white; }
 .btn-group { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
 .btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
 
 /* ── PREVIEW ── */
 .preview-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
-.preview-lbl { font-size:9px; color:var(--muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px; }
-.preview-val { font-size:14px; font-weight:800; color:var(--dark); }
+.preview-lbl { font-size:9px; color:var(–muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px; }
+.preview-val { font-size:14px; font-weight:800; color:var(–dark); }
 
 /* ── HISTORY ── */
-.hist-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--gray); font-size:12px; }
+.hist-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(–gray); font-size:12px; }
 .hist-row:last-child { border-bottom:none; }
-.hist-wk { background:var(--mid); color:white; border-radius:6px; padding:2px 7px; font-size:9px; font-weight:800; flex-shrink:0; }
+.hist-wk { background:var(–mid); color:white; border-radius:6px; padding:2px 7px; font-size:9px; font-weight:800; flex-shrink:0; }
 .hist-name { font-weight:700; flex:1; }
 .hist-net { font-weight:700; font-size:12px; }
-.hist-del { background:none; border:none; color:var(--muted); font-size:14px; cursor:pointer; padding:2px 4px; border-radius:4px; flex-shrink:0; }
-
+.hist-del { background:none; border:none; color:var(–muted); font-size:14px; cursor:pointer; padding:2px 4px; border-radius:4px; flex-shrink:0; }
 
 /* ── ADMIN ── */
-.admin-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--gray); }
+.admin-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(–gray); }
 .admin-row:last-child { border-bottom:none; }
-.admin-lbl { font-size:13px; font-weight:600; color:var(--dark); }
-.admin-sub { font-size:11px; color:var(--muted); margin-top:1px; }
+.admin-lbl { font-size:13px; font-weight:600; color:var(–dark); }
+.admin-sub { font-size:11px; color:var(–muted); margin-top:1px; }
 
 /* ── LOADING OVERLAY ── */
-.loading-overlay { position:fixed; inset:0; background:var(--navy); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:999; transition:opacity 0.4s; }
+.loading-overlay { position:fixed; inset:0; background:var(–navy); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:999; transition:opacity 0.4s; }
 .loading-overlay.hidden { opacity:0; pointer-events:none; }
 .loading-logo { font-size:48px; margin-bottom:16px; }
-.loading-title { color:var(--gold); font-size:20px; font-weight:900; margin-bottom:8px; }
+.loading-title { color:var(–gold); font-size:20px; font-weight:900; margin-bottom:8px; }
 .loading-msg { color:rgba(255,255,255,0.4); font-size:12px; }
-.loading-spinner { width:32px; height:32px; border:3px solid rgba(255,255,255,0.1); border-top-color:var(--gold); border-radius:50%; animation:spin 0.8s linear infinite; margin-top:20px; }
+.loading-spinner { width:32px; height:32px; border:3px solid rgba(255,255,255,0.1); border-top-color:var(–gold); border-radius:50%; animation:spin 0.8s linear infinite; margin-top:20px; }
 @keyframes spin { to { transform:rotate(360deg); } }
 
 /* ── TOAST ── */
-.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--dark); color:white; padding:11px 22px; border-radius:24px; font-size:13px; font-weight:700; z-index:998; transition:transform 0.3s ease; white-space:nowrap; box-shadow:0 4px 20px rgba(0,0,0,0.3); }
+.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(–dark); color:white; padding:11px 22px; border-radius:24px; font-size:13px; font-weight:700; z-index:998; transition:transform 0.3s ease; white-space:nowrap; box-shadow:0 4px 20px rgba(0,0,0,0.3); }
 .toast.show { transform:translateX(-50%) translateY(0); }
 
 .section-label { font-size:10px; font-weight:800; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; padding-top:4px; }
-.empty { color:var(--muted); font-size:13px; padding:16px 0; text-align:center; }
+.empty { color:var(–muted); font-size:13px; padding:16px 0; text-align:center; }
 
 /* ── DRAG & DROP ROTATION ORDER ── */
 .drag-list { list-style:none; padding:0; margin:0; }
 .drag-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  background: var(--off);
-  border: 1.5px solid var(--gray);
-  border-radius: 10px;
-  margin-bottom: 8px;
-  cursor: grab;
-  user-select: none;
-  transition: box-shadow 0.15s, transform 0.15s, background 0.15s;
-  /* touch-action set dynamically only in admin tab */
+display: flex;
+align-items: center;
+gap: 12px;
+padding: 10px 12px;
+background: var(–off);
+border: 1.5px solid var(–gray);
+border-radius: 10px;
+margin-bottom: 8px;
+cursor: grab;
+user-select: none;
+transition: box-shadow 0.15s, transform 0.15s, background 0.15s;
+/* touch-action set dynamically only in admin tab */
 }
 .drag-item:active { cursor: grabbing; }
 .drag-item.dragging {
-  opacity: 0.4;
-  transform: scale(0.98);
+opacity: 0.4;
+transform: scale(0.98);
 }
 .drag-item.drag-over {
-  border-color: var(--steel);
-  background: #EFF6FF;
-  box-shadow: 0 0 0 2px rgba(37,99,168,0.2);
+border-color: var(–steel);
+background: #EFF6FF;
+box-shadow: 0 0 0 2px rgba(37,99,168,0.2);
 }
 .drag-handle {
-  color: var(--gray2);
-  font-size: 18px;
-  flex-shrink: 0;
-  line-height: 1;
+color: var(–gray2);
+font-size: 18px;
+flex-shrink: 0;
+line-height: 1;
 }
 .drag-num {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--steel);
-  color: white;
-  font-size: 10px;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+width: 22px;
+height: 22px;
+border-radius: 50%;
+background: var(–steel);
+color: white;
+font-size: 10px;
+font-weight: 800;
+display: flex;
+align-items: center;
+justify-content: center;
+flex-shrink: 0;
 }
 .drag-name {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--dark);
-  flex: 1;
+font-size: 14px;
+font-weight: 700;
+color: var(–dark);
+flex: 1;
 }
 .drag-medal { font-size: 16px; flex-shrink: 0; }
 
 /* ── WHO AM I MODAL ── */
 .wai-overlay { display:flex; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:600; align-items:center; justify-content:center; padding:20px; opacity:0; pointer-events:none; transition:opacity 0.2s; }
 .wai-overlay.open { opacity:1; pointer-events:all; }
-.wai-sheet { background:var(--navy2); border-radius:20px; padding:24px; width:100%; max-width:360px; border:1px solid rgba(255,255,255,0.1); }
-.wai-title { color:var(--gold); font-size:20px; font-weight:900; text-align:center; margin-bottom:6px; }
+.wai-sheet { background:var(–navy2); border-radius:20px; padding:24px; width:100%; max-width:360px; border:1px solid rgba(255,255,255,0.1); }
+.wai-title { color:var(–gold); font-size:20px; font-weight:900; text-align:center; margin-bottom:6px; }
 .wai-sub { color:rgba(255,255,255,0.45); font-size:12px; text-align:center; margin-bottom:20px; }
 .wai-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px; }
 .wai-btn { background:rgba(255,255,255,0.07); border:1.5px solid rgba(255,255,255,0.12); border-radius:12px; padding:12px 6px; text-align:center; cursor:pointer; transition:all 0.15s; }
 .wai-btn:active { transform:scale(0.96); }
-.wai-btn.selected { background:var(--gold); border-color:var(--gold-lt); }
+.wai-btn.selected { background:var(–gold); border-color:var(–gold-lt); }
 .wai-ini { font-size:22px; font-weight:900; color:white; line-height:1; }
-.wai-btn.selected .wai-ini { color:var(--navy); }
+.wai-btn.selected .wai-ini { color:var(–navy); }
 .wai-name { font-size:10px; font-weight:700; color:rgba(255,255,255,0.5); margin-top:3px; }
-.wai-btn.selected .wai-name { color:var(--navy); }
+.wai-btn.selected .wai-name { color:var(–navy); }
 
 /* ── YOUR TURN BANNER ── */
-.your-turn-banner { background:linear-gradient(135deg,#78350F,var(--gold)); border-radius:14px; padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; gap:12px; }
+.your-turn-banner { background:linear-gradient(135deg,#78350F,var(–gold)); border-radius:14px; padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; gap:12px; }
 .your-turn-banner.visible { animation:glow 2s ease-in-out infinite; }
 @keyframes glow { 0%,100%{box-shadow:0 0 12px rgba(212,160,23,0.4)} 50%{box-shadow:0 0 24px rgba(212,160,23,0.7)} }
 .ytb-emoji { font-size:28px; flex-shrink:0; }
 .ytb-text { flex:1; }
-.ytb-title { font-size:14px; font-weight:900; color:var(--navy); }
+.ytb-title { font-size:14px; font-weight:900; color:var(–navy); }
 .ytb-sub { font-size:11px; color:rgba(0,0,0,0.55); margin-top:1px; }
 
 /* ── SPARKLINE ── */
 .sparkline-wrap { margin-top:8px; }
 .sparkline-svg { width:100%; height:44px; overflow:visible; }
 
-
 /* ── MANAGE PUNTERS ── */
-.mp-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--gray); }
+.mp-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(–gray); }
 .mp-row:last-child { border-bottom:none; }
 .mp-avatar-wrap { position:relative; flex-shrink:0; cursor:pointer; }
-.mp-avatar { width:44px; height:44px; border-radius:50%; object-fit:cover; border:2px solid var(--gray); }
-.mp-avatar-ini { width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,var(--mid),var(--steel)); display:flex; align-items:center; justify-content:center; color:white; font-size:14px; font-weight:800; border:2px solid var(--gray); flex-shrink:0; }
-.mp-avatar-edit { position:absolute; bottom:-2px; right:-2px; background:var(--steel); color:white; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; font-size:10px; border:1.5px solid white; }
-.mp-name-input { flex:1; padding:9px 12px; border:1.5px solid var(--gray); border-radius:8px; font-size:14px; font-weight:700; color:var(--dark); background:var(--off); }
-.mp-name-input:focus { outline:none; border-color:var(--steel); background:white; }
+.mp-avatar { width:44px; height:44px; border-radius:50%; object-fit:cover; border:2px solid var(–gray); }
+.mp-avatar-ini { width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,var(–mid),var(–steel)); display:flex; align-items:center; justify-content:center; color:white; font-size:14px; font-weight:800; border:2px solid var(–gray); flex-shrink:0; }
+.mp-avatar-edit { position:absolute; bottom:-2px; right:-2px; background:var(–steel); color:white; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; font-size:10px; border:1.5px solid white; }
+.mp-name-input { flex:1; padding:9px 12px; border:1.5px solid var(–gray); border-radius:8px; font-size:14px; font-weight:700; color:var(–dark); background:var(–off); }
+.mp-name-input:focus { outline:none; border-color:var(–steel); background:white; }
 
 /* ── TOP-UP CARD ── */
-.topup-history-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--gray); font-size:12px; }
+.topup-history-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(–gray); font-size:12px; }
 .topup-history-row:last-child { border-bottom:none; }
-.topup-badge { background:linear-gradient(135deg,#1D4ED8,var(--steel)); color:white; border-radius:6px; padding:2px 8px; font-size:9px; font-weight:800; flex-shrink:0; }
+.topup-badge { background:linear-gradient(135deg,#1D4ED8,var(–steel)); color:white; border-radius:6px; padding:2px 8px; font-size:9px; font-weight:800; flex-shrink:0; }
 </style>
+
 </head>
 <body>
 
 <!-- WHO AM I MODAL -->
+
 <div class="wai-overlay" id="wai-overlay">
   <div class="wai-sheet">
     <div class="wai-title">👋 Who are you?</div>
@@ -302,6 +303,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 </div>
 
 <!-- LOADING OVERLAY -->
+
 <div class="loading-overlay" id="loading-overlay">
   <div class="loading-logo">🏇</div>
   <div class="loading-title">Bus Bois Betting</div>
@@ -310,12 +312,14 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 </div>
 
 <!-- SYNC STATUS -->
+
 <div class="sync-bar syncing" id="sync-bar">
   <div class="sync-dot pulse" id="sync-dot"></div>
   <span id="sync-label">Connecting…</span>
 </div>
 
 <!-- HEADER -->
+
 <div class="hdr">
   <div class="hdr-top">
     <div class="hdr-title">🏇 Bus Bois Betting</div>
@@ -325,6 +329,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 </div>
 
 <!-- TABS -->
+
 <div class="tabs">
   <div class="tab active" onclick="switchTab('home')">🏠 Home</div>
   <div class="tab" onclick="switchTab('enter')">➕ Log Bet</div>
@@ -335,6 +340,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 <div class="scroll-area">
 
 <!-- HOME -->
+
 <div class="page active" id="tab-home">
   <div id="your-turn-banner" class="your-turn-banner" style="display:none">
     <div class="ytb-emoji">🏇</div>
@@ -403,6 +409,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 </div>
 
 <!-- LOG BET -->
+
 <div class="page" id="tab-enter">
   <div class="card-dark" style="margin-top:2px">
     <div style="color:rgba(255,255,255,0.5);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Log a Bet</div>
@@ -410,6 +417,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   </div>
 
   <!-- Bet type toggle -->
+
   <div style="display:flex;gap:8px;margin-bottom:10px">
     <button id="btn-type-normal" onclick="setBetType('normal')"
       style="flex:1;padding:10px;border-radius:10px;border:2px solid var(--steel);background:var(--steel);color:white;font-size:13px;font-weight:800;cursor:pointer">
@@ -454,6 +462,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   </div>
 
   <!-- Week status for this punter -->
+
   <div id="week-status-card" class="card" style="padding:12px 14px">
     <div id="week-status-content"></div>
   </div>
@@ -463,7 +472,30 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div class="preview-grid" id="preview-grid"></div>
     <div style="margin-top:10px;padding:8px;background:var(--off);border-radius:8px;font-size:11px;color:var(--muted)" id="preview-next"></div>
   </div>
-  <button class="btn btn-primary" id="save-btn" onclick="submitBet()" style="margin-bottom:12px">💾 Save Bet</button>
+  <!-- Action buttons -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+    <button class="btn btn-primary" id="save-btn" onclick="submitBet()">💾 Save Bet</button>
+    <button class="btn" id="queue-btn" onclick="addToQueue()"
+      style="background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);font-size:14px">
+      ➕ Add to Queue
+    </button>
+  </div>
+
+  <!-- Queue -->
+
+  <div id="queue-card" style="display:none;margin-bottom:12px">
+    <div style="background:linear-gradient(135deg,var(--navy2),var(--mid));border-radius:14px;padding:14px;border:1px solid rgba(255,255,255,0.1)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="color:var(--gold);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px">Queued Bets</div>
+        <div id="queue-count" style="background:var(--gold);color:var(--navy);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:900">0</div>
+      </div>
+      <div id="queue-list" style="margin-bottom:10px"></div>
+      <button class="btn btn-primary" onclick="saveQueue()" id="save-queue-btn">
+        💾 Save All Bets
+      </button>
+    </div>
+  </div>
+
   <div class="section-label" style="margin-top:4px">Current Rotation</div>
   <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:10px 12px;overflow-x:auto;">
     <div class="rotation-strip" id="enter-rotation-strip" style="margin-bottom:0;background:none;border:none;padding:0;justify-content:flex-start;"></div>
@@ -471,6 +503,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 </div>
 
 <!-- LEADERBOARD -->
+
 <div class="page" id="tab-board">
   <div class="card" style="margin-top:2px">
     <div class="card-title">🏆 Season Leaderboard</div>
@@ -478,6 +511,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   </div>
 
   <!-- YOUR STATS — only shown when logged in -->
+
   <div id="my-stats-card" style="display:none">
     <div style="background:linear-gradient(135deg,var(--navy2),#1a3a6b,var(--mid));border-radius:14px;padding:14px;margin-bottom:10px;border:1.5px solid rgba(212,160,23,0.35);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -491,48 +525,51 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
         <div id="my-stats-rank" style="background:var(--gold);color:var(--navy);border-radius:10px;padding:6px 12px;font-size:13px;font-weight:900;text-align:center"></div>
       </div>
 
-      <!-- Big stat row -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
-        <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:10px 6px;text-align:center">
-          <div id="my-net" style="font-size:18px;font-weight:900;color:white;line-height:1">–</div>
-          <div style="font-size:8px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px">Net P&L</div>
-        </div>
-        <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:10px 6px;text-align:center">
-          <div id="my-roi" style="font-size:18px;font-weight:900;color:white;line-height:1">–</div>
-          <div style="font-size:8px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px">ROI</div>
-        </div>
-        <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:10px 6px;text-align:center">
-          <div id="my-wl" style="font-size:18px;font-weight:900;color:white;line-height:1">–</div>
-          <div style="font-size:8px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px">W / L</div>
-        </div>
-      </div>
-
-      <!-- Secondary stats -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
-        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px">
-          <div style="font-size:9px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Weeks Played</div>
-          <div id="my-weeks" style="font-size:14px;font-weight:800;color:white">–</div>
-        </div>
-        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px">
-          <div style="font-size:9px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Best Return</div>
-          <div id="my-best" style="font-size:14px;font-weight:800;color:white">–</div>
-        </div>
-        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px">
-          <div style="font-size:9px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Total Staked</div>
-          <div id="my-staked" style="font-size:14px;font-weight:800;color:white">–</div>
-        </div>
-        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px">
-          <div style="font-size:9px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Current Streak</div>
-          <div id="my-streak" style="font-size:14px;font-weight:800;color:white">–</div>
-        </div>
-      </div>
-
-      <!-- vs leader bar -->
-      <div id="my-vs-leader" style="background:rgba(255,255,255,0.06);border-radius:8px;padding:8px 10px;font-size:11px;color:rgba(255,255,255,0.6)"></div>
-
-      <!-- Bonus bets row if any -->
-      <div id="my-bonus-row" style="display:none;margin-top:8px;background:rgba(212,160,23,0.1);border:1px solid rgba(212,160,23,0.25);border-radius:8px;padding:8px 10px;font-size:11px;color:rgba(212,160,23,0.8)"></div>
+```
+  <!-- Big stat row -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+    <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:10px 6px;text-align:center">
+      <div id="my-net" style="font-size:18px;font-weight:900;color:white;line-height:1">–</div>
+      <div style="font-size:8px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px">Net P&L</div>
     </div>
+    <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:10px 6px;text-align:center">
+      <div id="my-roi" style="font-size:18px;font-weight:900;color:white;line-height:1">–</div>
+      <div style="font-size:8px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px">ROI</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:10px 6px;text-align:center">
+      <div id="my-wl" style="font-size:18px;font-weight:900;color:white;line-height:1">–</div>
+      <div style="font-size:8px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px">W / L</div>
+    </div>
+  </div>
+
+  <!-- Secondary stats -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+    <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px">
+      <div style="font-size:9px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Weeks Played</div>
+      <div id="my-weeks" style="font-size:14px;font-weight:800;color:white">–</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px">
+      <div style="font-size:9px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Best Return</div>
+      <div id="my-best" style="font-size:14px;font-weight:800;color:white">–</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px">
+      <div style="font-size:9px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Total Staked</div>
+      <div id="my-staked" style="font-size:14px;font-weight:800;color:white">–</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px">
+      <div style="font-size:9px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Current Streak</div>
+      <div id="my-streak" style="font-size:14px;font-weight:800;color:white">–</div>
+    </div>
+  </div>
+
+  <!-- vs leader bar -->
+  <div id="my-vs-leader" style="background:rgba(255,255,255,0.06);border-radius:8px;padding:8px 10px;font-size:11px;color:rgba(255,255,255,0.6)"></div>
+
+  <!-- Bonus bets row if any -->
+  <div id="my-bonus-row" style="display:none;margin-top:8px;background:rgba(212,160,23,0.1);border:1px solid rgba(212,160,23,0.25);border-radius:8px;padding:8px 10px;font-size:11px;color:rgba(212,160,23,0.8)"></div>
+</div>
+```
+
   </div>
 
   <div class="card">
@@ -546,6 +583,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 </div>
 
 <!-- ADMIN -->
+
 <div class="page" id="tab-account">
   <div class="stat-grid" style="margin-top:2px">
     <div class="stat-tile" style="grid-column:span 2;padding:14px">
@@ -600,6 +638,59 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     </div>
     <button class="btn btn-primary" onclick="processTopUp()" id="topup-btn">💰 Process Top-Up</button>
     <div id="topup-history" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🤝 New Punter Buy-In</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">When someone joins mid-season, they buy in at their fair share of the current pool. Records the payment and adjusts the group baseline.</div>
+
+```
+<div style="background:var(--off);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px">
+  <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+    <span style="color:var(--muted)">Current balance</span>
+    <span id="buyin-current-bal" style="font-weight:800;color:var(--dark)">$–</span>
+  </div>
+  <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+    <span style="color:var(--muted)">Current punters</span>
+    <span id="buyin-current-punters" style="font-weight:800;color:var(--dark)">–</span>
+  </div>
+  <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+    <span style="color:var(--muted)">New punter count</span>
+    <span id="buyin-new-punters" style="font-weight:800;color:var(--dark)">–</span>
+  </div>
+  <div style="height:1px;background:var(--gray);margin:6px 0"></div>
+  <div style="display:flex;justify-content:space-between">
+    <span style="color:var(--steel);font-weight:700">Suggested buy-in</span>
+    <span id="buyin-suggested" style="font-weight:900;color:var(--steel);font-size:14px">$–</span>
+  </div>
+</div>
+
+<div class="form-group">
+  <label class="form-label">Joining Punter</label>
+  <select id="buyin-punter" class="form-control" onchange="updateBuyInPreview()"></select>
+</div>
+
+<div class="form-row" style="margin-bottom:12px">
+  <div class="form-group" style="margin-bottom:0">
+    <label class="form-label">Buy-In Amount ($) <span>override if needed</span></label>
+    <input type="number" id="buyin-amount" class="form-control editable-auto" step="0.01" placeholder="auto-calculated" oninput="updateBuyInPreview()">
+  </div>
+  <div class="form-group" style="margin-bottom:0">
+    <label class="form-label">Date</label>
+    <input type="date" id="buyin-date" class="form-control">
+  </div>
+</div>
+
+<div class="form-group">
+  <label class="form-label">Note <span>(optional)</span></label>
+  <input type="text" id="buyin-note" class="form-control" placeholder="e.g. CC joins Week 3">
+</div>
+
+<div id="buyin-preview" style="display:none;background:rgba(37,99,168,0.08);border:1.5px solid rgba(37,99,168,0.2);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--dark)"></div>
+
+<button class="btn btn-primary" onclick="processBuyIn()" id="buyin-btn">🤝 Process Buy-In</button>
+```
+
   </div>
 
   <div class="card">
@@ -1060,7 +1151,7 @@ function switchTab(tab) {
     el.style.touchAction = tab === 'account' ? 'none' : 'pan-y';
   });
   if(tab==='home')    renderHome();
-  if(tab==='enter')   populateEntryForm();
+  if(tab==='enter')   { betQueue=[]; populateEntryForm(); }
   if(tab==='board')   renderBoard();
   if(tab==='account') renderAdmin();
 }
@@ -1162,6 +1253,7 @@ function renderHome() {
 
 // ═══════════════ ENTRY FORM ═══════════════
 let currentBetType = 'normal';
+let betQueue = []; // holds bets waiting to be saved
 
 function setBetType(type) {
   currentBetType = type;
@@ -1340,7 +1432,8 @@ async function submitBet() {
       : impliedResult === 'Pending' ? `📋 Bet logged — week still in progress`
       : `❌ ${punter} week complete`;
     showToast(msg);
-    switchTab('home');
+    // Stay on Log Bet page — reset form for next entry
+    populateEntryForm();
   } catch(e) {
     console.error(e);
     showToast('❌ Save failed — check connection');
@@ -1465,6 +1558,7 @@ function renderAdmin() {
   document.getElementById('acct-split2').textContent='$'+split.toFixed(2);
   const pe=document.getElementById('acct-pnl2');pe.textContent=(pnl>=0?'+$':'-$')+Math.abs(pnl).toFixed(2);pe.style.color=pnl>=0?'var(--green)':'var(--red)';
   renderWeekMgmtStatus();
+  initBuyInCard();
   renderManagePunters();
   renderDragList();
   initTopUpCard();
@@ -1529,6 +1623,216 @@ async function clearHistory() {
     showToast('🗑 All data cleared');renderAdmin();
     setSyncStatus('connected','Live · 0 bets');
   }catch(e){showToast('❌ Clear failed');}
+}
+
+
+// ═══════════════ NEW PUNTER BUY-IN ═══════════════
+function initBuyInCard() {
+  const account = getAccountTotal();
+  const curPunters = state.numPunters;
+  const newPunters = curPunters + 1;  // assumes adding one
+  const suggested = account / newPunters;
+
+  document.getElementById('buyin-current-bal').textContent = '$' + account.toFixed(2);
+  document.getElementById('buyin-current-punters').textContent = curPunters;
+  document.getElementById('buyin-new-punters').textContent = newPunters;
+  document.getElementById('buyin-suggested').textContent = '$' + suggested.toFixed(2);
+  document.getElementById('buyin-date').value = new Date().toISOString().split('T')[0];
+
+  // Populate punter dropdown — show all punters as options
+  const sel = document.getElementById('buyin-punter');
+  sel.innerHTML = getPunters().map(p => `<option value="${p}">${p}</option>`).join('');
+
+  // Auto-fill suggested amount
+  const amtEl = document.getElementById('buyin-amount');
+  if (!amtEl.value) amtEl.value = suggested.toFixed(2);
+
+  updateBuyInPreview();
+}
+
+function updateBuyInPreview() {
+  const punter = document.getElementById('buyin-punter')?.value;
+  const amt = parseFloat(document.getElementById('buyin-amount')?.value);
+  const account = getAccountTotal();
+  const curPunters = state.numPunters;
+  const newPunters = curPunters + 1;
+  const suggested = account / newPunters;
+  const preview = document.getElementById('buyin-preview');
+  if (!preview || !punter || isNaN(amt)) { if(preview) preview.style.display='none'; return; }
+
+  // After buy-in: new balance = account + amt, split by newPunters
+  const newBalance = account + amt;
+  const newSplit = newBalance / newPunters;
+  const fairShare = account / newPunters;
+  const diff = amt - fairShare;
+
+  preview.style.display = 'block';
+  preview.innerHTML = `
+    <div style="font-weight:800;margin-bottom:6px;color:var(--steel)">${punter} joins the group</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+      <span style="color:var(--muted)">Buy-in amount</span><span style="font-weight:700;text-align:right">$${amt.toFixed(2)}</span>
+      <span style="color:var(--muted)">Fair share</span><span style="font-weight:700;text-align:right">$${fairShare.toFixed(2)}</span>
+      <span style="color:var(--muted)">New balance</span><span style="font-weight:700;text-align:right">$${newBalance.toFixed(2)}</span>
+      <span style="color:var(--muted)">New split each</span><span style="font-weight:700;text-align:right">$${newSplit.toFixed(2)}</span>
+    </div>
+    ${Math.abs(diff) > 0.5 ? `<div style="margin-top:6px;font-size:11px;color:${diff<0?'var(--orange)':'var(--green)'}">
+      ${diff < 0 ? `⚠️ $${Math.abs(diff).toFixed(2)} less than fair share — others take a small dilution` : `✅ $${diff.toFixed(2)} above fair share — slightly favourable for existing punters`}
+    </div>` : '<div style="margin-top:6px;font-size:11px;color:var(--green)">✅ Exactly fair</div>'}`;
+}
+
+async function processBuyIn() {
+  const punter = document.getElementById('buyin-punter').value;
+  const amt = parseFloat(document.getElementById('buyin-amount').value);
+  const dateRaw = document.getElementById('buyin-date').value;
+  const note = document.getElementById('buyin-note').value.trim();
+
+  if (!punter) { showToast('⚠️ Select the joining punter'); return; }
+  if (!amt || isNaN(amt) || amt <= 0) { showToast('⚠️ Enter buy-in amount'); return; }
+
+  const account = getAccountTotal();
+  const newPunters = state.numPunters + 1;
+  const newBalance = account + amt;
+
+  if (!confirm(`Process buy-in for ${punter}?\n\nBuy-in: $${amt.toFixed(2)}\nNew balance: $${newBalance.toFixed(2)}\nNew punter count: ${newPunters}\n\nThis will update the group size and add the buy-in to the pool.`)) return;
+
+  const btn = document.getElementById('buyin-btn');
+  btn.disabled = true; btn.textContent = '⏳ Processing…';
+
+  try {
+    setSyncStatus('syncing', 'Processing buy-in…');
+
+    // Record as a top-up with a buy-in note
+    const noteText = note || `${punter} buy-in (joined mid-season)`;
+    const { error } = await supa.from('topups').insert({
+      amount_per_person: amt,
+      num_punters: 1,  // one person buying in
+      total_added: amt,
+      note: noteText
+    });
+    if (error) throw error;
+
+    // Update punter count in settings
+    state.numPunters = newPunters;
+    // Also update pool size to reflect new group
+    state.poolSize = newPunters * 10;
+    await saveSettingsToSupabase();
+
+    showToast(`✅ ${punter} buy-in processed! Group is now ${newPunters} punters`);
+    document.getElementById('buyin-note').value = '';
+    document.getElementById('buyin-amount').value = '';
+    await loadFromSupabase();
+    renderAdmin();
+    renderHome();
+  } catch(e) {
+    console.error(e);
+    showToast('❌ Buy-in failed — check connection');
+  } finally {
+    btn.disabled = false; btn.textContent = '🤝 Process Buy-In';
+  }
+}
+
+
+// ═══════════════ BET QUEUE ═══════════════
+function addToQueue() {
+  const week    = parseInt(document.getElementById('entry-week').value);
+  const dateRaw = document.getElementById('entry-date').value;
+  const punter  = document.getElementById('entry-punter').value;
+  const betVal  = parseFloat(document.getElementById('entry-bet').value);
+  const ret     = parseFloat(document.getElementById('entry-return').value);
+  const isBonus = currentBetType === 'bonus';
+
+  if (!punter)              { showToast('⚠️ Select a punter'); return; }
+  if (!week || isNaN(week)) { showToast('⚠️ Enter week number'); return; }
+  if (!isBonus && (!betVal || isNaN(betVal))) { showToast('⚠️ Enter bet amount'); return; }
+  if (isNaN(ret) || ret < 0){ showToast('⚠️ Enter return amount'); return; }
+
+  const date = dateRaw
+    ? new Date(dateRaw).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'})
+    : new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'});
+
+  const pool = getPoolSize();
+  const existingWeek = getWeekSummary(punter, week);
+  // Also count queued bets for this punter/week
+  const queuedForWeek = betQueue.filter(b => b.punter===punter && b.week===week && !b.isBonus);
+  const queuedStaked  = queuedForWeek.reduce((a,b)=>a+b.bet,0);
+  const queuedReturn  = queuedForWeek.reduce((a,b)=>a+b.returnAmt,0);
+  const projStaked    = existingWeek.totalStaked + queuedStaked + (isBonus ? 0 : betVal);
+  const projReturn    = existingWeek.totalReturn  + queuedReturn + ret;
+  const impliedResult = projStaked >= pool
+    ? (projReturn >= pool*2 ? 'Win' : projReturn >= pool ? 'Success' : 'Loss')
+    : 'Pending';
+
+  betQueue.push({ week, date, punter, bet: isBonus?0:betVal, returnAmt: ret,
+    result: impliedResult, isBonus, bonusStake: isBonus?betVal:0, _tempId: Date.now() });
+
+  showToast(`➕ Added to queue (${betQueue.length} bet${betQueue.length!==1?'s':''})`);
+  renderQueue();
+  // Reset just the bet-specific fields, keep week/punter/date
+  document.getElementById('entry-return').value = '';
+  document.getElementById('entry-bet').value = isBonus ? '0' : getPoolSize().toFixed(2);
+  document.getElementById('preview-card').style.display = 'none';
+  updateWeekStatus();
+}
+
+function renderQueue() {
+  const card = document.getElementById('queue-card');
+  const list = document.getElementById('queue-list');
+  const countEl = document.getElementById('queue-count');
+  if (!betQueue.length) { card.style.display='none'; return; }
+  card.style.display = 'block';
+  countEl.textContent = betQueue.length;
+
+  list.innerHTML = betQueue.map((b, i) => {
+    const net = b.isBonus ? b.returnAmt : b.returnAmt - b.bet;
+    const netStr = (net>=0?'+$':'-$') + Math.abs(net).toFixed(2);
+    const netCol = net>=0?'#6EE7B7':'#FCA5A5';
+    const typeIcon = b.isBonus ? '🎟️' : '💵';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(255,255,255,0.06);border-radius:8px;margin-bottom:6px;font-size:12px">
+      <span style="flex-shrink:0">${typeIcon}</span>
+      <span style="font-weight:700;color:white;flex:1">${b.punter}</span>
+      <span style="color:rgba(255,255,255,0.5)">Wk${b.week}</span>
+      <span style="color:rgba(255,255,255,0.5)">${b.isBonus?'bonus':'$'+b.bet.toFixed(0)}→$${b.returnAmt.toFixed(0)}</span>
+      <span style="font-weight:800;color:${netCol}">${netStr}</span>
+      <button onclick="removeFromQueue(${i})" style="background:rgba(220,38,38,0.2);border:none;color:#FCA5A5;border-radius:6px;padding:2px 7px;font-size:11px;cursor:pointer;flex-shrink:0">✕</button>
+    </div>`;
+  }).join('');
+
+  // Update save button text
+  const totalNet = betQueue.reduce((a,b) => a + (b.isBonus ? b.returnAmt : b.returnAmt-b.bet), 0);
+  const saveBtn = document.getElementById('save-queue-btn');
+  if (saveBtn) saveBtn.textContent = `💾 Save ${betQueue.length} Bet${betQueue.length!==1?'s':''} (net ${totalNet>=0?'+$':'-$'}${Math.abs(totalNet).toFixed(2)})`;
+}
+
+function removeFromQueue(idx) {
+  betQueue.splice(idx, 1);
+  renderQueue();
+  showToast('Removed from queue');
+}
+
+async function saveQueue() {
+  if (!betQueue.length) { showToast('⚠️ Queue is empty'); return; }
+  const btn = document.getElementById('save-queue-btn');
+  btn.disabled = true; btn.textContent = `⏳ Saving ${betQueue.length} bets…`;
+
+  try {
+    if (state.override) { state.override = null; await saveSettingsToSupabase(); }
+    for (const b of betQueue) {
+      const id = await saveBetToSupabase(b);
+      b.id = id;
+      state.bets.push({...b});
+    }
+    const count = betQueue.length;
+    betQueue = [];
+    renderQueue();
+    showToast(`✅ ${count} bet${count!==1?'s':''} saved!`);
+    populateEntryForm();
+  } catch(e) {
+    console.error(e);
+    showToast('❌ Save failed — check connection');
+  } finally {
+    btn.disabled = false;
+    renderQueue();
+  }
 }
 
 // ═══════════════ WEEK MANAGEMENT ═══════════════
@@ -1614,401 +1918,364 @@ function generateReport() {
   const lbRows=allStats.map((s,i)=>{const m=['🥇','🥈','🥉','4','5','6'];const net=s.net===0?'$0.00':(s.net>0?'+$':'-$')+Math.abs(s.net).toFixed(2);const roi=s.bets===0?'–':(s.roi>=0?'+':'')+s.roi.toFixed(1)+'%';const bp=Math.min(Math.abs(s.roi)/maxRoi*100,100),bc=s.roi>=0?'#16A34A':'#DC2626';const st=s.streak>1?` · ${s.streak}× ${s.streakType==='Win'?'🔥':'❄️'}`:'';return`<tr style="background:${i%2===0?'#F8FAFC':'#FFF'}"><td style="text-align:center;font-size:16px">${m[i]}</td><td style="font-weight:800">${s.name}${st}</td><td style="text-align:center">${s.wins}W / ${s.losses}L</td><td style="text-align:right;font-weight:800;color:${s.net>=0?'#16A34A':'#DC2626'}">${net}</td><td style="text-align:right;font-weight:800;color:${s.roi>=0?'#16A34A':'#DC2626'}">${roi}</td><td style="padding:0 8px 0 4px"><div style="background:#E2E8F0;border-radius:4px;height:10px;overflow:hidden"><div style="width:${bp}%;height:100%;background:${bc};border-radius:4px"></div></div></td></tr>`;}).join('');
   const ps=allStats.find(s=>s.name===nextPunter);const psStr=ps&&ps.bets>0?`${ps.wins}W / ${ps.losses}L · ${ps.roi>=0?'+':''}${ps.roi.toFixed(1)}% ROI`:'First bet coming up';
   const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Bus Bois Betting — Week ${reportWeek}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#F1F5F9;color:#1E293B}@media print{body{background:white}.no-print{display:none}@page{margin:10mm;size:A4}}.wrap{max-width:720px;margin:0 auto;padding:16px}.hdr{background:linear-gradient(135deg,#0A1628 0%,#163356 60%,#1B3A5C 100%);border-radius:16px;padding:22px 24px 18px;color:white;margin-bottom:14px;position:relative;overflow:hidden}.hdr::before{content:'🏇';position:absolute;right:16px;top:10px;font-size:64px;opacity:.08}.hdr-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}.rh-title{font-size:22px;font-weight:900;color:#D4A017}.rh-sub{font-size:12px;color:rgba(255,255,255,.5);margin-top:2px}.rh-wn{font-size:36px;font-weight:900;color:white;line-height:1;text-align:right}.rh-wl{font-size:10px;font-weight:700;color:rgba(212,160,23,.7);text-transform:uppercase;letter-spacing:1px}.rh-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.rh-stat{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 8px;text-align:center}.rh-sv{font-size:18px;font-weight:800;color:white;line-height:1}.rh-sl{font-size:9px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}.acct{background:linear-gradient(135deg,${account>=opening?'#14532D,#16A34A':'#7F1D1D,#DC2626'});border-radius:14px;padding:14px 18px;color:white;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}.ab-lbl{font-size:9px;font-weight:800;opacity:.6;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}.ab-bal{font-size:28px;font-weight:900;line-height:1}.ab-split{font-size:20px;font-weight:800;text-align:right}.ab-sl{font-size:9px;opacity:.6;text-transform:uppercase;letter-spacing:.5px}.ab-pnl{font-size:13px;font-weight:700;margin-top:3px;opacity:.85}.sec{background:white;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.06)}.sec-title{font-size:11px;font-weight:800;color:#2563A8;text-transform:uppercase;letter-spacing:1px;padding-bottom:8px;border-bottom:1px solid #E2E8F0;margin-bottom:12px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#F8FAFC;font-size:10px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:.5px;padding:7px 10px;text-align:left;border-bottom:2px solid #E2E8F0}td{padding:9px 10px;border-bottom:1px solid #F1F5F9;vertical-align:middle}tr:last-child td{border-bottom:none}.wk-res{text-align:center;padding:10px 0 4px}.wr-lbl{font-size:10px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}.wr-net{font-size:32px;font-weight:900;color:${weekNet>=0?'#16A34A':'#DC2626'}}.wr-sub{font-size:12px;color:#64748B;margin-top:2px}.nu{background:linear-gradient(135deg,#0F2040,#163356);border-radius:12px;padding:14px 18px;color:white;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.nu-lbl{font-size:10px;font-weight:800;color:rgba(212,160,23,.7);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}.nu-name{font-size:22px;font-weight:900;color:white}.nu-sub{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px}.footer{text-align:center;font-size:10px;color:#94A3B8;padding:8px 0 4px}.pbtn{display:block;width:100%;padding:14px;background:linear-gradient(135deg,#163356,#2563A8);color:white;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:14px;text-align:center}</style></head><body><div class="wrap"><button class="pbtn no-print" onclick="window.print()">🖨️ Save as PDF / Print</button><div class="hdr"><div class="hdr-top"><div><div class="rh-title">🏇 Bus Bois Betting</div><div class="rh-sub">2026 Season · Generated ${gen}</div></div><div><div class="rh-wl">Week</div><div class="rh-wn">${reportWeek}</div></div></div><div class="rh-stats"><div class="rh-stat"><div class="rh-sv">${gW}/${gL}</div><div class="rh-sl">Group W/L</div></div><div class="rh-stat"><div class="rh-sv">${gRoi}%</div><div class="rh-sl">Season ROI</div></div><div class="rh-stat"><div class="rh-sv">$${Math.abs(gNet).toFixed(0)}</div><div class="rh-sl">${gNet>=0?'Profit':'Loss'}</div></div><div class="rh-stat"><div class="rh-sv">${state.bets.length}</div><div class="rh-sl">Total Bets</div></div></div></div><div class="acct"><div><div class="ab-lbl">Account Balance</div><div class="ab-bal">$${account.toFixed(2)}</div></div><div><div class="ab-split">$${split.toFixed(2)}</div><div class="ab-sl">split per person</div><div class="ab-pnl">${pnl>=0?'+':'-'}$${Math.abs(pnl).toFixed(2)} each vs opening</div></div></div><div class="sec"><div class="sec-title">📅 Week ${reportWeek} — ${reportDate}</div><div class="wk-res"><div class="wr-lbl">Week Net Result</div><div class="wr-net">${weekNet>=0?'+':'-'}$${Math.abs(weekNet).toFixed(2)}</div><div class="wr-sub">${weekBets.length} bet${weekBets.length!==1?'s':''} · ${weekBets.filter(b=>b.result==='Win').length}W / ${weekBets.filter(b=>b.result==='Loss').length}L</div></div><table style="margin-top:12px"><thead><tr><th>Punter</th><th>Bet</th><th>Return</th><th>Net</th><th>ROI</th><th>Result</th></tr></thead><tbody>${weekRows}</tbody></table></div><div class="sec"><div class="sec-title">🏆 Season Leaderboard</div><table><thead><tr><th style="width:32px"></th><th>Punter</th><th style="text-align:center">W/L</th><th style="text-align:right">Net P&L</th><th style="text-align:right">ROI</th><th style="width:100px">Bar</th></tr></thead><tbody>${lbRows}</tbody></table></div><div class="nu"><div><div class="nu-lbl">Up Next — Week ${reportWeek+1}</div><div class="nu-name">${nextPunter}</div><div class="nu-sub">$${getPoolSize()} pool</div></div><div style="text-align:right;font-size:11px;color:rgba(255,255,255,.4)">${psStr}</div></div><div class="footer">Bus Bois Betting 2026 · Week ${reportWeek} · ${gen}</div></div></body></html>`;
-  const w=window.open('','_blank');w.document.write(html);w.document.close();
-}
 
+const w=window.open(’’,’_blank’);w.document.write(html);w.document.close();
+}
 
 // ═══════════════ DRAG & DROP ROTATION ORDER ═══════════════
 function renderDragList() {
-  const list = document.getElementById('drag-order-list');
-  if (!list) return;
-  // Enable touch-action:none only when admin tab is showing so it doesn't block scroll elsewhere
-  document.querySelectorAll('.drag-item').forEach(el => el.style.touchAction = 'none');
-  const punters = getPunters();
-  list.innerHTML = punters.map((p, i) => `
-    <li class="drag-item" draggable="true" data-name="${p}"
-        ondragstart="onDragStart(event)"
-        ondragover="onDragOver(event)"
-        ondrop="onDrop(event)"
-        ondragend="onDragEnd(event)"
-        ontouchstart="onTouchStart(event)"
-        ontouchmove="onTouchMove(event)"
-        ontouchend="onTouchEnd(event)">
-      <span class="drag-handle">⠿</span>
-      <span class="drag-num">${i + 1}</span>
-      <span class="drag-name">${p}</span>
-      <span class="drag-medal">${MEDALS[i] || ''}</span>
-    </li>`).join('');
+const list = document.getElementById(‘drag-order-list’);
+if (!list) return;
+// Enable touch-action:none only when admin tab is showing so it doesn’t block scroll elsewhere
+document.querySelectorAll(’.drag-item’).forEach(el => el.style.touchAction = ‘none’);
+const punters = getPunters();
+list.innerHTML = punters.map((p, i) => ` <li class="drag-item" draggable="true" data-name="${p}" ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)" ontouchstart="onTouchStart(event)" ontouchmove="onTouchMove(event)" ontouchend="onTouchEnd(event)"> <span class="drag-handle">⠿</span> <span class="drag-num">${i + 1}</span> <span class="drag-name">${p}</span> <span class="drag-medal">${MEDALS[i] || ''}</span> </li>`).join(’’);
 }
 
 let dragSrc = null;
 
 function onDragStart(e) {
-  dragSrc = e.currentTarget;
-  dragSrc.classList.add('dragging');
-  e.dataTransfer.effectAllowed = 'move';
+dragSrc = e.currentTarget;
+dragSrc.classList.add(‘dragging’);
+e.dataTransfer.effectAllowed = ‘move’;
 }
 
 function onDragOver(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-  document.querySelectorAll('.drag-item').forEach(el => el.classList.remove('drag-over'));
-  if (e.currentTarget !== dragSrc) e.currentTarget.classList.add('drag-over');
+e.preventDefault();
+e.dataTransfer.dropEffect = ‘move’;
+document.querySelectorAll(’.drag-item’).forEach(el => el.classList.remove(‘drag-over’));
+if (e.currentTarget !== dragSrc) e.currentTarget.classList.add(‘drag-over’);
 }
 
 function onDrop(e) {
-  e.preventDefault();
-  const target = e.currentTarget;
-  if (!dragSrc || dragSrc === target) return;
-  const list = document.getElementById('drag-order-list');
-  const items = [...list.querySelectorAll('.drag-item')];
-  const srcIdx = items.indexOf(dragSrc);
-  const tgtIdx = items.indexOf(target);
-  if (srcIdx < tgtIdx) list.insertBefore(dragSrc, target.nextSibling);
-  else list.insertBefore(dragSrc, target);
-  refreshDragNumbers();
+e.preventDefault();
+const target = e.currentTarget;
+if (!dragSrc || dragSrc === target) return;
+const list = document.getElementById(‘drag-order-list’);
+const items = […list.querySelectorAll(’.drag-item’)];
+const srcIdx = items.indexOf(dragSrc);
+const tgtIdx = items.indexOf(target);
+if (srcIdx < tgtIdx) list.insertBefore(dragSrc, target.nextSibling);
+else list.insertBefore(dragSrc, target);
+refreshDragNumbers();
 }
 
 function onDragEnd(e) {
-  document.querySelectorAll('.drag-item').forEach(el => {
-    el.classList.remove('dragging', 'drag-over');
-  });
-  dragSrc = null;
+document.querySelectorAll(’.drag-item’).forEach(el => {
+el.classList.remove(‘dragging’, ‘drag-over’);
+});
+dragSrc = null;
 }
 
 // ── Touch support for mobile ──────────────────────────────
 let touchDragEl = null, touchClone = null, touchOffsetX = 0, touchOffsetY = 0;
 
 function onTouchStart(e) {
-  touchDragEl = e.currentTarget;
-  touchDragEl.classList.add('dragging');
-  const touch = e.touches[0];
-  const rect = touchDragEl.getBoundingClientRect();
-  touchOffsetX = touch.clientX - rect.left;
-  touchOffsetY = touch.clientY - rect.top;
+touchDragEl = e.currentTarget;
+touchDragEl.classList.add(‘dragging’);
+const touch = e.touches[0];
+const rect = touchDragEl.getBoundingClientRect();
+touchOffsetX = touch.clientX - rect.left;
+touchOffsetY = touch.clientY - rect.top;
 
-  // Create floating clone
-  touchClone = touchDragEl.cloneNode(true);
-  touchClone.style.cssText = `position:fixed;z-index:9999;width:${rect.width}px;pointer-events:none;opacity:0.9;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.25);background:white;`;
-  touchClone.style.left = (touch.clientX - touchOffsetX) + 'px';
-  touchClone.style.top  = (touch.clientY - touchOffsetY) + 'px';
-  document.body.appendChild(touchClone);
+// Create floating clone
+touchClone = touchDragEl.cloneNode(true);
+touchClone.style.cssText = `position:fixed;z-index:9999;width:${rect.width}px;pointer-events:none;opacity:0.9;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.25);background:white;`;
+touchClone.style.left = (touch.clientX - touchOffsetX) + ‘px’;
+touchClone.style.top  = (touch.clientY - touchOffsetY) + ‘px’;
+document.body.appendChild(touchClone);
 }
 
 function onTouchMove(e) {
-  e.preventDefault();
-  const touch = e.touches[0];
-  if (touchClone) {
-    touchClone.style.left = (touch.clientX - touchOffsetX) + 'px';
-    touchClone.style.top  = (touch.clientY - touchOffsetY) + 'px';
-  }
-  // Highlight item under finger
-  document.querySelectorAll('.drag-item').forEach(el => el.classList.remove('drag-over'));
-  const el = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.drag-item');
-  if (el && el !== touchDragEl) el.classList.add('drag-over');
+e.preventDefault();
+const touch = e.touches[0];
+if (touchClone) {
+touchClone.style.left = (touch.clientX - touchOffsetX) + ‘px’;
+touchClone.style.top  = (touch.clientY - touchOffsetY) + ‘px’;
+}
+// Highlight item under finger
+document.querySelectorAll(’.drag-item’).forEach(el => el.classList.remove(‘drag-over’));
+const el = document.elementFromPoint(touch.clientX, touch.clientY)?.closest(’.drag-item’);
+if (el && el !== touchDragEl) el.classList.add(‘drag-over’);
 }
 
 function onTouchEnd(e) {
-  const touch = e.changedTouches[0];
-  if (touchClone) { touchClone.remove(); touchClone = null; }
-  document.querySelectorAll('.drag-item').forEach(el => el.classList.remove('dragging', 'drag-over'));
+const touch = e.changedTouches[0];
+if (touchClone) { touchClone.remove(); touchClone = null; }
+document.querySelectorAll(’.drag-item’).forEach(el => el.classList.remove(‘dragging’, ‘drag-over’));
 
-  const target = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.drag-item');
-  if (target && target !== touchDragEl) {
-    const list = document.getElementById('drag-order-list');
-    const items = [...list.querySelectorAll('.drag-item')];
-    const srcIdx = items.indexOf(touchDragEl);
-    const tgtIdx = items.indexOf(target);
-    if (srcIdx < tgtIdx) list.insertBefore(touchDragEl, target.nextSibling);
-    else list.insertBefore(touchDragEl, target);
-    refreshDragNumbers();
-  }
-  touchDragEl = null;
+const target = document.elementFromPoint(touch.clientX, touch.clientY)?.closest(’.drag-item’);
+if (target && target !== touchDragEl) {
+const list = document.getElementById(‘drag-order-list’);
+const items = […list.querySelectorAll(’.drag-item’)];
+const srcIdx = items.indexOf(touchDragEl);
+const tgtIdx = items.indexOf(target);
+if (srcIdx < tgtIdx) list.insertBefore(touchDragEl, target.nextSibling);
+else list.insertBefore(touchDragEl, target);
+refreshDragNumbers();
+}
+touchDragEl = null;
 }
 
 function refreshDragNumbers() {
-  document.querySelectorAll('#drag-order-list .drag-item').forEach((el, i) => {
-    el.querySelector('.drag-num').textContent = i + 1;
-    el.querySelector('.drag-medal').textContent = MEDALS[i] || '';
-  });
+document.querySelectorAll(’#drag-order-list .drag-item’).forEach((el, i) => {
+el.querySelector(’.drag-num’).textContent = i + 1;
+el.querySelector(’.drag-medal’).textContent = MEDALS[i] || ‘’;
+});
 }
 
 async function savePunterOrder() {
-  const items = document.querySelectorAll('#drag-order-list .drag-item');
-  const newOrder = [...items].map(el => el.dataset.name);
-  state.punterOrder = newOrder;
-  state.numPunters = newOrder.length;
-  try {
-    await saveSettingsToSupabase();
-    showToast('✅ Betting order saved!');
-    renderAdmin();
-    renderHome();
-  } catch(e) {
-    showToast('❌ Failed to save order');
-  }
+const items = document.querySelectorAll(’#drag-order-list .drag-item’);
+const newOrder = […items].map(el => el.dataset.name);
+state.punterOrder = newOrder;
+state.numPunters = newOrder.length;
+try {
+await saveSettingsToSupabase();
+showToast(‘✅ Betting order saved!’);
+renderAdmin();
+renderHome();
+} catch(e) {
+showToast(‘❌ Failed to save order’);
 }
-
-
+}
 
 // ═══════════════ MANAGE PUNTERS ═══════════════
 function getAvatar(name, size=36) {
-  const av = state.punterAvatars?.[name];
-  if (av) return `<img class="mp-avatar" src="${av}" style="width:${size}px;height:${size}px" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="mp-avatar-ini" style="width:${size}px;height:${size}px;display:none">${INI(name)}</div>`;
-  return `<div class="mp-avatar-ini" style="width:${size}px;height:${size}px">${INI(name)}</div>`;
+const av = state.punterAvatars?.[name];
+if (av) return `<img class="mp-avatar" src="${av}" style="width:${size}px;height:${size}px" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="mp-avatar-ini" style="width:${size}px;height:${size}px;display:none">${INI(name)}</div>`;
+return `<div class="mp-avatar-ini" style="width:${size}px;height:${size}px">${INI(name)}</div>`;
 }
 
 function renderManagePunters() {
-  const el = document.getElementById('manage-punters-list');
-  if (!el) return;
-  el.innerHTML = getPunters().map((p, i) => {
-    const av = state.punterAvatars?.[p];
-    return `<div class="mp-row">
-      <div class="mp-avatar-wrap" onclick="document.getElementById('av-upload-${i}').click()" title="Tap to upload photo">
-        ${av
-          ? `<img class="mp-avatar" src="${av}" onerror="this.style.display='none'">`
-          : `<div class="mp-avatar-ini">${INI(p)}</div>`}
-        <div class="mp-avatar-edit">📷</div>
-        <input type="file" id="av-upload-${i}" accept="image/*" style="display:none" onchange="handleAvatarUpload(event,'${p}',${i})">
-      </div>
-      <input class="mp-name-input" id="mp-name-${i}" value="${p}" placeholder="Name" maxlength="20">
-      ${av ? `<button onclick="removeAvatar('${p}')" style="background:var(--red-lt);color:var(--red);border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0">✕</button>` : ''}
-    </div>`;
-  }).join('');
+const el = document.getElementById(‘manage-punters-list’);
+if (!el) return;
+el.innerHTML = getPunters().map((p, i) => {
+const av = state.punterAvatars?.[p];
+return `<div class="mp-row"> <div class="mp-avatar-wrap" onclick="document.getElementById('av-upload-${i}').click()" title="Tap to upload photo"> ${av ? `<img class="mp-avatar" src="${av}" onerror="this.style.display='none'">`:`<div class="mp-avatar-ini">${INI(p)}</div>`} <div class="mp-avatar-edit">📷</div> <input type="file" id="av-upload-${i}" accept="image/*" style="display:none" onchange="handleAvatarUpload(event,'${p}',${i})"> </div> <input class="mp-name-input" id="mp-name-${i}" value="${p}" placeholder="Name" maxlength="20"> ${av ? `<button onclick="removeAvatar('${p}')" style="background:var(--red-lt);color:var(--red);border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0">✕</button>` : ''} </div>`;
+}).join(’’);
 }
 
 function handleAvatarUpload(event, punterName, idx) {
-  const file = event.target.files[0];
-  if (!file) return;
-  if (file.size > 500000) { showToast('⚠️ Image too large — max 500KB'); return; }
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    // Resize to max 120px for storage efficiency
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const max = 120;
-      const ratio = Math.min(max/img.width, max/img.height);
-      canvas.width = img.width * ratio;
-      canvas.height = img.height * ratio;
-      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      const data = canvas.toDataURL('image/jpeg', 0.8);
-      if (!state.punterAvatars) state.punterAvatars = {};
-      state.punterAvatars[punterName] = data;
-      renderManagePunters();
-      showToast(`📷 Avatar set for ${punterName} — tap Save`);
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+const file = event.target.files[0];
+if (!file) return;
+if (file.size > 500000) { showToast(‘⚠️ Image too large — max 500KB’); return; }
+const reader = new FileReader();
+reader.onload = (e) => {
+// Resize to max 120px for storage efficiency
+const img = new Image();
+img.onload = () => {
+const canvas = document.createElement(‘canvas’);
+const max = 120;
+const ratio = Math.min(max/img.width, max/img.height);
+canvas.width = img.width * ratio;
+canvas.height = img.height * ratio;
+canvas.getContext(‘2d’).drawImage(img, 0, 0, canvas.width, canvas.height);
+const data = canvas.toDataURL(‘image/jpeg’, 0.8);
+if (!state.punterAvatars) state.punterAvatars = {};
+state.punterAvatars[punterName] = data;
+renderManagePunters();
+showToast(`📷 Avatar set for ${punterName} — tap Save`);
+};
+img.src = e.target.result;
+};
+reader.readAsDataURL(file);
 }
 
 function addPunter() {
-  const newName = 'New Punter';
-  state.punterOrder.push(newName);
-  state.numPunters = state.punterOrder.length;
-  renderWeekMgmtStatus();
-  renderManagePunters();
-  renderDragList();
-  // Focus the new name input
-  const lastIdx = state.punterOrder.length - 1;
-  setTimeout(() => {
-    const input = document.getElementById(`mp-name-${lastIdx}`);
-    if (input) { input.focus(); input.select(); }
-  }, 50);
-  showToast('✅ Punter added — enter their name and save');
+const newName = ‘New Punter’;
+state.punterOrder.push(newName);
+state.numPunters = state.punterOrder.length;
+renderWeekMgmtStatus();
+initBuyInCard();
+renderManagePunters();
+renderDragList();
+// Focus the new name input
+const lastIdx = state.punterOrder.length - 1;
+setTimeout(() => {
+const input = document.getElementById(`mp-name-${lastIdx}`);
+if (input) { input.focus(); input.select(); }
+}, 50);
+showToast(‘✅ Punter added — enter their name and save’);
 }
 
 function removeAvatar(name) {
-  if (state.punterAvatars) delete state.punterAvatars[name];
-  renderManagePunters();
+if (state.punterAvatars) delete state.punterAvatars[name];
+renderManagePunters();
 }
 
 async function savePunterDetails() {
-  const newOrder = [];
-  const newAvatars = { ...(state.punterAvatars || {}) };
-  const oldOrder = [...getPunters()];
+const newOrder = [];
+const newAvatars = { …(state.punterAvatars || {}) };
+const oldOrder = […getPunters()];
 
-  getPunters().forEach((oldName, i) => {
-    const inputEl = document.getElementById(`mp-name-${i}`);
-    const newName = inputEl?.value.trim() || oldName;
-    newOrder.push(newName);
-    // Migrate avatar key if name changed
-    if (newName !== oldName && newAvatars[oldName]) {
-      newAvatars[newName] = newAvatars[oldName];
-      delete newAvatars[oldName];
-    }
-    // Migrate bets in local state if name changed
-    if (newName !== oldName) {
-      state.bets = state.bets.map(b => b.punter === oldName ? {...b, punter: newName} : b);
-      if (state.whoAmI === oldName) {
-        state.whoAmI = newName;
-        localStorage.setItem('bbb_whoami', newName);
-      }
-    }
-  });
+getPunters().forEach((oldName, i) => {
+const inputEl = document.getElementById(`mp-name-${i}`);
+const newName = inputEl?.value.trim() || oldName;
+newOrder.push(newName);
+// Migrate avatar key if name changed
+if (newName !== oldName && newAvatars[oldName]) {
+newAvatars[newName] = newAvatars[oldName];
+delete newAvatars[oldName];
+}
+// Migrate bets in local state if name changed
+if (newName !== oldName) {
+state.bets = state.bets.map(b => b.punter === oldName ? {…b, punter: newName} : b);
+if (state.whoAmI === oldName) {
+state.whoAmI = newName;
+localStorage.setItem(‘bbb_whoami’, newName);
+}
+}
+});
 
-  state.punterOrder = newOrder;
-  state.punterAvatars = newAvatars;
-  state.numPunters = newOrder.length;
+state.punterOrder = newOrder;
+state.punterAvatars = newAvatars;
+state.numPunters = newOrder.length;
 
-  try {
-    await saveSettingsToSupabase();
-    showToast('✅ Punter details saved!');
-    renderAdmin();
-    renderHome();
-  } catch(e) {
-    console.error(e);
-    showToast('❌ Save failed');
-  }
+try {
+await saveSettingsToSupabase();
+showToast(‘✅ Punter details saved!’);
+renderAdmin();
+renderHome();
+} catch(e) {
+console.error(e);
+showToast(‘❌ Save failed’);
+}
 }
 
 // ═══════════════ WHO AM I ═══════════════
 function showWhoAmI() {
-  const grid = document.getElementById('wai-grid');
-  grid.innerHTML = getPunters().map(p => {
-    const av = state.punterAvatars?.[p];
-    return `<div class="wai-btn ${state.whoAmI===p?'selected':''}" onclick="selectWAI('${p}')" id="wai-${p}">
-      ${av ? `<img src="${av}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;margin-bottom:4px" onerror="this.style.display='none'">` : `<div class="wai-ini">${INI(p)}</div>`}
-      <div class="wai-name">${p}</div>
-    </div>`;
-  }).join('');
-  document.getElementById('wai-overlay').classList.add('open');
+const grid = document.getElementById(‘wai-grid’);
+grid.innerHTML = getPunters().map(p => {
+const av = state.punterAvatars?.[p];
+return `<div class="wai-btn ${state.whoAmI===p?'selected':''}" onclick="selectWAI('${p}')" id="wai-${p}"> ${av ? `<img src="${av}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;margin-bottom:4px" onerror="this.style.display='none'">`:`<div class="wai-ini">${INI(p)}</div>`} <div class="wai-name">${p}</div> </div>`;
+}).join(’’);
+document.getElementById(‘wai-overlay’).classList.add(‘open’);
 }
 
 function selectWAI(name) {
-  document.querySelectorAll('.wai-btn').forEach(b => b.classList.remove('selected'));
-  document.getElementById('wai-'+name)?.classList.add('selected');
-  state.whoAmI = name;
+document.querySelectorAll(’.wai-btn’).forEach(b => b.classList.remove(‘selected’));
+document.getElementById(‘wai-’+name)?.classList.add(‘selected’);
+state.whoAmI = name;
 }
 
 function saveWhoAmI() {
-  if (!state.whoAmI) { showToast('⚠️ Pick your name first'); return; }
-  localStorage.setItem('bbb_whoami', state.whoAmI);
-  document.getElementById('wai-overlay').classList.remove('open');
-  showToast(`👋 Welcome, ${state.whoAmI}!`);
-  renderHome();
+if (!state.whoAmI) { showToast(‘⚠️ Pick your name first’); return; }
+localStorage.setItem(‘bbb_whoami’, state.whoAmI);
+document.getElementById(‘wai-overlay’).classList.remove(‘open’);
+showToast(`👋 Welcome, ${state.whoAmI}!`);
+renderHome();
 }
 
 function skipWhoAmI() {
-  document.getElementById('wai-overlay').classList.remove('open');
+document.getElementById(‘wai-overlay’).classList.remove(‘open’);
 }
 
 // ═══════════════ SPARKLINE ═══════════════
 function renderSparkline() {
-  const svg = document.getElementById('sparkline-svg');
-  const history = getBalanceHistory();
-  const rangeEl = document.getElementById('sparkline-range');
-  if (!svg || history.length < 2) {
-    if (svg) svg.innerHTML = '<text x="150" y="24" text-anchor="middle" fill="#94A3B8" font-size="11" font-family="Arial">Bet history will appear here</text>';
-    if (rangeEl) rangeEl.textContent = '';
-    return;
-  }
+const svg = document.getElementById(‘sparkline-svg’);
+const history = getBalanceHistory();
+const rangeEl = document.getElementById(‘sparkline-range’);
+if (!svg || history.length < 2) {
+if (svg) svg.innerHTML = ‘<text x="150" y="24" text-anchor="middle" fill="#94A3B8" font-size="11" font-family="Arial">Bet history will appear here</text>’;
+if (rangeEl) rangeEl.textContent = ‘’;
+return;
+}
 
-  const W = 300, H = 44, PAD = 4;
-  const min = Math.min(...history);
-  const max = Math.max(...history);
-  const range = max - min || 1;
-  const pts = history.map((v, i) => {
-    const x = PAD + (i / (history.length - 1)) * (W - PAD*2);
-    const y = H - PAD - ((v - min) / range) * (H - PAD*2);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
+const W = 300, H = 44, PAD = 4;
+const min = Math.min(…history);
+const max = Math.max(…history);
+const range = max - min || 1;
+const pts = history.map((v, i) => {
+const x = PAD + (i / (history.length - 1)) * (W - PAD*2);
+const y = H - PAD - ((v - min) / range) * (H - PAD*2);
+return `${x.toFixed(1)},${y.toFixed(1)}`;
+});
 
-  const last = history[history.length-1];
-  const first = history[0];
-  const isUp = last >= first;
-  const lineCol = isUp ? '#16A34A' : '#DC2626';
-  const fillCol = isUp ? 'rgba(22,163,74,0.12)' : 'rgba(220,38,38,0.12)';
+const last = history[history.length-1];
+const first = history[0];
+const isUp = last >= first;
+const lineCol = isUp ? ‘#16A34A’ : ‘#DC2626’;
+const fillCol = isUp ? ‘rgba(22,163,74,0.12)’ : ‘rgba(220,38,38,0.12)’;
 
-  // Fill area
-  const firstPt = pts[0].split(',');
-  const lastPt  = pts[pts.length-1].split(',');
-  const areaPath = `M${firstPt[0]},${H} L${pts.join(' L')} L${lastPt[0]},${H} Z`;
+// Fill area
+const firstPt = pts[0].split(’,’);
+const lastPt  = pts[pts.length-1].split(’,’);
+const areaPath = `M${firstPt[0]},${H} L${pts.join(' L')} L${lastPt[0]},${H} Z`;
 
-  // Top-up markers (vertical lines) — approximate positions
-  const topups = state.topups || [];
-  const totalEvents = history.length - 1;
-  const topupMarkers = topups.map((t, ti) => {
-    const approxIdx = Math.min(Math.round((ti + 1) * totalEvents / (topups.length + 1)), totalEvents);
-    const x = PAD + (approxIdx / (history.length-1)) * (W - PAD*2);
-    return `<line x1="${x.toFixed(1)}" y1="2" x2="${x.toFixed(1)}" y2="${H-2}" stroke="#D4A017" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.7"/>`;
-  }).join('');
+// Top-up markers (vertical lines) — approximate positions
+const topups = state.topups || [];
+const totalEvents = history.length - 1;
+const topupMarkers = topups.map((t, ti) => {
+const approxIdx = Math.min(Math.round((ti + 1) * totalEvents / (topups.length + 1)), totalEvents);
+const x = PAD + (approxIdx / (history.length-1)) * (W - PAD*2);
+return `<line x1="${x.toFixed(1)}" y1="2" x2="${x.toFixed(1)}" y2="${H-2}" stroke="#D4A017" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.7"/>`;
+}).join(’’);
 
-  svg.innerHTML = `
-    <path d="${areaPath}" fill="${fillCol}"/>
-    <polyline points="${pts.join(' ')}" fill="none" stroke="${lineCol}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    ${topupMarkers}
-    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="3" fill="${lineCol}"/>`;
+svg.innerHTML = ` <path d="${areaPath}" fill="${fillCol}"/> <polyline points="${pts.join(' ')}" fill="none" stroke="${lineCol}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> ${topupMarkers} <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="3" fill="${lineCol}"/>`;
 
-  const diff = last - first;
-  rangeEl.textContent = `${isUp?'+':'-'}$${Math.abs(diff).toFixed(0)} overall`;
-  rangeEl.style.color = isUp ? 'var(--green)' : 'var(--red)';
+const diff = last - first;
+rangeEl.textContent = `${isUp?'+':'-'}$${Math.abs(diff).toFixed(0)} overall`;
+rangeEl.style.color = isUp ? ‘var(–green)’ : ‘var(–red)’;
 }
 
 // ═══════════════ TOP-UPS ═══════════════
 function initTopUpCard() {
-  document.getElementById('topup-date').value = new Date().toISOString().split('T')[0];
-  updateTopUpPreview();
+document.getElementById(‘topup-date’).value = new Date().toISOString().split(‘T’)[0];
+updateTopUpPreview();
 }
 
 function updateTopUpPreview() {
-  const amt = parseFloat(document.getElementById('topup-amount')?.value) || 0;
-  const n = state.numPunters || 6;
-  const total = amt * n;
-  const el = document.getElementById('topup-total-preview');
-  if (el) el.textContent = `$${total.toFixed(2)} ($${amt.toFixed(0)} × ${n} punters)`;
+const amt = parseFloat(document.getElementById(‘topup-amount’)?.value) || 0;
+const n = state.numPunters || 6;
+const total = amt * n;
+const el = document.getElementById(‘topup-total-preview’);
+if (el) el.textContent = `$${total.toFixed(2)} ($${amt.toFixed(0)} × ${n} punters)`;
 }
 
 async function processTopUp() {
-  const amt = parseFloat(document.getElementById('topup-amount').value);
-  const dateRaw = document.getElementById('topup-date').value;
-  const note = document.getElementById('topup-note').value.trim();
-  if (!amt || isNaN(amt) || amt <= 0) { showToast('⚠️ Enter a top-up amount'); return; }
-  const n = state.numPunters;
-  const total = amt * n;
-  const dateStr = dateRaw
-    ? new Date(dateRaw).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'})
-    : new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'});
+const amt = parseFloat(document.getElementById(‘topup-amount’).value);
+const dateRaw = document.getElementById(‘topup-date’).value;
+const note = document.getElementById(‘topup-note’).value.trim();
+if (!amt || isNaN(amt) || amt <= 0) { showToast(‘⚠️ Enter a top-up amount’); return; }
+const n = state.numPunters;
+const total = amt * n;
+const dateStr = dateRaw
+? new Date(dateRaw).toLocaleDateString(‘en-AU’,{day:‘2-digit’,month:‘short’,year:‘2-digit’})
+: new Date().toLocaleDateString(‘en-AU’,{day:‘2-digit’,month:‘short’,year:‘2-digit’});
 
-  if (!confirm(`Add $${total.toFixed(2)} to the account?\n$${amt.toFixed(2)} × ${n} punters = $${total.toFixed(2)}\n\nThis will update everyone's balance immediately.`)) return;
+if (!confirm(`Add $${total.toFixed(2)} to the account?\n$${amt.toFixed(2)} × ${n} punters = $${total.toFixed(2)}\n\nThis will update everyone's balance immediately.`)) return;
 
-  const btn = document.getElementById('topup-btn');
-  btn.disabled = true; btn.textContent = '⏳ Processing…';
-  try {
-    setSyncStatus('syncing', 'Processing top-up…');
-    const { error } = await supa.from('topups').insert({
-      amount_per_person: amt,
-      num_punters: n,
-      total_added: total,
-      note: note || null
-    });
-    if (error) throw error;
-    showToast(`✅ +$${total.toFixed(2)} added to pool!`);
-    document.getElementById('topup-note').value = '';
-    await loadFromSupabase();
-    renderAdmin();
-    renderHome();
-  } catch(e) {
-    console.error(e);
-    showToast('❌ Top-up failed — check connection');
-  } finally {
-    btn.disabled = false; btn.textContent = '💰 Process Top-Up';
-  }
+const btn = document.getElementById(‘topup-btn’);
+btn.disabled = true; btn.textContent = ‘⏳ Processing…’;
+try {
+setSyncStatus(‘syncing’, ‘Processing top-up…’);
+const { error } = await supa.from(‘topups’).insert({
+amount_per_person: amt,
+num_punters: n,
+total_added: total,
+note: note || null
+});
+if (error) throw error;
+showToast(`✅ +$${total.toFixed(2)} added to pool!`);
+document.getElementById(‘topup-note’).value = ‘’;
+await loadFromSupabase();
+renderAdmin();
+renderHome();
+} catch(e) {
+console.error(e);
+showToast(‘❌ Top-up failed — check connection’);
+} finally {
+btn.disabled = false; btn.textContent = ‘💰 Process Top-Up’;
+}
 }
 
 function renderTopUpHistory() {
-  const el = document.getElementById('topup-history');
-  if (!el) return;
-  const topups = [...(state.topups||[])].reverse();
-  if (!topups.length) { el.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:6px 0">No top-ups yet</div>'; return; }
-  el.innerHTML = '<div style="font-size:10px;font-weight:800;color:var(--steel);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Top-Up History</div>' +
-    topups.map(t => `
-    <div class="topup-history-row">
-      <span class="topup-badge">💰 TOP-UP</span>
-      <span style="flex:1;font-weight:700">+$${t.totalAdded.toFixed(2)}</span>
-      <span style="color:var(--muted)">$${t.amountEach.toFixed(0)} × ${t.numPunters}</span>
-      <span style="color:var(--muted);font-size:10px;margin-left:6px">${t.date}</span>
-    </div>${t.note ? `<div style="font-size:10px;color:var(--muted);padding:2px 0 6px 0">${t.note}</div>` : ''}`).join('');
+const el = document.getElementById(‘topup-history’);
+if (!el) return;
+const topups = […(state.topups||[])].reverse();
+if (!topups.length) { el.innerHTML = ‘<div style="font-size:11px;color:var(--muted);padding:6px 0">No top-ups yet</div>’; return; }
+el.innerHTML = ‘<div style="font-size:10px;font-weight:800;color:var(--steel);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Top-Up History</div>’ +
+topups.map(t => `<div class="topup-history-row"> <span class="topup-badge">💰 TOP-UP</span> <span style="flex:1;font-weight:700">+$${t.totalAdded.toFixed(2)}</span> <span style="color:var(--muted)">$${t.amountEach.toFixed(0)} × ${t.numPunters}</span> <span style="color:var(--muted);font-size:10px;margin-left:6px">${t.date}</span> </div>${t.note ?`<div style="font-size:10px;color:var(--muted);padding:2px 0 6px 0">${t.note}</div>` : ''}`).join(’’);
 }
 
 // ═══════════════ PERSONAL BEST ON LEADERBOARD ═══════════════
@@ -2016,35 +2283,36 @@ function renderTopUpHistory() {
 
 // ═══════════════ TOAST ═══════════════
 function showToast(msg) {
-  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
+const t=document.getElementById(‘toast’);t.textContent=msg;t.classList.add(‘show’);
+setTimeout(()=>t.classList.remove(‘show’),2500);
 }
 
 // ═══════════════ INIT ═══════════════
 async function init() {
-  const overlay=document.getElementById('loading-overlay');
-  document.getElementById('loading-msg').textContent='Connecting to live database…';
-  const ok = await loadFromSupabase();
-  if (ok) {
-    overlay.classList.add('hidden');
-    setTimeout(()=>overlay.style.display='none',400);
-    // Update header sub immediately in case renderHome has issues
-    const hdrSub = document.getElementById('hdr-sub');
-    if (hdrSub) hdrSub.textContent = `2026 Season · ${state.bets.length} bet${state.bets.length!==1?'s':''} · Live`;
-    renderHome();
-    subscribeToRealtime();
-    // Show who-am-I picker on first visit
-    if (!state.whoAmI) setTimeout(showWhoAmI, 600);
-    // Live preview for top-up amount
-    document.getElementById('topup-amount')?.addEventListener('input', updateTopUpPreview);
-  } else {
-    document.getElementById('loading-msg').textContent='Connection failed. Tap to retry.';
-    overlay.onclick=()=>init();
-    document.querySelector('.loading-spinner').style.display='none';
-  }
+const overlay=document.getElementById(‘loading-overlay’);
+document.getElementById(‘loading-msg’).textContent=‘Connecting to live database…’;
+const ok = await loadFromSupabase();
+if (ok) {
+overlay.classList.add(‘hidden’);
+setTimeout(()=>overlay.style.display=‘none’,400);
+// Update header sub immediately in case renderHome has issues
+const hdrSub = document.getElementById(‘hdr-sub’);
+if (hdrSub) hdrSub.textContent = `2026 Season · ${state.bets.length} bet${state.bets.length!==1?'s':''} · Live`;
+renderHome();
+subscribeToRealtime();
+// Show who-am-I picker on first visit
+if (!state.whoAmI) setTimeout(showWhoAmI, 600);
+// Live preview for top-up amount
+document.getElementById(‘topup-amount’)?.addEventListener(‘input’, updateTopUpPreview);
+} else {
+document.getElementById(‘loading-msg’).textContent=‘Connection failed. Tap to retry.’;
+overlay.onclick=()=>init();
+document.querySelector(’.loading-spinner’).style.display=‘none’;
+}
 }
 
 init();
 </script>
+
 </body>
 </html>
