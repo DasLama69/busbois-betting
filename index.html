@@ -1153,7 +1153,7 @@ function getWeekSummary(punter, week) {
 function getImplicitResult(punter, week) {
   const s = getWeekSummary(punter, week);
   if (!s.isComplete) return 'Pending';
-  if (s.goesAgain)   return 'Win';      // goes again next week
+  if (s.isSuccess || s.goesAgain) return 'Win';  // any profitable week = Win
   return 'Loss';
 }
 
@@ -1592,12 +1592,14 @@ function updateWeekStatus() {
   if (!el) return;
   const remaining = Math.max(0, pool - s.totalStaked);
   const pct = Math.min(s.totalStaked / pool * 100, 100);
-  const barCol = s.isComplete ? (s.goesAgain ? 'var(--green)' : 'var(--red)') : 'var(--steel)';
+  const barCol = s.isComplete ? (s.isSuccess ? 'var(--green)' : 'var(--red)') : 'var(--steel)';
   let statusMsg = '';
   if (!s.isComplete) {
     statusMsg = `<span style="color:var(--steel);font-weight:700">$${remaining.toFixed(0)} remaining</span> to complete week`;
   } else if (s.goesAgain) {
     statusMsg = `<span style="color:var(--green);font-weight:700">🔥 Goes again next week!</span> (return ≥ $${(pool*2).toFixed(0)})`;
+  } else if (s.isSuccess) {
+    statusMsg = `<span style="color:var(--green);font-weight:700">✅ Win</span> — rotation moves on`;
   } else {
     statusMsg = `<span style="color:var(--red);font-weight:700">❌ Week complete</span> — rotation moves on`;
   }
@@ -1634,13 +1636,17 @@ function updatePreview() {
   const projComplete = projStaked >= pool;
   const projGoesAgain = projReturn >= pool * 2;
   let nextMsg = '';
+  const projWin = projReturn >= pool;
   if (!projComplete) {
     nextMsg = `📊 Week still in progress — $${(pool - projStaked).toFixed(0)} more to spend`;
   } else if (projGoesAgain) {
     nextMsg = `🔥 Goes again next week! (total return $${projReturn.toFixed(0)} ≥ $${(pool*2).toFixed(0)})`;
+  } else if (projWin) {
+    const nextIdx = (getPunters().indexOf(punter)+1) % getPunters().length;
+    nextMsg = `✅ Win — rotation moves to ${getPunters()[nextIdx]}`;
   } else {
     const nextIdx = (getPunters().indexOf(punter)+1) % getPunters().length;
-    nextMsg = `🔄 Week complete — rotation moves to ${getPunters()[nextIdx]}`;
+    nextMsg = `❌ Week complete — rotation moves to ${getPunters()[nextIdx]}`;
   }
   document.getElementById('preview-card').style.display = 'block';
   document.getElementById('preview-grid').innerHTML = `
@@ -1696,7 +1702,7 @@ async function submitBet() {
     const projStaked = existingWeek.totalStaked + (isBonus ? 0 : betVal);
     const projReturn = existingWeek.totalReturn + ret;
     impliedResult = projStaked >= pool
-      ? (projReturn >= pool * 2 ? 'Win' : 'Loss')
+      ? (projReturn >= pool ? 'Win' : 'Loss')
       : 'Pending';
   }
 
@@ -1719,7 +1725,7 @@ async function submitBet() {
     const msg = isBonus
       ? `🎟️ Bonus bet saved for ${punter}!`
       : impliedResult === 'Void' ? `🚫 Void bet recorded — no P/L impact`
-      : impliedResult === 'Win' ? `🔥 ${punter} goes again next week!`
+      : impliedResult === 'Win' ? ((() => { const s2=getWeekSummary(punter,week); return s2.goesAgain ? `🔥 ${punter} goes again next week!` : `✅ ${punter} wins — rotation moves on`; })())
       : impliedResult === 'Pending' ? `📋 Bet logged — week still in progress`
       : `❌ ${punter} week complete`;
     showToast(msg);
@@ -2069,7 +2075,7 @@ function addToQueue() {
     const projStaked    = existingWeek.totalStaked + queuedStaked + (isBonus ? 0 : betVal);
     const projReturn    = existingWeek.totalReturn  + queuedReturn + ret;
     impliedResult = projStaked >= pool
-      ? (projReturn >= pool*2 ? 'Win' : 'Loss')
+      ? (projReturn >= pool ? 'Win' : 'Loss')
       : 'Pending';
   }
 
@@ -2206,7 +2212,7 @@ function renderWeekMgmtStatus() {
   el.innerHTML = `
     ${baselineStr}
     <div style="margin-bottom:4px"><strong>Now:</strong> Week ${week} · ${punter} is up</div>
-    <div style="margin-bottom:4px"><strong>Status:</strong> $${s.totalStaked.toFixed(0)}/$${pool} staked · ${s.isComplete ? (s.goesAgain?'🔥 Goes again':'❌ Loss') : '⏳ In progress'}</div>
+    <div style="margin-bottom:4px"><strong>Status:</strong> $${s.totalStaked.toFixed(0)}/$${pool} staked · ${s.isComplete ? (s.goesAgain?'🔥 Goes again':s.isSuccess?'✅ Win':'❌ Loss') : '⏳ In progress'}</div>
     ${last ? `<div style="font-size:11px;color:var(--muted)">Last completed: ${last.punter} Wk${last.week} · $${last.returned.toFixed(0)} return</div>` : ''}`;
 }
 
