@@ -1437,7 +1437,10 @@ function renderHome() {
   const allValid=state.bets.filter(b=>b.result!=='Void');
   const gW=allValid.filter(b=>b.result==='Win').length,gL=allValid.filter(b=>b.result==='Loss').length;
   document.getElementById('st-bets').textContent=allValid.length;
-  document.getElementById('st-winrate-sub').textContent=(allValid.length>0?Math.round(gW/allValid.length*100):0)+'% win rate';
+  const allBets=state.bets;
+const gV=allBets.filter(b=>b.result==='Void').length;
+const winPct = allBets.length > 0 ? Math.round(gW/allBets.length*100) : 0;
+document.getElementById('st-winrate-sub').innerHTML=`${gW}W - ${gL}L - ${gV}V<br>${winPct}% win rate`;
 
   // Group W/L: count profitable weeks (total return > total staked for that week across all punters)
   const allWeeks = [...new Set(state.bets.filter(b=>b.result!=='Void').map(b=>b.week))];
