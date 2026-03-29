@@ -521,7 +521,8 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div class="card-title">👥 Manage Punters</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Edit names and upload avatar photos. Changes sync to everyone.</div>
     <div id="manage-punters-list"></div>
-    <button class="btn btn-primary" onclick="savePunterDetails()" style="margin-top:4px">💾 Save Names & Avatars</button>
+    <button onclick="addPunter()" style="width:100%;padding:11px;background:var(--off);border:1.5px dashed var(--gray2);border-radius:10px;color:var(--steel);font-size:13px;font-weight:800;cursor:pointer;margin-bottom:8px;margin-top:4px">＋ Add Punter</button>
+    <button class="btn btn-primary" onclick="savePunterDetails()">💾 Save Names & Avatars</button>
   </div>
 
   <div class="card">
@@ -1372,6 +1373,21 @@ function handleAvatarUpload(event, punterName, idx) {
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+function addPunter() {
+  const newName = 'New Punter';
+  state.punterOrder.push(newName);
+  state.numPunters = state.punterOrder.length;
+  renderManagePunters();
+  renderDragList();
+  // Focus the new name input
+  const lastIdx = state.punterOrder.length - 1;
+  setTimeout(() => {
+    const input = document.getElementById(`mp-name-${lastIdx}`);
+    if (input) { input.focus(); input.select(); }
+  }, 50);
+  showToast('✅ Punter added — enter their name and save');
 }
 
 function removeAvatar(name) {
