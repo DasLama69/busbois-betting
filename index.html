@@ -1059,7 +1059,7 @@ function renderBoard() {
     const barPct=Math.min(Math.abs(s.roi)/maxRoi*100,100);
     const barCol=s.roi>=0?'var(--green)':'var(--red)';
     const strk=s.streak>1?` ${s.streak}× ${s.streakType==='Win'?'🔥':'❄️'}`:'';
-    return `<div class="lb-row"><div class="lb-rank">${MEDALS[i]}</div><div class="lb-avatar">${INI(s.name)}</div><div class="lb-info"><div class="lb-name">${s.name}${strk}</div><div class="lb-detail">${s.wins}W / ${s.losses}L · $${s.totalBet.toFixed(0)} staked</div><div class="lb-bar-track"><div class="lb-bar-fill" style="width:${barPct}%;background:${barCol}"></div></div></div><div class="lb-right"><div class="lb-net" style="color:${s.net>=0?'var(--green)':'var(--red)'}">${netStr}</div><div class="lb-roi">${roiStr} ROI</div></div></div>`;
+    return `<div class="lb-row"><div class="lb-rank">${MEDALS[i]}</div><div class="lb-avatar" style="overflow:hidden;padding:0">${state.punterAvatars?.[s.name] ? `<img src="${state.punterAvatars[s.name]}" style="width:36px;height:36px;border-radius:50%;object-fit:cover" onerror="this.parentElement.innerHTML='${INI(s.name)}'">` : INI(s.name)}</div><div class="lb-info"><div class="lb-name">${s.name}${strk}</div><div class="lb-detail">${s.wins}W / ${s.losses}L · $${s.totalBet.toFixed(0)} staked</div><div class="lb-bar-track"><div class="lb-bar-fill" style="width:${barPct}%;background:${barCol}"></div></div></div><div class="lb-right"><div class="lb-net" style="color:${s.net>=0?'var(--green)':'var(--red)'}">${netStr}</div><div class="lb-roi">${roiStr} ROI</div></div></div>`;
   }).join('');
   document.getElementById('roi-bars').innerHTML=stats.map(s=>{
     const pct=Math.min(Math.abs(s.roi)/maxRoi*100,100),col=s.roi>=0?'var(--green)':'var(--red)';
