@@ -1391,7 +1391,7 @@ function renderHome() {
     ytbEl.style.background = 'linear-gradient(135deg,#78350F,var(--gold))';
     ytbEl.classList.add('visible');
     document.getElementById('ytb-title').textContent = `It's your turn, ${punter}! 🏇`;
-    document.getElementById('ytb-sub').textContent = `Week ${week} · $${getPoolSize()} pool — go log that bet`;
+    document.getElementById('ytb-sub').textContent = `Week ${week} · $${getPoolSize()} to bet — go win us some cash!`;
   } else if (state.whoAmI && state.whoAmI === punter && alreadyBet) {
     ytbEl.style.display = 'flex';
     ytbEl.style.background = 'linear-gradient(135deg,#14532D,var(--green))';
