@@ -282,6 +282,31 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .mp-name-input { flex:1; padding:9px 12px; border:1.5px solid var(--gray); border-radius:8px; font-size:14px; font-weight:700; color:var(--dark); background:var(--off); }
 .mp-name-input:focus { outline:none; border-color:var(--steel); background:white; }
 
+
+/* ── ADMIN SECTIONS ── */
+.admin-section-hdr {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 4px 6px;
+  margin-top: 4px;
+  margin-bottom: 2px;
+}
+.admin-section-hdr-icon { font-size: 16px; }
+.admin-section-hdr-label {
+  font-size: 11px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  flex: 1;
+}
+.admin-section-hdr-line {
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+}
+
 /* ── TOP-UP CARD ── */
 .topup-history-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--gray); font-size:12px; }
 .topup-history-row:last-child { border-bottom:none; }
@@ -569,6 +594,8 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 
 <!-- ADMIN -->
 <div class="page" id="tab-account">
+
+  <!-- Balance summary tiles -->
   <div class="stat-grid" style="margin-top:2px">
     <div class="stat-tile" style="grid-column:span 2;padding:14px">
       <div class="stat-tile-val" id="acct-big" style="font-size:30px;color:var(--green)">$–</div>
@@ -579,30 +606,87 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div class="stat-tile"><div class="stat-tile-val" id="acct-pnl2" style="font-size:17px">$–</div><div class="stat-tile-lbl">P&L Each</div></div>
   </div>
 
-  <div class="card">
-    <div class="card-title">🏁 Week Management</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Manually close a week or revert if needed. The app auto-rotates based on bets logged, but use these controls if something is wrong.</div>
-    <div id="week-mgmt-status" style="background:var(--off);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--dark)"></div>
-    <div class="form-row" style="margin-bottom:10px">
-      <button class="btn btn-primary" onclick="forceAdvanceWeek()" style="font-size:13px">⏭ Force Next Week</button>
-      <button class="btn btn-warn" onclick="revertWeek()" style="font-size:13px">↩ Revert Week</button>
-    </div>
-    <div style="font-size:10px;color:var(--muted)">Force Next Week advances rotation regardless of current bets. Revert undoes the last rotation advance.</div>
+  <!-- ══ SECTION: SEASON ══ -->
+  <div class="admin-section-hdr">
+    <span class="admin-section-hdr-icon">📊</span>
+    <span class="admin-section-hdr-label">Season</span>
+    <div class="admin-section-hdr-line"></div>
   </div>
 
+  <!-- Week & Rotation -->
+  <div class="card">
+    <div class="card-title">🏁 Rotation & Week</div>
+    <div id="week-mgmt-status" style="background:var(--off);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--dark)"></div>
+
+    <!-- Set baseline -->
+    <div style="font-size:11px;font-weight:700;color:var(--steel);margin-bottom:6px">Set Rotation Baseline</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Lock in a specific punter and week as the new starting point. The app computes rotation forward from here — no warning, no override flag.</div>
+    <div class="form-row" style="margin-bottom:8px">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Punter</label>
+        <select id="baseline-punter" class="form-control"></select>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Week #</label>
+        <input type="number" id="baseline-week" class="form-control" min="1">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="setBaseline()" style="margin-bottom:10px">📍 Lock Baseline</button>
+
+    <div style="height:1px;background:var(--gray);margin-bottom:10px"></div>
+    <div style="font-size:11px;font-weight:700;color:var(--steel);margin-bottom:6px">Quick Adjust</div>
+    <div class="form-row">
+      <button class="btn btn-primary" onclick="forceAdvanceWeek()" style="font-size:12px">⏭ Next Week</button>
+      <button class="btn btn-warn" onclick="revertWeek()" style="font-size:12px">↩ Revert</button>
+    </div>
+  </div>
+
+  <!-- Weekly Report -->
   <div class="card">
     <div class="card-title">📄 Weekly Group Report</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Generate a one-page summary to share with the group.</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Generate a shareable one-page summary.</div>
     <div class="form-group">
-      <label class="form-label">Report for Week #</label>
-      <input type="number" id="report-week" class="form-control" min="1" placeholder="Leave blank for latest week">
+      <label class="form-label">Week # <span>(blank = latest)</span></label>
+      <input type="number" id="report-week" class="form-control" min="1" placeholder="Latest week">
     </div>
     <button class="btn btn-primary" onclick="generateReport()">📄 Generate Report</button>
   </div>
 
+  <!-- ══ SECTION: PUNTERS ══ -->
+  <div class="admin-section-hdr">
+    <span class="admin-section-hdr-icon">👥</span>
+    <span class="admin-section-hdr-label">Punters</span>
+    <div class="admin-section-hdr-line"></div>
+  </div>
+
+  <!-- Manage Punters — names, avatars, add, remove -->
+  <div class="card">
+    <div class="card-title">👥 Manage Punters</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Edit names, upload photos, add or remove punters. Changes sync to everyone.</div>
+    <div id="manage-punters-list"></div>
+    <button onclick="addPunter()" style="width:100%;padding:11px;background:var(--off);border:1.5px dashed var(--gray2);border-radius:10px;color:var(--steel);font-size:13px;font-weight:800;cursor:pointer;margin-bottom:8px;margin-top:4px">＋ Add Punter</button>
+    <button class="btn btn-primary" onclick="savePunterDetails()">💾 Save Names & Avatars</button>
+  </div>
+
+  <!-- Betting Order -->
+  <div class="card">
+    <div class="card-title">🔀 Betting Order</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Drag to reorder. Saves instantly for everyone.</div>
+    <ul class="drag-list" id="drag-order-list"></ul>
+    <button class="btn btn-primary" onclick="savePunterOrder()" style="margin-top:4px">💾 Save Order</button>
+  </div>
+
+  <!-- ══ SECTION: MONEY ══ -->
+  <div class="admin-section-hdr">
+    <span class="admin-section-hdr-icon">💰</span>
+    <span class="admin-section-hdr-label">Money</span>
+    <div class="admin-section-hdr-line"></div>
+  </div>
+
+  <!-- Top-Up -->
   <div class="card">
     <div class="card-title">💰 Top-Up Pool</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">When everyone chips in, record it here. Updates the account balance and logs the event for the group.</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">When everyone chips in, record it here.</div>
     <div class="form-row" style="margin-bottom:12px">
       <div class="form-group" style="margin-bottom:0">
         <label class="form-label">Amount Per Person ($)</label>
@@ -618,17 +702,16 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
       <input type="text" id="topup-note" class="form-control" placeholder="e.g. Round 2 buy-in">
     </div>
     <div style="background:var(--off);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--muted)">
-      Total added: <strong id="topup-total-preview" style="color:var(--dark)">$600.00</strong> ($100 × 6 punters)
+      Total added: <strong id="topup-total-preview" style="color:var(--dark)">$600.00</strong>
     </div>
     <button class="btn btn-primary" onclick="processTopUp()" id="topup-btn">💰 Process Top-Up</button>
     <div id="topup-history" style="margin-top:12px"></div>
   </div>
 
-
+  <!-- Buy-In -->
   <div class="card">
     <div class="card-title">🤝 New Punter Buy-In</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">When someone joins mid-season, they buy in at their fair share of the current pool. Records the payment and adjusts the group baseline.</div>
-
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Someone joining mid-season buys in at their fair share.</div>
     <div style="background:var(--off);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px">
       <div style="display:flex;justify-content:space-between;margin-bottom:4px">
         <span style="color:var(--muted)">Current balance</span>
@@ -638,77 +721,35 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
         <span style="color:var(--muted)">Current punters</span>
         <span id="buyin-current-punters" style="font-weight:800;color:var(--dark)">–</span>
       </div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-        <span style="color:var(--muted)">New punter count</span>
-        <span id="buyin-new-punters" style="font-weight:800;color:var(--dark)">–</span>
-      </div>
       <div style="height:1px;background:var(--gray);margin:6px 0"></div>
       <div style="display:flex;justify-content:space-between">
         <span style="color:var(--steel);font-weight:700">Suggested buy-in</span>
         <span id="buyin-suggested" style="font-weight:900;color:var(--steel);font-size:14px">$–</span>
       </div>
     </div>
-
     <div class="form-group">
       <label class="form-label">Joining Punter</label>
       <select id="buyin-punter" class="form-control" onchange="updateBuyInPreview()"></select>
     </div>
-
     <div class="form-row" style="margin-bottom:12px">
       <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Buy-In Amount ($) <span>override if needed</span></label>
-        <input type="number" id="buyin-amount" class="form-control editable-auto" step="0.01" placeholder="auto-calculated" oninput="updateBuyInPreview()">
+        <label class="form-label">Buy-In ($) <span>override ok</span></label>
+        <input type="number" id="buyin-amount" class="form-control editable-auto" step="0.01" placeholder="auto" oninput="updateBuyInPreview()">
       </div>
       <div class="form-group" style="margin-bottom:0">
         <label class="form-label">Date</label>
         <input type="date" id="buyin-date" class="form-control">
       </div>
     </div>
-
     <div class="form-group">
       <label class="form-label">Note <span>(optional)</span></label>
       <input type="text" id="buyin-note" class="form-control" placeholder="e.g. CC joins Week 3">
     </div>
-
     <div id="buyin-preview" style="display:none;background:rgba(37,99,168,0.08);border:1.5px solid rgba(37,99,168,0.2);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--dark)"></div>
-
     <button class="btn btn-primary" onclick="processBuyIn()" id="buyin-btn">🤝 Process Buy-In</button>
   </div>
 
-  <div class="card">
-    <div class="card-title">👥 Manage Punters</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Edit names and upload avatar photos. Changes sync to everyone.</div>
-    <div id="manage-punters-list"></div>
-    <button onclick="addPunter()" style="width:100%;padding:11px;background:var(--off);border:1.5px dashed var(--gray2);border-radius:10px;color:var(--steel);font-size:13px;font-weight:800;cursor:pointer;margin-bottom:8px;margin-top:4px">＋ Add Punter</button>
-    <button class="btn btn-primary" onclick="savePunterDetails()">💾 Save Names & Avatars</button>
-  </div>
-
-  <div class="card">
-    <div class="card-title">🔀 Betting Order</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Drag to reorder. Saves to the live database — updates for everyone instantly.</div>
-    <ul class="drag-list" id="drag-order-list"></ul>
-    <button class="btn btn-primary" onclick="savePunterOrder()" style="margin-top:4px">💾 Save Order</button>
-  </div>
-
-  <div class="card">
-    <div class="card-title">🎯 Override Rotation</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Manually set who's betting next if auto-rotation is wrong.</div>
-    <div class="form-group">
-      <label class="form-label">Set Next Punter</label>
-      <select id="override-punter" class="form-control"></select>
-    </div>
-    <div class="form-row">
-      <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Set Week #</label>
-        <input type="number" id="override-week" class="form-control" min="1">
-      </div>
-      <div style="display:flex;align-items:flex-end;">
-        <button class="btn btn-warn" onclick="applyOverride()" style="margin-bottom:0;padding:12px">✅ Apply</button>
-      </div>
-    </div>
-    <div id="override-status" style="font-size:11px;color:var(--muted);margin-top:8px;padding:6px 8px;background:var(--off);border-radius:8px;display:none"></div>
-  </div>
-
+  <!-- Settings -->
   <div class="card">
     <div class="card-title">⚙️ Settings</div>
     <div class="form-group">
@@ -726,6 +767,14 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <button class="btn btn-primary" onclick="saveSettings()" style="margin-bottom:0">💾 Save Settings</button>
   </div>
 
+  <!-- ══ SECTION: TOOLS ══ -->
+  <div class="admin-section-hdr">
+    <span class="admin-section-hdr-icon">🔧</span>
+    <span class="admin-section-hdr-label">Tools</span>
+    <div class="admin-section-hdr-line"></div>
+  </div>
+
+  <!-- Bet management -->
   <div class="card">
     <div class="card-title">🔧 Bet Management</div>
     <div class="admin-row">
@@ -742,6 +791,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     </div>
   </div>
 
+  <!-- Full history -->
   <div class="card">
     <div class="card-title">📜 Full History</div>
     <div id="acct-history"><div class="empty">No bets yet</div></div>
@@ -776,6 +826,8 @@ let state = {
   numPunters: 6,
   poolSize: 60,
   override: null,
+  baselineWeek: null,
+  baselinePunter: null,
   punterOrder: [...DEFAULT_PUNTERS],
   punterAvatars: {},
   whoAmI: localStorage.getItem('bbb_whoami') || null
@@ -809,6 +861,8 @@ async function loadFromSupabase() {
       if (settingsData.punter_order) {
         try { state.punterOrder = JSON.parse(settingsData.punter_order); } catch(e) {}
       }
+      state.baselineWeek    = settingsData.baseline_week    || null;
+      state.baselinePunter  = settingsData.baseline_punter  || null;
       if (settingsData.punter_avatars) {
         try { state.punterAvatars = JSON.parse(settingsData.punter_avatars); } catch(e) {}
       }
@@ -879,8 +933,10 @@ async function deleteBetFromSupabase(id) {
   setSyncStatus('connected', `Live · ${state.bets.length} bets`);
 }
 
-// Run in Supabase SQL if not already done:
+// Run in Supabase SQL:
 // alter table settings add column if not exists punter_avatars text;
+// alter table settings add column if not exists baseline_week integer;
+// alter table settings add column if not exists baseline_punter text;
 async function saveSettingsToSupabase() {
   const { error } = await supa.from('settings').upsert({
     id:               1,
@@ -890,6 +946,8 @@ async function saveSettingsToSupabase() {
     override_punter:  state.override?.punter || null,
     override_week:    state.override?.week || null,
     punter_order:     JSON.stringify(state.punterOrder),
+    baseline_week:    state.baselineWeek   || null,
+    baseline_punter:  state.baselinePunter || null,
     punter_avatars:   JSON.stringify(state.punterAvatars || {})
   });
   if (error) throw error;
@@ -957,17 +1015,17 @@ function getImplicitResult(punter, week) {
 // ── Find the most recent completed week across all bets ──────────────────────
 function getLastCompletedWeek() {
   if (state.bets.length === 0) return null;
-  // Group by week, find highest week where a punter has spent their pool
   const pool = getPoolSize();
+  const baseWeek = state.baselineWeek || 1;
   const weekPunters = {};
   for (const b of state.bets) {
     if (b.isBonus) continue;
+    if (b.week < baseWeek) continue;
     const key = `${b.week}:${b.punter}`;
     if (!weekPunters[key]) weekPunters[key] = { week: b.week, punter: b.punter, staked: 0, returned: 0 };
     weekPunters[key].staked   += b.bet;
     weekPunters[key].returned += b.returnAmt;
   }
-  // Find completed entries sorted by week desc
   const completed = Object.values(weekPunters)
     .filter(e => e.staked >= pool)
     .sort((a, b) => b.week - a.week);
@@ -975,26 +1033,39 @@ function getLastCompletedWeek() {
 }
 
 function computeCurrentState() {
-  if (state.override) return { week: state.override.week, punter: state.override.punter, overridden: true };
-  if (state.bets.length === 0) return { week: START_WEEK, punter: START_PUNTER };
-
   const pool = getPoolSize();
-  // Find the most recent week that has a completed punter
-  const last = getLastCompletedWeek();
+
+  // Determine the starting point: baseline if set, else defaults
+  const baseWeek    = state.baselineWeek   || START_WEEK;
+  const basePunter  = state.baselinePunter || START_PUNTER;
+
+  // Find the most recent completed week AT OR AFTER the baseline
+  const weekPunters = {};
+  for (const b of state.bets) {
+    if (b.isBonus) continue;
+    if (b.week < baseWeek) continue; // ignore bets before baseline
+    const key = `${b.week}:${b.punter}`;
+    if (!weekPunters[key]) weekPunters[key] = { week: b.week, punter: b.punter, staked: 0, returned: 0 };
+    weekPunters[key].staked   += b.bet;
+    weekPunters[key].returned += b.returnAmt;
+  }
+  const completed = Object.values(weekPunters)
+    .filter(e => e.staked >= pool)
+    .sort((a, b) => b.week - a.week);
+  const last = completed.length ? completed[0] : null;
+
   if (!last) {
-    // No completed week yet — use first bet's week/punter
-    const first = state.bets.filter(b => !b.isBonus)[0];
-    return first
-      ? { week: first.week, punter: first.punter }
-      : { week: START_WEEK, punter: START_PUNTER };
+    // No completed week since baseline — use baseline as starting point
+    const firstAfter = state.bets.filter(b => !b.isBonus && b.week >= baseWeek)[0];
+    return firstAfter
+      ? { week: firstAfter.week, punter: firstAfter.punter }
+      : { week: baseWeek, punter: basePunter };
   }
 
   const goesAgain = last.returned >= pool * 2;
   if (goesAgain) {
-    // Same punter, next week
     return { week: last.week + 1, punter: last.punter };
   } else {
-    // Rotate to next punter, next week
     const nextIdx = (getPunters().indexOf(last.punter) + 1) % getPunters().length;
     return { week: last.week + 1, punter: getPunters()[nextIdx] };
   }
@@ -1549,12 +1620,11 @@ function renderAdmin() {
   document.getElementById('settings-punters').value=state.numPunters;
   document.getElementById('settings-pool').value=getPoolSize();
   const {week:cw,punter:cp}=computeCurrentState();
-  document.getElementById('override-punter').innerHTML=getPunters().map(p=>`<option value="${p}" ${p===cp?'selected':''}>${p}</option>`).join('');
-  document.getElementById('override-week').value=cw;
-  const ov=document.getElementById('override-status');
-  ov.style.display='block';
-  if(state.override){ov.style.background='#FFF7ED';ov.style.color='var(--orange)';ov.textContent=`⚠️ Override active: ${state.override.punter} · Week ${state.override.week}`;}
-  else{ov.style.background='var(--off)';ov.style.color='var(--muted)';ov.textContent=`Auto rotation: ${cp} · Week ${cw}`;}
+  // Populate baseline selects
+  const bpSel = document.getElementById('baseline-punter');
+  if (bpSel) bpSel.innerHTML = getPunters().map(p=>`<option value="${p}" ${p===(state.baselinePunter||cp)?'selected':''}>${p}</option>`).join('');
+  const bwEl = document.getElementById('baseline-week');
+  if (bwEl) bwEl.value = state.baselineWeek || cw;
   if(state.bets.length>0){const last=state.bets[state.bets.length-1];const n=last.returnAmt-last.bet;document.getElementById('last-bet-preview').textContent=`${last.punter} · Wk${last.week} · ${last.result} · ${n>=0?'+':''}$${n.toFixed(2)}`;}
   const histEl=document.getElementById('acct-history');
   if(!state.bets.length){histEl.innerHTML='<div class="empty">No bets yet</div>';return;}
@@ -1564,14 +1634,7 @@ function renderAdmin() {
   }).join('');
 }
 
-async function applyOverride() {
-  const punter=document.getElementById('override-punter').value;
-  const week=parseInt(document.getElementById('override-week').value);
-  if(!punter||!week||isNaN(week)){showToast('⚠️ Select punter and week');return;}
-  state.override={punter,week};
-  try{await saveSettingsToSupabase();showToast(`✅ Override set: ${punter} · Week ${week}`);renderAdmin();}
-  catch(e){showToast('❌ Failed to save override');}
-}
+// applyOverride removed — replaced by setBaseline
 
 async function saveSettings() {
   state.openingBalance=parseFloat(document.getElementById('settings-opening').value)||600;
@@ -1817,18 +1880,61 @@ async function saveQueue() {
   }
 }
 
+
+// ═══════════════ REMOVE PUNTER ═══════════════
+function removePunter(idx) {
+  const name = getPunters()[idx];
+  const hasBets = state.bets.some(b => b.punter === name);
+  const msg = hasBets
+    ? `Remove ${name}? They have bets recorded — their history stays but they'll be removed from the rotation.`
+    : `Remove ${name} from the group?`;
+  if (!confirm(msg)) return;
+  state.punterOrder.splice(idx, 1);
+  state.numPunters = state.punterOrder.length;
+  if (state.punterAvatars?.[name]) delete state.punterAvatars[name];
+  if (state.whoAmI === name) {
+    state.whoAmI = null;
+    localStorage.removeItem('bbb_whoami');
+  }
+  renderManagePunters();
+  renderDragList();
+  showToast(`🗑 ${name} removed — tap Save to confirm`);
+}
+
+// ═══════════════ SET BASELINE ═══════════════
+async function setBaseline() {
+  const punter = document.getElementById('baseline-punter').value;
+  const week   = parseInt(document.getElementById('baseline-week').value);
+  if (!punter || !week || isNaN(week)) { showToast('⚠️ Select punter and week'); return; }
+  if (!confirm(`Lock rotation baseline to ${punter} · Week ${week}?
+
+The app will compute rotation forward from this point. Bets before Week ${week} won't affect the rotation anymore.`)) return;
+  state.baselineWeek   = week;
+  state.baselinePunter = punter;
+  state.override = null; // clear any old override
+  try {
+    await saveSettingsToSupabase();
+    showToast(`📍 Baseline locked: ${punter} · Week ${week}`);
+    renderAdmin();
+    renderHome();
+  } catch(e) { showToast('❌ Failed to save baseline'); }
+}
+
 // ═══════════════ WEEK MANAGEMENT ═══════════════
 function renderWeekMgmtStatus() {
   const el = document.getElementById('week-mgmt-status');
   if (!el) return;
-  const { week, punter, overridden } = computeCurrentState();
+  const { week, punter } = computeCurrentState();
   const pool = getPoolSize();
   const s = getWeekSummary(punter, week);
   const last = getLastCompletedWeek();
+  const baselineStr = state.baselineWeek
+    ? `<div style="font-size:11px;color:var(--green);margin-bottom:4px">📍 Baseline: ${state.baselinePunter} · Week ${state.baselineWeek}</div>`
+    : `<div style="font-size:11px;color:var(--muted);margin-bottom:4px">No baseline set — using defaults</div>`;
   el.innerHTML = `
-    <div style="margin-bottom:6px"><strong>Current:</strong> Week ${week} · ${punter} is up</div>
-    <div style="margin-bottom:4px"><strong>Week status:</strong> $${s.totalStaked.toFixed(0)}/$${pool} staked · ${s.isComplete ? (s.goesAgain?'🔥 Goes again':s.isSuccess?'✅ Success':'❌ Loss') : '⏳ In progress'}</div>
-    ${overridden ? `<div style="color:var(--orange);font-size:11px">⚠️ Manual override active</div>` : ''}
+    ${baselineStr}
+    <div style="margin-bottom:4px"><strong>Now:</strong> Week ${week} · ${punter} is up</div>
+    <div style="margin-bottom:4px"><strong>Status:</strong> $${s.totalStaked.toFixed(0)}/$${pool} staked · ${s.isComplete ? (s.goesAgain?'🔥 Goes again':s.isSuccess?'✅ Success':'❌ Loss') : '⏳ In progress'}</div>
     ${last ? `<div style="font-size:11px;color:var(--muted)">Last completed: ${last.punter} Wk${last.week} · $${last.returned.toFixed(0)} return</div>` : ''}`;
 }
 
@@ -1837,34 +1943,35 @@ async function forceAdvanceWeek() {
   const nextIdx = (getPunters().indexOf(punter) + 1) % getPunters().length;
   const nextPunter = getPunters()[nextIdx];
   const nextWeek = week + 1;
-  if (!confirm(`Force advance to Week ${nextWeek} · ${nextPunter}?
+  if (!confirm(`Advance to Week ${nextWeek} · ${nextPunter}?
 
-This overrides the auto-rotation.`)) return;
-  state.override = { punter: nextPunter, week: nextWeek };
+This sets a new baseline.`)) return;
+  state.baselineWeek   = nextWeek;
+  state.baselinePunter = nextPunter;
+  state.override = null;
   try {
     await saveSettingsToSupabase();
     showToast(`✅ Advanced to Week ${nextWeek} · ${nextPunter}`);
-    renderAdmin();
-    renderHome();
+    renderAdmin(); renderHome();
   } catch(e) { showToast('❌ Failed to save'); }
 }
 
 async function revertWeek() {
   const { week, punter } = computeCurrentState();
-  // Revert to previous punter, previous week
   const curIdx = getPunters().indexOf(punter);
   const prevIdx = (curIdx - 1 + getPunters().length) % getPunters().length;
   const prevPunter = getPunters()[prevIdx];
   const prevWeek = Math.max(1, week - 1);
   if (!confirm(`Revert to Week ${prevWeek} · ${prevPunter}?
 
-This sets a manual override.`)) return;
-  state.override = { punter: prevPunter, week: prevWeek };
+This sets a new baseline.`)) return;
+  state.baselineWeek   = prevWeek;
+  state.baselinePunter = prevPunter;
+  state.override = null;
   try {
     await saveSettingsToSupabase();
     showToast(`↩ Reverted to Week ${prevWeek} · ${prevPunter}`);
-    renderAdmin();
-    renderHome();
+    renderAdmin(); renderHome();
   } catch(e) { showToast('❌ Failed to save'); }
 }
 
