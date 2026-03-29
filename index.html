@@ -1677,22 +1677,22 @@ async function clearHistory() {
 function initBuyInCard() {
   const account = getAccountTotal();
   const curPunters = state.numPunters;
-  const newPunters = curPunters + 1;  // assumes adding one
-  const suggested = account / newPunters;
+  const newPunters = curPunters + 1;
+  const suggested = account / curPunters;  // fair share = current balance ÷ current punters
 
   const _bal = document.getElementById('buyin-current-bal'); if(_bal) _bal.textContent = '$' + account.toFixed(2);
   const _cp = document.getElementById('buyin-current-punters'); if(_cp) _cp.textContent = curPunters;
   const _np = document.getElementById('buyin-new-punters'); if(_np) _np.textContent = newPunters;
-  const _sg = document.getElementById('buyin-suggested'); if(_sg) _sg.textContent = '$' + suggested.toFixed(2);
+  const _sg = document.getElementById('buyin-suggested'); if(_sg) _sg.textContent = '$' + (account / curPunters).toFixed(2);
   document.getElementById('buyin-date').value = new Date().toISOString().split('T')[0];
 
   // Populate punter dropdown — show all punters as options
   const sel = document.getElementById('buyin-punter');
   sel.innerHTML = getPunters().map(p => `<option value="${p}">${p}</option>`).join('');
 
-  // Auto-fill suggested amount
+  // Auto-fill suggested amount = balance ÷ current punters
   const amtEl = document.getElementById('buyin-amount');
-  if (!amtEl.value) amtEl.value = suggested.toFixed(2);
+  if (!amtEl.value) amtEl.value = (account / curPunters).toFixed(2);
 
   updateBuyInPreview();
 }
@@ -1703,14 +1703,14 @@ function updateBuyInPreview() {
   const account = getAccountTotal();
   const curPunters = state.numPunters;
   const newPunters = curPunters + 1;
-  const suggested = account / newPunters;
+  const suggested = account / curPunters;  // fair share = what each current member holds
   const preview = document.getElementById('buyin-preview');
   if (!preview || !punter || isNaN(amt)) { if(preview) preview.style.display='none'; return; }
 
-  // After buy-in: new balance = account + amt, split by newPunters
+  // After buy-in: new balance = account + amt, split equally by new punter count
   const newBalance = account + amt;
   const newSplit = newBalance / newPunters;
-  const fairShare = account / newPunters;
+  const fairShare = account / curPunters;  // correct fair share formula
   const diff = amt - fairShare;
 
   preview.style.display = 'block';
