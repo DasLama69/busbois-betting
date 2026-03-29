@@ -445,22 +445,6 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:4px">Tip: use <strong style="color:var(--gold-lt)">➕ Add to Queue</strong> to log multiple bets at once before saving</div>
   </div>
 
-  <!-- Bet type toggle -->
-  <div style="display:flex;gap:8px;margin-bottom:10px">
-    <button id="btn-type-normal" onclick="setBetType('normal')"
-      style="flex:1;padding:10px;border-radius:10px;border:2px solid var(--steel);background:var(--steel);color:white;font-size:13px;font-weight:800;cursor:pointer">
-      💵 Normal Bet
-    </button>
-    <button id="btn-type-bonus" onclick="setBetType('bonus')"
-      style="flex:1;padding:10px;border-radius:10px;border:2px solid var(--gray2);background:transparent;color:rgba(255,255,255,0.5);font-size:13px;font-weight:800;cursor:pointer">
-      🎟️ Bonus Bet
-    </button>
-  </div>
-
-  <div id="bonus-notice" style="display:none;background:rgba(212,160,23,0.12);border:1px solid rgba(212,160,23,0.3);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:var(--gold-lt)">
-    🎟️ <strong>Bonus Bet</strong> — free token, $0 cost to the account. Only winnings count as real income.
-  </div>
-
   <div class="card">
     <div class="card-title">📋 Bet Details</div>
     <div class="form-row" style="margin-bottom:12px">
@@ -485,6 +469,15 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
       <div class="form-group" style="margin-bottom:0">
         <label class="form-label">Return ($)</label>
         <input type="number" id="entry-return" class="form-control" placeholder="0.00" step="0.01" oninput="updatePreview()">
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <label for="entry-is-bonus" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:rgba(255,255,255,0.8)">
+        <input type="checkbox" id="entry-is-bonus" onchange="onBonusChange()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--gold)">
+        🎟️ Is this a bonus bet?
+      </label>
+      <div id="bonus-notice" style="display:none;background:rgba(212,160,23,0.12);border:1px solid rgba(212,160,23,0.3);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:12px;color:var(--gold-lt)">
+        🎟️ <strong>Bonus Bet</strong> — free token, $0 cost to the account. Only winnings count as real income.
       </div>
     </div>
     <div class="form-group" style="margin-bottom:0;margin-top:12px">
@@ -1407,26 +1400,19 @@ function renderHome() {
 }
 
 // ═══════════════ ENTRY FORM ═══════════════
-let currentBetType = 'normal';
 let betQueue = []; // holds bets waiting to be saved
 let lastBetTypePref = 'Multi'; // remembered bet type preference
 
-function setBetType(type) {
-  currentBetType = type;
-  const btnN = document.getElementById('btn-type-normal');
-  const btnB = document.getElementById('btn-type-bonus');
+function onBonusChange() {
+  const isBonus = document.getElementById('entry-is-bonus')?.checked || false;
   const notice = document.getElementById('bonus-notice');
   const betLabel = document.getElementById('bet-amount-label');
-  if (type === 'bonus') {
-    btnB.style.cssText += ';background:rgba(212,160,23,0.2);border-color:var(--gold);color:var(--gold-lt)';
-    btnN.style.cssText += ';background:transparent;border-color:var(--gray2);color:rgba(255,255,255,0.5)';
+  if (isBonus) {
     if (notice) notice.style.display = 'block';
     if (betLabel) betLabel.innerHTML = 'Bonus Stake ($) <span>(token value)</span>';
     const betEl = document.getElementById('entry-bet');
     if (betEl) { betEl.value = '0'; betEl.style.background = '#FFF7ED'; }
   } else {
-    btnN.style.cssText += ';background:var(--steel);border-color:var(--steel);color:white';
-    btnB.style.cssText += ';background:transparent;border-color:var(--gray2);color:rgba(255,255,255,0.5)';
     if (notice) notice.style.display = 'none';
     if (betLabel) betLabel.innerHTML = 'Bet ($) <span>(adjust ok)</span>';
     const betEl = document.getElementById('entry-bet');
@@ -1439,7 +1425,6 @@ function setBetType(type) {
 function populateEntryForm() {
   const {week, punter} = computeCurrentState();
   const pool = getPoolSize();
-  currentBetType = 'normal';
   document.getElementById('entry-week').value = week;
   document.getElementById('entry-bet').value = pool.toFixed(2);
   document.getElementById('entry-bet').style.background = '';
@@ -1450,11 +1435,11 @@ function populateEntryForm() {
   document.getElementById('entry-odds').value = '';
   document.getElementById('preview-card').style.display = 'none';
   document.getElementById('enter-auto-label').textContent = `${punter} is up · Week ${week} · $${pool} pool`;
-  // Reset bonus/normal toggle visuals
-  const btnN = document.getElementById('btn-type-normal');
-  const btnB = document.getElementById('btn-type-bonus');
-  if (btnN) { btnN.style.background='var(--steel)'; btnN.style.borderColor='var(--steel)'; btnN.style.color='white'; }
-  if (btnB) { btnB.style.background='transparent'; btnB.style.borderColor='var(--gray2)'; btnB.style.color='rgba(255,255,255,0.5)'; }
+  // Reset bonus checkbox
+  const bonusCheckbox = document.getElementById('entry-is-bonus');
+  if (bonusCheckbox) bonusCheckbox.checked = false;
+  const betLabel = document.getElementById('bet-amount-label');
+  if (betLabel) betLabel.innerHTML = 'Bet ($) <span>(adjust ok)</span>';
   const notice = document.getElementById('bonus-notice');
   if (notice) notice.style.display = 'none';
   // Apply smart defaults for optional fields
@@ -1548,7 +1533,7 @@ function updatePreview() {
   const punter = document.getElementById('entry-punter')?.value;
   const week = parseInt(document.getElementById('entry-week')?.value) || computeCurrentState().week;
   const pool = getPoolSize();
-  const isBonus = currentBetType === 'bonus';
+  const isBonus = document.getElementById('entry-is-bonus')?.checked || false;
   if (!punter || isNaN(ret)) { document.getElementById('preview-card').style.display='none'; return; }
   const cost = isBonus ? 0 : betVal;
   const net = isBonus ? ret : ret - betVal;
@@ -1588,7 +1573,7 @@ async function submitBet() {
   const punter = document.getElementById('entry-punter').value;
   const betVal = parseFloat(document.getElementById('entry-bet').value);
   const ret    = parseFloat(document.getElementById('entry-return').value);
-  const isBonus = currentBetType === 'bonus';
+  const isBonus = document.getElementById('entry-is-bonus')?.checked || false;
   const oddsRaw = parseFloat(document.getElementById('entry-odds').value);
   const odds    = !isNaN(oddsRaw) && oddsRaw > 0 ? oddsRaw : null;
   const betType = document.getElementById('entry-bet-type')?.value || 'Multi';
@@ -1942,7 +1927,7 @@ function addToQueue() {
   const punter  = document.getElementById('entry-punter').value;
   const betVal  = parseFloat(document.getElementById('entry-bet').value);
   const ret     = parseFloat(document.getElementById('entry-return').value);
-  const isBonus = currentBetType === 'bonus';
+  const isBonus = document.getElementById('entry-is-bonus')?.checked || false;
   const oddsRaw = parseFloat(document.getElementById('entry-odds').value);
   const odds    = !isNaN(oddsRaw) && oddsRaw > 0 ? oddsRaw : null;
   const betType = document.getElementById('entry-bet-type')?.value || 'Multi';
