@@ -1611,7 +1611,7 @@ function renderAdmin() {
   document.getElementById('acct-split2').textContent='$'+split.toFixed(2);
   const pe=document.getElementById('acct-pnl2');pe.textContent=(pnl>=0?'+$':'-$')+Math.abs(pnl).toFixed(2);pe.style.color=pnl>=0?'var(--green)':'var(--red)';
   renderWeekMgmtStatus();
-  initBuyInCard();
+  try { initBuyInCard(); } catch(e) { console.warn('initBuyInCard error:', e); }
   renderManagePunters();
   renderDragList();
   initTopUpCard();
@@ -1641,7 +1641,7 @@ async function saveSettings() {
   state.numPunters=parseInt(document.getElementById('settings-punters').value)||6;
   state.poolSize=parseFloat(document.getElementById('settings-pool').value)||60;
   try{await saveSettingsToSupabase();showToast('✅ Settings saved');renderAdmin();}
-  catch(e){showToast('❌ Failed to save settings');}
+  catch(e){console.error(e);showToast('❌ Save failed — run the SQL migrations in Supabase first');}
 }
 
 async function deleteLastBet() {
@@ -1678,10 +1678,10 @@ function initBuyInCard() {
   const newPunters = curPunters + 1;  // assumes adding one
   const suggested = account / newPunters;
 
-  document.getElementById('buyin-current-bal').textContent = '$' + account.toFixed(2);
-  document.getElementById('buyin-current-punters').textContent = curPunters;
-  document.getElementById('buyin-new-punters').textContent = newPunters;
-  document.getElementById('buyin-suggested').textContent = '$' + suggested.toFixed(2);
+  const _bal = document.getElementById('buyin-current-bal'); if(_bal) _bal.textContent = '$' + account.toFixed(2);
+  const _cp = document.getElementById('buyin-current-punters'); if(_cp) _cp.textContent = curPunters;
+  const _np = document.getElementById('buyin-new-punters'); if(_np) _np.textContent = newPunters;
+  const _sg = document.getElementById('buyin-suggested'); if(_sg) _sg.textContent = '$' + suggested.toFixed(2);
   document.getElementById('buyin-date').value = new Date().toISOString().split('T')[0];
 
   // Populate punter dropdown — show all punters as options
@@ -2218,7 +2218,7 @@ function addPunter() {
   state.punterOrder.push(newName);
   state.numPunters = state.punterOrder.length;
   renderWeekMgmtStatus();
-  initBuyInCard();
+  try { initBuyInCard(); } catch(e) { console.warn('initBuyInCard error:', e); }
   renderManagePunters();
   renderDragList();
   // Focus the new name input
