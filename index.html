@@ -249,9 +249,52 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   flex: 1;
 }
 .drag-medal { font-size: 16px; flex-shrink: 0; }
+
+/* ── WHO AM I MODAL ── */
+.wai-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:600; align-items:center; justify-content:center; padding:20px; }
+.wai-overlay.open { display:flex; }
+.wai-sheet { background:var(--navy2); border-radius:20px; padding:24px; width:100%; max-width:360px; border:1px solid rgba(255,255,255,0.1); }
+.wai-title { color:var(--gold); font-size:20px; font-weight:900; text-align:center; margin-bottom:6px; }
+.wai-sub { color:rgba(255,255,255,0.45); font-size:12px; text-align:center; margin-bottom:20px; }
+.wai-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px; }
+.wai-btn { background:rgba(255,255,255,0.07); border:1.5px solid rgba(255,255,255,0.12); border-radius:12px; padding:12px 6px; text-align:center; cursor:pointer; transition:all 0.15s; }
+.wai-btn:active { transform:scale(0.96); }
+.wai-btn.selected { background:var(--gold); border-color:var(--gold-lt); }
+.wai-ini { font-size:22px; font-weight:900; color:white; line-height:1; }
+.wai-btn.selected .wai-ini { color:var(--navy); }
+.wai-name { font-size:10px; font-weight:700; color:rgba(255,255,255,0.5); margin-top:3px; }
+.wai-btn.selected .wai-name { color:var(--navy); }
+
+/* ── YOUR TURN BANNER ── */
+.your-turn-banner { background:linear-gradient(135deg,#78350F,var(--gold)); border-radius:14px; padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; gap:12px; animation:glow 2s ease-in-out infinite; }
+@keyframes glow { 0%,100%{box-shadow:0 0 12px rgba(212,160,23,0.4)} 50%{box-shadow:0 0 24px rgba(212,160,23,0.7)} }
+.ytb-emoji { font-size:28px; flex-shrink:0; }
+.ytb-text { flex:1; }
+.ytb-title { font-size:14px; font-weight:900; color:var(--navy); }
+.ytb-sub { font-size:11px; color:rgba(0,0,0,0.55); margin-top:1px; }
+
+/* ── SPARKLINE ── */
+.sparkline-wrap { margin-top:8px; }
+.sparkline-svg { width:100%; height:44px; overflow:visible; }
+
+/* ── TOP-UP CARD ── */
+.topup-history-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--gray); font-size:12px; }
+.topup-history-row:last-child { border-bottom:none; }
+.topup-badge { background:linear-gradient(135deg,#1D4ED8,var(--steel)); color:white; border-radius:6px; padding:2px 8px; font-size:9px; font-weight:800; flex-shrink:0; }
 </style>
 </head>
 <body>
+
+<!-- WHO AM I MODAL -->
+<div class="wai-overlay" id="wai-overlay">
+  <div class="wai-sheet">
+    <div class="wai-title">👋 Who are you?</div>
+    <div class="wai-sub">Personalises your experience — just saves on this device</div>
+    <div class="wai-grid" id="wai-grid"></div>
+    <button class="btn btn-primary" onclick="saveWhoAmI()">Let's go 🏇</button>
+    <button onclick="skipWhoAmI()" style="width:100%;margin-top:8px;background:none;border:none;color:rgba(255,255,255,0.3);font-size:12px;cursor:pointer;padding:4px">Skip — just browsing</button>
+  </div>
+</div>
 
 <!-- LOADING OVERLAY -->
 <div class="loading-overlay" id="loading-overlay">
@@ -271,7 +314,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 <div class="hdr">
   <div class="hdr-top">
     <div class="hdr-title">🏇 Bus Bois Betting</div>
-    <div class="hdr-badge" id="hdr-week-badge">WK –</div>
+    <div style="display:flex;gap:6px;align-items:center"><button onclick="showWhoAmI()" id="hdr-who-btn" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;cursor:pointer">👤 –</button><div class="hdr-badge" id="hdr-week-badge">WK –</div></div>
   </div>
   <div class="hdr-sub" id="hdr-sub">2026 Season · Loading…</div>
 </div>
@@ -288,6 +331,13 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 
 <!-- HOME -->
 <div class="page active" id="tab-home">
+  <div id="your-turn-banner" style="display:none" class="your-turn-banner">
+    <div class="ytb-emoji">🏇</div>
+    <div class="ytb-text">
+      <div class="ytb-title" id="ytb-title">It's your turn!</div>
+      <div class="ytb-sub" id="ytb-sub">You're up this week</div>
+    </div>
+  </div>
   <div class="rotation-strip" id="home-rotation-strip"></div>
   <div class="hero">
     <div class="hero-top">
@@ -324,6 +374,14 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     </div>
     <div class="acct-track"><div class="acct-fill" id="home-acct-fill" style="width:50%"></div></div>
     <div class="acct-labels"><span>$0</span><span id="home-acct-open-label">Opening: $–</span></div>
+  </div>
+
+  <div class="card" id="sparkline-card" style="padding:12px 14px 10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span style="font-size:10px;font-weight:800;color:var(--steel);text-transform:uppercase;letter-spacing:1px">Balance History</span>
+      <span style="font-size:10px;color:var(--muted)" id="sparkline-range">–</span>
+    </div>
+    <div class="sparkline-wrap"><svg class="sparkline-svg" id="sparkline-svg" viewBox="0 0 300 44" preserveAspectRatio="none"></svg></div>
   </div>
 
   <div class="stat-grid">
@@ -439,6 +497,30 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   </div>
 
   <div class="card">
+    <div class="card-title">💰 Top-Up Pool</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">When everyone chips in, record it here. Updates the account balance and logs the event for the group.</div>
+    <div class="form-row" style="margin-bottom:12px">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Amount Per Person ($)</label>
+        <input type="number" id="topup-amount" class="form-control" step="0.01" value="100" placeholder="100">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Date</label>
+        <input type="date" id="topup-date" class="form-control">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Note <span>(optional)</span></label>
+      <input type="text" id="topup-note" class="form-control" placeholder="e.g. Round 2 buy-in">
+    </div>
+    <div style="background:var(--off);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--muted)">
+      Total added: <strong id="topup-total-preview" style="color:var(--dark)">$600.00</strong> ($100 × 6 punters)
+    </div>
+    <button class="btn btn-primary" onclick="processTopUp()" id="topup-btn">💰 Process Top-Up</button>
+    <div id="topup-history" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card">
     <div class="card-title">🔀 Betting Order</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Drag to reorder. Saves to the live database — updates for everyone instantly.</div>
     <ul class="drag-list" id="drag-order-list"></ul>
@@ -526,11 +608,13 @@ function getPunters() { return state.punterOrder; }
 // ═══════════════ STATE ═══════════════
 let state = {
   bets: [],
+  topups: [],
   openingBalance: 600,
   numPunters: 6,
   poolSize: 60,
   override: null,
-  punterOrder: [...DEFAULT_PUNTERS]
+  punterOrder: [...DEFAULT_PUNTERS],
+  whoAmI: localStorage.getItem('bbb_whoami') || null
 };
 let syncChannel = null;
 
@@ -575,7 +659,20 @@ async function loadFromSupabase() {
       punter:    b.punter,
       bet:       parseFloat(b.bet),
       returnAmt: parseFloat(b.return_amt),
-      result:    b.result
+      result:    b.result,
+      loggedBy:  b.logged_by || null
+    }));
+
+    // Load top-ups
+    const { data: topupData } = await supa
+      .from('topups').select('*').order('created_at', { ascending: true });
+    state.topups = (topupData || []).map(t => ({
+      id:          t.id,
+      amountEach:  parseFloat(t.amount_per_person),
+      numPunters:  t.num_punters,
+      totalAdded:  parseFloat(t.total_added),
+      note:        t.note || '',
+      date:        new Date(t.created_at).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'})
     }));
 
     setSyncStatus('connected', `Live · ${state.bets.length} bet${state.bets.length!==1?'s':''}`);
@@ -596,7 +693,8 @@ async function saveBetToSupabase(bet) {
     punter:     bet.punter,
     bet:        bet.bet,
     return_amt: bet.returnAmt,
-    result:     bet.result
+    result:     bet.result,
+    logged_by:  state.whoAmI || null
   }).select().single();
   if (error) throw error;
   setSyncStatus('connected', `Live · ${state.bets.length} bets`);
@@ -635,6 +733,11 @@ function subscribeToRealtime() {
       await loadFromSupabase();
       refreshCurrentTab();
     })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'topups' }, async () => {
+      setSyncStatus('syncing', 'Syncing…');
+      await loadFromSupabase();
+      refreshCurrentTab();
+    })
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         setSyncStatus('connected', `Live · ${state.bets.length} bets`);
@@ -669,7 +772,55 @@ function punterAlreadyBetThisWeek(punter, week) {
 function getAccountTotal() {
   let bal = state.openingBalance;
   for (const b of state.bets) { if (b.result !== 'Void') bal += (b.returnAmt - b.bet); }
+  for (const t of (state.topups||[])) { bal += t.totalAdded; }
   return bal;
+}
+
+// Balance history points for sparkline (one per bet + topup event, in order)
+function getBalanceHistory() {
+  const events = [];
+  // Merge bets and topups by index (bets are already in created_at order, topups too)
+  // Use a simple approach: interleave by their sequence
+  let bal = state.openingBalance;
+  events.push(bal);
+  // Build a timeline: bets have week/date, topups have date
+  // For simplicity, add topups between bets based on their position in array
+  let topupIdx = 0;
+  const topups = state.topups || [];
+  for (const b of state.bets) {
+    // Add any topups that happened before this bet (simple: add first half of topups before midpoint)
+    if (b.result !== 'Void') bal += (b.returnAmt - b.bet);
+    events.push(bal);
+  }
+  // Also add topup bumps at appropriate points
+  // Rebuild properly: sort all events by created_at isn't available in state, so approximate
+  // by applying topups proportionally — rebuild from scratch with correct order
+  const allEvents = [];
+  let runBal = state.openingBalance;
+  allEvents.push({ bal: runBal });
+  // We'll just interleave: apply topups after every (bets.length/topups.length) bets
+  const betCount = state.bets.filter(b=>b.result!=='Void').length;
+  const topupCount = topups.length;
+  let tIdx = 0;
+  let bIdx = 0;
+  for (const b of state.bets) {
+    if (b.result !== 'Void') {
+      runBal += (b.returnAmt - b.bet);
+      bIdx++;
+      // Insert topup after proportional point
+      if (topupCount > 0 && tIdx < topupCount) {
+        const threshold = Math.round((tIdx + 1) * betCount / topupCount);
+        if (bIdx >= threshold) {
+          runBal += topups[tIdx].totalAdded;
+          tIdx++;
+        }
+      }
+    }
+    allEvents.push({ bal: runBal });
+  }
+  // Append remaining topups
+  while (tIdx < topupCount) { runBal += topups[tIdx].totalAdded; allEvents.push({ bal: runBal }); tIdx++; }
+  return allEvents.map(e => e.bal);
 }
 
 function getPunterStats() {
@@ -727,8 +878,24 @@ function renderHome() {
   const opening = state.openingBalance;
   const pnl = split - (opening / state.numPunters);
 
+  // Your turn banner
+  const ytbEl = document.getElementById('your-turn-banner');
+  if (state.whoAmI && state.whoAmI === punter && !alreadyBet) {
+    ytbEl.style.display = 'flex';
+    document.getElementById('ytb-title').textContent = `It's your turn, ${punter}! 🏇`;
+    document.getElementById('ytb-sub').textContent = `Week ${week} · $${getPoolSize()} pool — go log that bet`;
+  } else if (state.whoAmI && state.whoAmI === punter && alreadyBet) {
+    ytbEl.style.display = 'flex';
+    ytbEl.style.background = 'linear-gradient(135deg,#14532D,var(--green))';
+    document.getElementById('ytb-title').textContent = `You've bet this week ✅`;
+    document.getElementById('ytb-sub').textContent = `Waiting on result · Week ${week}`;
+  } else {
+    ytbEl.style.display = 'none';
+  }
+
   document.getElementById('hdr-week-badge').textContent = 'WK ' + week;
   document.getElementById('hdr-sub').textContent = `2026 Season · ${state.bets.length} bet${state.bets.length!==1?'s':''} · Live`;
+  const whoBtn=document.getElementById('hdr-who-btn');if(whoBtn)whoBtn.textContent=state.whoAmI?`👤 ${state.whoAmI}`:'👤 –';
   renderRotationStrip('home-rotation-strip', punter, week);
 
   const alreadyBet = punterAlreadyBetThisWeek(punter, week) && !overridden;
@@ -767,6 +934,7 @@ function renderHome() {
   const ranked=getPunterStats().filter(s=>s.bets>0).sort((a,b)=>b.net-a.net);
   if(ranked.length>0){document.getElementById('st-leader').textContent=ranked[0].name;document.getElementById('st-leader-net').textContent=(ranked[0].net>=0?'+$':'-$')+Math.abs(ranked[0].net).toFixed(2);}
 
+  renderSparkline();
   const recent=[...state.bets].reverse().slice(0,8);
   document.getElementById('home-recent').innerHTML = recent.length ? recent.map(b=>{
     const net=b.returnAmt-b.bet,roi=b.bet>0?(net/b.bet*100).toFixed(0):0,cls=b.result==='Win'?'win':b.result==='Loss'?'loss':'void';
@@ -862,6 +1030,9 @@ function renderBoard() {
   const stats=getPunterStats().sort((a,b)=>b.net-a.net);
   const maxRoi=Math.max(...stats.map(s=>Math.abs(s.roi)),1);
   document.getElementById('lb-list').innerHTML=stats.map((s,i)=>{
+    const pb = state.bets.filter(b=>b.punter===s.name&&b.result!=='Void');
+    const bestRet = pb.length ? Math.max(...pb.map(b=>b.returnAmt-b.bet)) : null;
+    const pbStr = bestRet!==null&&bestRet>0 ? `Best: +$${bestRet.toFixed(0)}` : '';
     const netStr=s.net===0?'$0.00':(s.net>0?'+$':'-$')+Math.abs(s.net).toFixed(2);
     const roiStr=s.bets===0?'–':(s.roi>=0?'+':'')+s.roi.toFixed(1)+'%';
     const barPct=Math.min(Math.abs(s.roi)/maxRoi*100,100);
@@ -897,6 +1068,8 @@ function renderAdmin() {
   document.getElementById('acct-split2').textContent='$'+split.toFixed(2);
   const pe=document.getElementById('acct-pnl2');pe.textContent=(pnl>=0?'+$':'-$')+Math.abs(pnl).toFixed(2);pe.style.color=pnl>=0?'var(--green)':'var(--red)';
   renderDragList();
+  initTopUpCard();
+  renderTopUpHistory();
   document.getElementById('settings-opening').value=opening;
   document.getElementById('settings-punters').value=state.numPunters;
   document.getElementById('settings-pool').value=getPoolSize();
@@ -1133,6 +1306,157 @@ async function savePunterOrder() {
   }
 }
 
+
+// ═══════════════ WHO AM I ═══════════════
+function showWhoAmI() {
+  const grid = document.getElementById('wai-grid');
+  grid.innerHTML = getPunters().map(p => `
+    <div class="wai-btn ${state.whoAmI===p?'selected':''}" onclick="selectWAI('${p}')" id="wai-${p}">
+      <div class="wai-ini">${INI(p)}</div>
+      <div class="wai-name">${p}</div>
+    </div>`).join('');
+  document.getElementById('wai-overlay').classList.add('open');
+}
+
+function selectWAI(name) {
+  document.querySelectorAll('.wai-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('wai-'+name)?.classList.add('selected');
+  state.whoAmI = name;
+}
+
+function saveWhoAmI() {
+  if (!state.whoAmI) { showToast('⚠️ Pick your name first'); return; }
+  localStorage.setItem('bbb_whoami', state.whoAmI);
+  document.getElementById('wai-overlay').classList.remove('open');
+  showToast(`👋 Welcome, ${state.whoAmI}!`);
+  renderHome();
+}
+
+function skipWhoAmI() {
+  document.getElementById('wai-overlay').classList.remove('open');
+}
+
+// ═══════════════ SPARKLINE ═══════════════
+function renderSparkline() {
+  const svg = document.getElementById('sparkline-svg');
+  const history = getBalanceHistory();
+  const rangeEl = document.getElementById('sparkline-range');
+  if (!svg || history.length < 2) {
+    if (svg) svg.innerHTML = '<text x="150" y="24" text-anchor="middle" fill="#94A3B8" font-size="11" font-family="Arial">Bet history will appear here</text>';
+    if (rangeEl) rangeEl.textContent = '';
+    return;
+  }
+
+  const W = 300, H = 44, PAD = 4;
+  const min = Math.min(...history);
+  const max = Math.max(...history);
+  const range = max - min || 1;
+  const pts = history.map((v, i) => {
+    const x = PAD + (i / (history.length - 1)) * (W - PAD*2);
+    const y = H - PAD - ((v - min) / range) * (H - PAD*2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+
+  const last = history[history.length-1];
+  const first = history[0];
+  const isUp = last >= first;
+  const lineCol = isUp ? '#16A34A' : '#DC2626';
+  const fillCol = isUp ? 'rgba(22,163,74,0.12)' : 'rgba(220,38,38,0.12)';
+
+  // Fill area
+  const firstPt = pts[0].split(',');
+  const lastPt  = pts[pts.length-1].split(',');
+  const areaPath = `M${firstPt[0]},${H} L${pts.join(' L')} L${lastPt[0]},${H} Z`;
+
+  // Top-up markers (vertical lines) — approximate positions
+  const topups = state.topups || [];
+  const totalEvents = history.length - 1;
+  const topupMarkers = topups.map((t, ti) => {
+    const approxIdx = Math.min(Math.round((ti + 1) * totalEvents / (topups.length + 1)), totalEvents);
+    const x = PAD + (approxIdx / (history.length-1)) * (W - PAD*2);
+    return `<line x1="${x.toFixed(1)}" y1="2" x2="${x.toFixed(1)}" y2="${H-2}" stroke="#D4A017" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.7"/>`;
+  }).join('');
+
+  svg.innerHTML = `
+    <path d="${areaPath}" fill="${fillCol}"/>
+    <polyline points="${pts.join(' ')}" fill="none" stroke="${lineCol}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${topupMarkers}
+    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="3" fill="${lineCol}"/>`;
+
+  const diff = last - first;
+  rangeEl.textContent = `${isUp?'+':'-'}$${Math.abs(diff).toFixed(0)} overall`;
+  rangeEl.style.color = isUp ? 'var(--green)' : 'var(--red)';
+}
+
+// ═══════════════ TOP-UPS ═══════════════
+function initTopUpCard() {
+  document.getElementById('topup-date').value = new Date().toISOString().split('T')[0];
+  updateTopUpPreview();
+}
+
+function updateTopUpPreview() {
+  const amt = parseFloat(document.getElementById('topup-amount')?.value) || 0;
+  const n = state.numPunters || 6;
+  const total = amt * n;
+  const el = document.getElementById('topup-total-preview');
+  if (el) el.textContent = `$${total.toFixed(2)} ($${amt.toFixed(0)} × ${n} punters)`;
+}
+
+async function processTopUp() {
+  const amt = parseFloat(document.getElementById('topup-amount').value);
+  const dateRaw = document.getElementById('topup-date').value;
+  const note = document.getElementById('topup-note').value.trim();
+  if (!amt || isNaN(amt) || amt <= 0) { showToast('⚠️ Enter a top-up amount'); return; }
+  const n = state.numPunters;
+  const total = amt * n;
+  const dateStr = dateRaw
+    ? new Date(dateRaw).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'})
+    : new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'});
+
+  if (!confirm(`Add $${total.toFixed(2)} to the account?\n$${amt.toFixed(2)} × ${n} punters = $${total.toFixed(2)}\n\nThis will update everyone's balance immediately.`)) return;
+
+  const btn = document.getElementById('topup-btn');
+  btn.disabled = true; btn.textContent = '⏳ Processing…';
+  try {
+    setSyncStatus('syncing', 'Processing top-up…');
+    const { error } = await supa.from('topups').insert({
+      amount_per_person: amt,
+      num_punters: n,
+      total_added: total,
+      note: note || null
+    });
+    if (error) throw error;
+    showToast(`✅ +$${total.toFixed(2)} added to pool!`);
+    document.getElementById('topup-note').value = '';
+    await loadFromSupabase();
+    renderAdmin();
+    renderHome();
+  } catch(e) {
+    console.error(e);
+    showToast('❌ Top-up failed — check connection');
+  } finally {
+    btn.disabled = false; btn.textContent = '💰 Process Top-Up';
+  }
+}
+
+function renderTopUpHistory() {
+  const el = document.getElementById('topup-history');
+  if (!el) return;
+  const topups = [...(state.topups||[])].reverse();
+  if (!topups.length) { el.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:6px 0">No top-ups yet</div>'; return; }
+  el.innerHTML = '<div style="font-size:10px;font-weight:800;color:var(--steel);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Top-Up History</div>' +
+    topups.map(t => `
+    <div class="topup-history-row">
+      <span class="topup-badge">💰 TOP-UP</span>
+      <span style="flex:1;font-weight:700">+$${t.totalAdded.toFixed(2)}</span>
+      <span style="color:var(--muted)">$${t.amountEach.toFixed(0)} × ${t.numPunters}</span>
+      <span style="color:var(--muted);font-size:10px;margin-left:6px">${t.date}</span>
+    </div>${t.note ? `<div style="font-size:10px;color:var(--muted);padding:2px 0 6px 0">${t.note}</div>` : ''}`).join('');
+}
+
+// ═══════════════ PERSONAL BEST ON LEADERBOARD ═══════════════
+// (used in renderBoard — injects best single win per punter)
+
 // ═══════════════ TOAST ═══════════════
 function showToast(msg) {
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
@@ -1149,6 +1473,10 @@ async function init() {
     setTimeout(()=>overlay.style.display='none',400);
     renderHome();
     subscribeToRealtime();
+    // Show who-am-I picker on first visit
+    if (!state.whoAmI) setTimeout(showWhoAmI, 600);
+    // Live preview for top-up amount
+    document.getElementById('topup-amount')?.addEventListener('input', updateTopUpPreview);
   } else {
     document.getElementById('loading-msg').textContent='Connection failed. Tap to retry.';
     overlay.onclick=()=>init();
