@@ -1436,7 +1436,7 @@ function renderHome() {
 
   const allValid=state.bets.filter(b=>b.result!=='Void');
   const gW=allValid.filter(b=>b.result==='Win').length,gL=allValid.filter(b=>b.result==='Loss').length;
-  document.getElementById('st-bets').textContent=state.bets.length;
+  document.getElementById('st-bets').textContent=allValid.length;
   document.getElementById('st-winrate-sub').textContent=(allValid.length>0?Math.round(gW/allValid.length*100):0)+'% win rate';
 
   // Group W/L: count profitable weeks (total return > total staked for that week across all punters)
@@ -1773,13 +1773,13 @@ function renderMyStats(stats, sortedStats) {
 
   // Secondary stats
   document.getElementById('my-weeks').textContent = s.weeks > 0 ? `${s.weeks} week${s.weeks!==1?'s':''}` : 'No weeks yet';
-  const myBets = state.bets.filter(b => b.punter === name && !b.isBonus);
-  const bestRet = myBets.length ? Math.max(...myBets.map(b => b.returnAmt)) : 0;
-  document.getElementById('my-best').textContent = bestRet > 0 ? '$' + bestRet.toFixed(2) : '–';
+  const myBets = state.bets.filter(b => b.punter === name && b.result !== 'Void');
+  const bestNet = myBets.length ? Math.max(...myBets.map(b => b.returnAmt - b.bet)) : null;
+  document.getElementById('my-best').textContent = bestNet !== null && bestNet > 0 ? '+$' + bestNet.toFixed(2) : '–';
   document.getElementById('my-staked').textContent = '$' + s.totalBet.toFixed(2);
 
   const streakEl = document.getElementById('my-streak');
-  if (s.streak > 1) {
+  if (s.streak > 0) {
     streakEl.textContent = s.streak + '× ' + (s.streakType === 'Win' ? '🔥 Win' : '❄️ Loss');
     streakEl.style.color = s.streakType === 'Win' ? '#6EE7B7' : '#FCA5A5';
   } else {
