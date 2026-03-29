@@ -949,7 +949,9 @@ function getPunterStats() {
     let wins = 0, losses = 0, successes = 0;
     weekNums.forEach(w => {
       const s = getWeekSummary(name, w);
-      if (!s.isComplete) return; // pending — don't count
+      // Count week if: pool spent, OR any single bet >= pool (legacy bets)
+      const countIt = s.isComplete || s.realBets.some(b => b.bet >= getPoolSize());
+      if (!countIt) return;
       if (s.goesAgain)  wins++;
       else if (s.isSuccess) successes++;
       else losses++;
@@ -1022,12 +1024,14 @@ function renderRotationStrip(elId, currentPunter, currentWeek) {
 
 // ═══════════════ HOME ═══════════════
 function renderHome() {
+  try {
   const { week, punter, overridden } = computeCurrentState();
   const pool = getPoolSize();
   const account = getAccountTotal();
   const split = account / state.numPunters;
   const opening = state.openingBalance;
   const pnl = split - (opening / state.numPunters);
+  const alreadyBet = punterAlreadyBetThisWeek(punter, week) && !overridden;
 
   // Your turn banner
   const ytbEl = document.getElementById('your-turn-banner');
@@ -1053,7 +1057,6 @@ function renderHome() {
   const whoBtn=document.getElementById('hdr-who-btn');if(whoBtn)whoBtn.textContent=state.whoAmI?`👤 ${state.whoAmI}`:'👤 –';
   renderRotationStrip('home-rotation-strip', punter, week);
 
-  const alreadyBet = punterAlreadyBetThisWeek(punter, week) && !overridden;
   document.getElementById('hero-eyebrow').textContent = alreadyBet ? `WEEK ${week} · UP NEXT` : `WEEK ${week} · UP NOW`;
   document.getElementById('hero-punter-name').textContent = punter;
   document.getElementById('hero-punter-sub').textContent = alreadyBet ? `Waiting on result · $${pool} pool` : overridden ? `⚠️ Manually set · $${pool} pool` : `Ready to bet · $${pool} pool`;
@@ -1095,6 +1098,7 @@ function renderHome() {
     const cost=b.isBonus?0:b.bet; const net=b.isBonus?b.returnAmt:(b.returnAmt-b.bet); const roi=cost>0?(net/cost*100).toFixed(0):0; const cls=b.result==='Win'?'win':b.result==='Loss'||b.result==='Loss'?'loss':b.result==='Success'?'win':'void';
     return `<div class="bet-row"><div class="bet-avatar ${cls}">${INI(b.punter)}</div><div class="bet-info"><div class="bet-name">${b.punter} <span class="pill pill-${cls}">${b.result}</span></div><div class="bet-meta">Wk${b.week} · ${b.date} · $${b.bet.toFixed(0)} staked</div></div><div class="bet-amount"><div class="bet-net" style="color:${net>=0?'var(--green)':'var(--red)'}">${net>=0?'+':'-'}$${Math.abs(net).toFixed(2)}</div><div class="bet-roi">${roi>0?'+':''}${roi}% ROI</div></div></div>`;
   }).join('') : '<div class="empty">No bets yet</div>';
+  } catch(e) { console.error('renderHome error:', e); }
 }
 
 // ═══════════════ ENTRY FORM ═══════════════
@@ -1892,6 +1896,9 @@ async function init() {
   if (ok) {
     overlay.classList.add('hidden');
     setTimeout(()=>overlay.style.display='none',400);
+    // Update header sub immediately in case renderHome has issues
+    const hdrSub = document.getElementById('hdr-sub');
+    if (hdrSub) hdrSub.textContent = `2026 Season · ${state.bets.length} bet${state.bets.length!==1?'s':''} · Live`;
     renderHome();
     subscribeToRealtime();
     // Show who-am-I picker on first visit
