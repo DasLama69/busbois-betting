@@ -188,6 +188,15 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--dark); color:white; padding:11px 22px; border-radius:24px; font-size:13px; font-weight:700; z-index:998; transition:transform 0.3s ease; white-space:nowrap; box-shadow:0 4px 20px rgba(0,0,0,0.3); }
 .toast.show { transform:translateX(-50%) translateY(0); }
 
+/* ── QUICK ENTRY ── */
+.odds-presets { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+.odds-preset-btn { padding:5px 10px; border-radius:20px; border:1.5px solid rgba(37,99,168,0.4); background:rgba(37,99,168,0.08); color:var(--steel); font-size:11px; font-weight:800; cursor:pointer; transition:all 0.15s; -webkit-appearance:none; }
+.odds-preset-btn:active, .odds-preset-btn.active { background:var(--steel); color:white; border-color:var(--steel); }
+.more-details-toggle { width:100%; padding:10px 14px; border-radius:10px; border:1.5px dashed rgba(255,255,255,0.15); background:transparent; color:rgba(255,255,255,0.5); font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:10px; transition:all 0.2s; -webkit-appearance:none; }
+.more-details-toggle:active { background:rgba(255,255,255,0.06); }
+.more-details-section { overflow:hidden; transition:max-height 0.3s ease; max-height:0; }
+.more-details-section.open { max-height:400px; }
+
 .section-label { font-size:10px; font-weight:800; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; padding-top:4px; }
 .empty { color:var(--muted); font-size:13px; padding:16px 0; text-align:center; }
 
@@ -433,6 +442,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   <div class="card-dark" style="margin-top:2px">
     <div style="color:rgba(255,255,255,0.5);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Log a Bet</div>
     <div style="color:var(--gold-lt);font-size:13px;font-weight:700" id="enter-auto-label">Auto-filled from rotation · adjust if needed</div>
+    <div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:4px">Tip: use <strong style="color:var(--gold-lt)">➕ Add to Queue</strong> to log multiple bets at once before saving</div>
   </div>
 
   <!-- Bet type toggle -->
@@ -477,6 +487,50 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
         <input type="number" id="entry-return" class="form-control" placeholder="0.00" step="0.01" oninput="updatePreview()">
       </div>
     </div>
+    <div class="form-group" style="margin-bottom:0;margin-top:12px">
+      <label class="form-label">Odds <span>(optional)</span></label>
+      <input type="number" id="entry-odds" class="form-control" placeholder="e.g. 6.50" step="0.01" min="1" oninput="updatePreview()">
+      <div class="odds-presets" id="odds-presets"></div>
+    </div>
+  </div>
+
+  <!-- More Details collapsible -->
+  <button class="more-details-toggle" id="more-details-toggle" onclick="toggleMoreDetails()">
+    <span id="more-details-icon">▶</span> More Details (bet type, sport, notes)
+  </button>
+  <div class="more-details-section" id="more-details-section">
+    <div class="card" style="margin-bottom:10px">
+      <div class="card-title">📋 Optional Details</div>
+      <div class="form-row" style="margin-bottom:12px">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Bet Type <span>(default: Multi)</span></label>
+          <select id="entry-bet-type" class="form-control">
+            <option value="Multi">Multi</option>
+            <option value="Single">Single</option>
+            <option value="Parlay">Parlay</option>
+            <option value="System">System</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Sport / League <span>(optional)</span></label>
+          <select id="entry-sport" class="form-control">
+            <option value="">— Select —</option>
+            <option value="AFL">AFL</option>
+            <option value="NRL">NRL</option>
+            <option value="Racing">Racing</option>
+            <option value="Cricket">Cricket</option>
+            <option value="Soccer">Soccer</option>
+            <option value="NBA">NBA</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Notes <span>(optional)</span></label>
+        <input type="text" id="entry-notes" class="form-control" placeholder="e.g. Collingwood to win, game 3 finals">
+      </div>
+    </div>
   </div>
 
   <!-- Week status for this punter -->
@@ -489,24 +543,35 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div class="preview-grid" id="preview-grid"></div>
     <div style="margin-top:10px;padding:8px;background:var(--off);border-radius:8px;font-size:11px;color:var(--muted)" id="preview-next"></div>
   </div>
-  <!-- Action buttons -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-    <button class="btn btn-primary" id="save-btn" onclick="submitBet()">💾 Save Bet</button>
-    <button class="btn" id="queue-btn" onclick="addToQueue()"
-      style="background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);font-size:14px">
+
+  <!-- Action buttons — queue is primary for multi-bet entry -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+    <button class="btn btn-primary" id="queue-btn" onclick="addToQueue()"
+      style="background:linear-gradient(135deg,#1a6b3a,#16A34A);box-shadow:0 4px 12px rgba(22,163,74,0.35)">
       ➕ Add to Queue
     </button>
+    <button class="btn btn-primary" id="save-btn" onclick="submitBet()"
+      style="background:linear-gradient(135deg,var(--mid),var(--steel))">
+      💾 Save Bet
+    </button>
+  </div>
+  <div style="text-align:center;font-size:10px;color:rgba(255,255,255,0.35);margin-bottom:12px;margin-top:-4px">
+    Queue multiple bets then save all at once · or save individually
   </div>
 
   <!-- Queue -->
   <div id="queue-card" style="display:none;margin-bottom:12px">
-    <div style="background:linear-gradient(135deg,var(--navy2),var(--mid));border-radius:14px;padding:14px;border:1px solid rgba(255,255,255,0.1)">
+    <div style="background:linear-gradient(135deg,var(--navy2),var(--mid));border-radius:14px;padding:14px;border:1px solid rgba(22,163,74,0.3)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="color:var(--gold);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px">Queued Bets</div>
-        <div id="queue-count" style="background:var(--gold);color:var(--navy);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:900">0</div>
+        <div>
+          <div style="color:#6EE7B7;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px">📋 Queued Bets</div>
+          <div style="color:rgba(255,255,255,0.4);font-size:10px;margin-top:2px">Review &amp; save all at once</div>
+        </div>
+        <div id="queue-count" style="background:#16A34A;color:white;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:900">0</div>
       </div>
       <div id="queue-list" style="margin-bottom:10px"></div>
-      <button class="btn btn-primary" onclick="saveQueue()" id="save-queue-btn">
+      <button class="btn btn-primary" onclick="saveQueue()" id="save-queue-btn"
+        style="background:linear-gradient(135deg,#1a6b3a,#16A34A);box-shadow:0 4px 12px rgba(22,163,74,0.35)">
         💾 Save All Bets
       </button>
     </div>
@@ -892,7 +957,11 @@ async function loadFromSupabase() {
       result:    b.result,
       loggedBy:  b.logged_by || null,
       isBonus:   b.is_bonus || false,
-      bonusStake: parseFloat(b.bonus_stake) || 0
+      bonusStake: parseFloat(b.bonus_stake) || 0,
+      odds:      b.odds ? parseFloat(b.odds) : null,
+      betType:   b.bet_type || 'Multi',
+      sport:     b.sport || null,
+      notes:     b.notes || null
     }));
 
     // Load top-ups
@@ -929,7 +998,11 @@ async function saveBetToSupabase(bet) {
       result:     bet.result,
       logged_by:  state.whoAmI || null,
       is_bonus:   bet.isBonus || false,
-      bonus_stake: bet.bonusStake || 0
+      bonus_stake: bet.bonusStake || 0,
+      odds:       bet.odds || null,
+      bet_type:   bet.betType || 'Multi',
+      sport:      bet.sport || null,
+      notes:      bet.notes || null
     }).select().single();
     if (error) throw error;
     setSyncStatus('connected', `Live · ${state.bets.length} bet${state.bets.length !== 1 ? 's' : ''}`);
@@ -956,6 +1029,11 @@ async function deleteBetFromSupabase(id) {
 // alter table settings add column if not exists punter_avatars text;
 // alter table settings add column if not exists baseline_week integer;
 // alter table settings add column if not exists baseline_punter text;
+// Run in Supabase SQL to add Quick Entry optional columns:
+// ALTER TABLE bets ADD COLUMN IF NOT EXISTS odds DECIMAL(6,2);
+// ALTER TABLE bets ADD COLUMN IF NOT EXISTS bet_type TEXT DEFAULT 'Multi';
+// ALTER TABLE bets ADD COLUMN IF NOT EXISTS sport TEXT;
+// ALTER TABLE bets ADD COLUMN IF NOT EXISTS notes TEXT;
 async function saveSettingsToSupabase() {
   setSyncStatus('syncing', 'Saving settings...');
   try {
@@ -1331,6 +1409,7 @@ function renderHome() {
 // ═══════════════ ENTRY FORM ═══════════════
 let currentBetType = 'normal';
 let betQueue = []; // holds bets waiting to be saved
+let lastBetTypePref = 'Multi'; // remembered bet type preference
 
 function setBetType(type) {
   currentBetType = type;
@@ -1368,6 +1447,7 @@ function populateEntryForm() {
   const sel = document.getElementById('entry-punter');
   sel.innerHTML = getPunters().map(p=>`<option value="${p}" ${p===punter?'selected':''}>${p}${p===punter?' 👈 auto':''}</option>`).join('');
   document.getElementById('entry-return').value = '';
+  document.getElementById('entry-odds').value = '';
   document.getElementById('preview-card').style.display = 'none';
   document.getElementById('enter-auto-label').textContent = `${punter} is up · Week ${week} · $${pool} pool`;
   // Reset bonus/normal toggle visuals
@@ -1377,8 +1457,51 @@ function populateEntryForm() {
   if (btnB) { btnB.style.background='transparent'; btnB.style.borderColor='var(--gray2)'; btnB.style.color='rgba(255,255,255,0.5)'; }
   const notice = document.getElementById('bonus-notice');
   if (notice) notice.style.display = 'none';
+  // Apply smart defaults for optional fields
+  const betTypeEl = document.getElementById('entry-bet-type');
+  if (betTypeEl) betTypeEl.value = lastBetTypePref;
+  const sportEl = document.getElementById('entry-sport');
+  if (sportEl) sportEl.value = '';
+  const notesEl = document.getElementById('entry-notes');
+  if (notesEl) notesEl.value = '';
+  populateOddsPresets();
   renderRotationStrip('enter-rotation-strip', punter, week);
   updateWeekStatus();
+}
+
+function toggleMoreDetails() {
+  const section = document.getElementById('more-details-section');
+  const icon = document.getElementById('more-details-icon');
+  const isOpen = section.classList.contains('open');
+  section.classList.toggle('open', !isOpen);
+  icon.textContent = isOpen ? '▶' : '▼';
+}
+
+function populateOddsPresets() {
+  const container = document.getElementById('odds-presets');
+  if (!container) return;
+  // Pull up to 5 unique recent odds values from saved bets
+  const seen = new Set();
+  const presets = [];
+  for (let i = state.bets.length - 1; i >= 0 && presets.length < 5; i--) {
+    const o = state.bets[i].odds;
+    if (o && !seen.has(o)) { seen.add(o); presets.push(o); }
+  }
+  if (!presets.length) { container.innerHTML = ''; return; }
+  container.innerHTML = presets.map(o =>
+    `<button class="odds-preset-btn" onclick="setQuickOdds(${o})">${o.toFixed(2)}</button>`
+  ).join('');
+}
+
+function setQuickOdds(val) {
+  const el = document.getElementById('entry-odds');
+  if (!el) return;
+  el.value = val;
+  // Highlight selected preset
+  document.querySelectorAll('.odds-preset-btn').forEach(b => {
+    b.classList.toggle('active', Math.abs(parseFloat(b.textContent) - val) < 0.001);
+  });
+  updatePreview();
 }
 
 function onPunterChange() { updateWeekStatus(); updatePreview(); }
@@ -1466,6 +1589,11 @@ async function submitBet() {
   const betVal = parseFloat(document.getElementById('entry-bet').value);
   const ret    = parseFloat(document.getElementById('entry-return').value);
   const isBonus = currentBetType === 'bonus';
+  const oddsRaw = parseFloat(document.getElementById('entry-odds').value);
+  const odds    = !isNaN(oddsRaw) && oddsRaw > 0 ? oddsRaw : null;
+  const betType = document.getElementById('entry-bet-type')?.value || 'Multi';
+  const sport   = document.getElementById('entry-sport')?.value || null;
+  const notes   = document.getElementById('entry-notes')?.value?.trim() || null;
 
   if (!punter)                          { showToast('⚠️ Select a punter'); return; }
   if (!week || isNaN(week) || week <= 0){ showToast('⚠️ Week must be a positive number'); return; }
@@ -1501,11 +1629,13 @@ async function submitBet() {
       returnAmt: ret,
       result:    impliedResult,
       isBonus,
-      bonusStake: isBonus ? betVal : 0
+      bonusStake: isBonus ? betVal : 0,
+      odds, betType, sport, notes
     };
     const id = await saveBetToSupabase(newBet);
     newBet.id = id;
     state.bets.push(newBet);
+    if (betType) lastBetTypePref = betType;
 
     const msg = isBonus
       ? `🎟️ Bonus bet saved for ${punter}!`
@@ -1813,6 +1943,11 @@ function addToQueue() {
   const betVal  = parseFloat(document.getElementById('entry-bet').value);
   const ret     = parseFloat(document.getElementById('entry-return').value);
   const isBonus = currentBetType === 'bonus';
+  const oddsRaw = parseFloat(document.getElementById('entry-odds').value);
+  const odds    = !isNaN(oddsRaw) && oddsRaw > 0 ? oddsRaw : null;
+  const betType = document.getElementById('entry-bet-type')?.value || 'Multi';
+  const sport   = document.getElementById('entry-sport')?.value || null;
+  const notes   = document.getElementById('entry-notes')?.value?.trim() || null;
 
   if (!punter)              { showToast('⚠️ Select a punter'); return; }
   if (!week || isNaN(week) || week <= 0) { showToast('⚠️ Week must be a positive number'); return; }
@@ -1841,14 +1976,18 @@ function addToQueue() {
     : 'Pending';
 
   betQueue.push({ week, date, punter, bet: isBonus?0:betVal, returnAmt: ret,
-    result: impliedResult, isBonus, bonusStake: isBonus?betVal:0, _tempId: Date.now() });
+    result: impliedResult, isBonus, bonusStake: isBonus?betVal:0,
+    odds, betType, sport, notes, _tempId: Date.now() });
+  if (betType) lastBetTypePref = betType;
 
   showToast(`➕ Added to queue (${betQueue.length} bet${betQueue.length!==1?'s':''})`);
   renderQueue();
-  // Reset just the bet-specific fields, keep week/punter/date
+  // Reset bet-specific fields, keep week/punter/date/sport/bet-type for fast repeat entry
   document.getElementById('entry-return').value = '';
+  document.getElementById('entry-odds').value = '';
   document.getElementById('entry-bet').value = isBonus ? '0' : getPoolSize().toFixed(2);
   document.getElementById('preview-card').style.display = 'none';
+  if (document.getElementById('entry-notes')) document.getElementById('entry-notes').value = '';
   updateWeekStatus();
 }
 
@@ -1865,12 +2004,14 @@ function renderQueue() {
     const netStr = (net>=0?'+$':'-$') + Math.abs(net).toFixed(2);
     const netCol = net>=0?'#6EE7B7':'#FCA5A5';
     const typeIcon = b.isBonus ? '🎟️' : '💵';
+    const meta = [b.betType||'Multi', b.sport, b.odds ? `@ ${b.odds}` : null].filter(Boolean).join(' · ');
     return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(255,255,255,0.06);border-radius:8px;margin-bottom:6px;font-size:12px">
       <span style="flex-shrink:0">${typeIcon}</span>
-      <span style="font-weight:700;color:white;flex:1">${b.punter}</span>
-      <span style="color:rgba(255,255,255,0.5)">Wk${b.week}</span>
-      <span style="color:rgba(255,255,255,0.5)">${b.isBonus?'bonus':'$'+b.bet.toFixed(0)}→$${b.returnAmt.toFixed(0)}</span>
-      <span style="font-weight:800;color:${netCol}">${netStr}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;color:white">${b.punter} <span style="color:rgba(255,255,255,0.4);font-weight:400">Wk${b.week}</span></div>
+        <div style="color:rgba(255,255,255,0.4);font-size:10px;margin-top:1px">${b.isBonus?'bonus':'$'+b.bet.toFixed(0)}→$${b.returnAmt.toFixed(0)} · ${meta}</div>
+      </div>
+      <span style="font-weight:800;color:${netCol};flex-shrink:0">${netStr}</span>
       <button onclick="removeFromQueue(${i})" style="background:rgba(220,38,38,0.2);border:none;color:#FCA5A5;border-radius:6px;padding:2px 7px;font-size:11px;cursor:pointer;flex-shrink:0">✕</button>
     </div>`;
   }).join('');
