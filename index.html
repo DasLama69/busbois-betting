@@ -42,8 +42,8 @@ body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',
 .tab.active { color:var(--gold); border-bottom-color:var(--gold); }
 
 /* ── SCROLL ── */
-.scroll-area { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
-.page { display:none; padding:10px 12px 80px; }
+.scroll-area { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; touch-action:pan-y; }
+.page { display:none; padding:10px 12px 80px; touch-action:pan-y; }
 .page.active { display:block; }
 
 /* ── CARDS ── */
@@ -259,7 +259,8 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .wai-btn.selected .wai-name { color:var(--navy); }
 
 /* ── YOUR TURN BANNER ── */
-.your-turn-banner { background:linear-gradient(135deg,#78350F,var(--gold)); border-radius:14px; padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; gap:12px; animation:glow 2s ease-in-out infinite; }
+.your-turn-banner { background:linear-gradient(135deg,#78350F,var(--gold)); border-radius:14px; padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; gap:12px; }
+.your-turn-banner.visible { animation:glow 2s ease-in-out infinite; }
 @keyframes glow { 0%,100%{box-shadow:0 0 12px rgba(212,160,23,0.4)} 50%{box-shadow:0 0 24px rgba(212,160,23,0.7)} }
 .ytb-emoji { font-size:28px; flex-shrink:0; }
 .ytb-text { flex:1; }
@@ -335,7 +336,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 
 <!-- HOME -->
 <div class="page active" id="tab-home">
-  <div id="your-turn-banner" style="display:none" class="your-turn-banner">
+  <div id="your-turn-banner" class="your-turn-banner" style="display:none">
     <div class="ytb-emoji">🏇</div>
     <div class="ytb-text">
       <div class="ytb-title" id="ytb-title">It's your turn!</div>
@@ -860,6 +861,10 @@ function switchTab(tab) {
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',TAB_NAMES[i]===tab));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('tab-'+tab).classList.add('active');
+  // Reset drag item touch-action — only allow in admin tab
+  document.querySelectorAll('.drag-item').forEach(el => {
+    el.style.touchAction = tab === 'account' ? 'none' : 'pan-y';
+  });
   if(tab==='home')    renderHome();
   if(tab==='enter')   populateEntryForm();
   if(tab==='board')   renderBoard();
@@ -895,15 +900,19 @@ function renderHome() {
   const ytbEl = document.getElementById('your-turn-banner');
   if (state.whoAmI && state.whoAmI === punter && !alreadyBet) {
     ytbEl.style.display = 'flex';
+    ytbEl.style.background = 'linear-gradient(135deg,#78350F,var(--gold))';
+    ytbEl.classList.add('visible');
     document.getElementById('ytb-title').textContent = `It's your turn, ${punter}! 🏇`;
     document.getElementById('ytb-sub').textContent = `Week ${week} · $${getPoolSize()} pool — go log that bet`;
   } else if (state.whoAmI && state.whoAmI === punter && alreadyBet) {
     ytbEl.style.display = 'flex';
     ytbEl.style.background = 'linear-gradient(135deg,#14532D,var(--green))';
+    ytbEl.classList.remove('visible');
     document.getElementById('ytb-title').textContent = `You've bet this week ✅`;
     document.getElementById('ytb-sub').textContent = `Waiting on result · Week ${week}`;
   } else {
     ytbEl.style.display = 'none';
+    ytbEl.classList.remove('visible');
   }
 
   document.getElementById('hdr-week-badge').textContent = 'WK ' + week;
