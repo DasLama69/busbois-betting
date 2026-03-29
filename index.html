@@ -864,8 +864,6 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
       <select id="admin-status-select" class="form-control" style="flex:1;min-width:120px;font-size:12px">
         <option value="Win">🔥 Win</option>
         <option value="Loss">❌ Loss</option>
-        <option value="Success">✅ Success</option>
-        <option value="Pending">⏳ Pending</option>
         <option value="Void">🚫 Void</option>
       </select>
       <button onclick="applyBetStatusChange()" style="background:rgba(212,160,23,0.15);color:var(--gold);border:1px solid rgba(212,160,23,0.4);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap">✏️ Update</button>
@@ -880,6 +878,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 </div>
 
 </div><!-- scroll area -->
+<div style="text-align:center;padding:8px 0 16px;font-size:10px;color:rgba(255,255,255,0.18);letter-spacing:0.5px">Bus Bois Betting · v1.3.0</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1153,9 +1152,8 @@ function getWeekSummary(punter, week) {
 // ── Derive implicit result for display purposes ───────────────────────────────
 function getImplicitResult(punter, week) {
   const s = getWeekSummary(punter, week);
-  if (!s.isComplete) return 'pending';
-  if (s.goesAgain)   return 'Win';      // goes again next week
-  if (s.isSuccess)   return 'Success';  // profitable but doesn't go again
+  if (!s.isComplete) return 'Pending';
+  if (s.isSuccess || s.goesAgain) return 'Win';  // any profitable week = Win
   return 'Loss';
 }
 
@@ -1478,7 +1476,7 @@ document.getElementById('st-winrate-sub').innerHTML=`${gW}W - ${gL}L - ${gV}V<br
     const cost = b.isBonus ? 0 : b.bet;
     const net = isVoid ? 0 : b.isBonus ? b.returnAmt : (b.returnAmt - b.bet);
     const roi = cost > 0 ? (net / cost * 100).toFixed(0) : 0;
-    const cls = b.result === 'Win' || b.result === 'Success' ? 'win' : b.result === 'Loss' ? 'loss' : 'void';
+    const cls = b.result === 'Win' ? 'win' : (b.result === 'Void' || b.result === 'Pending') ? 'void' : 'loss';
     const stakedStr = isVoid ? 'void' : '$' + b.bet.toFixed(0) + ' staked';
     const netColor = isVoid ? 'rgba(255,255,255,0.4)' : net >= 0 ? 'var(--green)' : 'var(--red)';
     const netStr = isVoid ? '—' : (net >= 0 ? '+' : '-') + '$' + Math.abs(net).toFixed(2);
@@ -1601,7 +1599,7 @@ function updateWeekStatus() {
   } else if (s.goesAgain) {
     statusMsg = `<span style="color:var(--green);font-weight:700">🔥 Goes again next week!</span> (return ≥ $${(pool*2).toFixed(0)})`;
   } else if (s.isSuccess) {
-    statusMsg = `<span style="color:var(--green);font-weight:700">✅ Successful week</span> — rotation moves on`;
+    statusMsg = `<span style="color:var(--green);font-weight:700">✅ Win</span> — rotation moves on`;
   } else {
     statusMsg = `<span style="color:var(--red);font-weight:700">❌ Week complete</span> — rotation moves on`;
   }
@@ -1637,17 +1635,18 @@ function updatePreview() {
   const projReturn = existingWeek.totalReturn + ret;
   const projComplete = projStaked >= pool;
   const projGoesAgain = projReturn >= pool * 2;
-  const projSuccess = projReturn >= pool;
   let nextMsg = '';
+  const projWin = projReturn >= pool;
   if (!projComplete) {
     nextMsg = `📊 Week still in progress — $${(pool - projStaked).toFixed(0)} more to spend`;
   } else if (projGoesAgain) {
     nextMsg = `🔥 Goes again next week! (total return $${projReturn.toFixed(0)} ≥ $${(pool*2).toFixed(0)})`;
-  } else if (projSuccess) {
-    nextMsg = `✅ Successful week — rotation moves to next punter`;
+  } else if (projWin) {
+    const nextIdx = (getPunters().indexOf(punter)+1) % getPunters().length;
+    nextMsg = `✅ Win — rotation moves to ${getPunters()[nextIdx]}`;
   } else {
     const nextIdx = (getPunters().indexOf(punter)+1) % getPunters().length;
-    nextMsg = `🔄 Week complete — rotation moves to ${getPunters()[nextIdx]}`;
+    nextMsg = `❌ Week complete — rotation moves to ${getPunters()[nextIdx]}`;
   }
   document.getElementById('preview-card').style.display = 'block';
   document.getElementById('preview-grid').innerHTML = `
@@ -1703,7 +1702,7 @@ async function submitBet() {
     const projStaked = existingWeek.totalStaked + (isBonus ? 0 : betVal);
     const projReturn = existingWeek.totalReturn + ret;
     impliedResult = projStaked >= pool
-      ? (projReturn >= pool * 2 ? 'Win' : projReturn >= pool ? 'Success' : 'Loss')
+      ? (projReturn >= pool ? 'Win' : 'Loss')
       : 'Pending';
   }
 
@@ -1726,8 +1725,7 @@ async function submitBet() {
     const msg = isBonus
       ? `🎟️ Bonus bet saved for ${punter}!`
       : impliedResult === 'Void' ? `🚫 Void bet recorded — no P/L impact`
-      : impliedResult === 'Win' ? `🔥 ${punter} goes again next week!`
-      : impliedResult === 'Success' ? `✅ ${punter} successful week!`
+      : impliedResult === 'Win' ? ((() => { const s2=getWeekSummary(punter,week); return s2.goesAgain ? `🔥 ${punter} goes again next week!` : `✅ ${punter} wins — rotation moves on`; })())
       : impliedResult === 'Pending' ? `📋 Bet logged — week still in progress`
       : `❌ ${punter} week complete`;
     showToast(msg);
@@ -1886,7 +1884,7 @@ function renderAdmin() {
   if(!state.bets.length){histEl.innerHTML='<div class="empty">No bets yet</div>';return;}
   histEl.innerHTML=[...state.bets].reverse().map(b=>{
     const net=b.result==='Void'?0:(b.returnAmt-b.bet);
-    const cls=b.result==='Win'||b.result==='Success'?'win':b.result==='Loss'?'loss':'void';
+    const cls=b.result==='Win'?'win':b.result==='Loss'?'loss':'void';
     const netColor=b.result==='Void'?'rgba(255,255,255,0.4)':net>=0?'var(--green)':'var(--red)';
     const netStr=b.result==='Void'?'—':(net>=0?'+':'-')+'$'+Math.abs(net).toFixed(2);
     return `<div class="hist-row"><span class="hist-wk">Wk${b.week}</span><span class="hist-name">${b.punter}${b.isBonus?' 🎟️':''}</span><span class="pill pill-${cls}">${b.isBonus?'Bonus':b.result}</span><span class="hist-net" style="color:${netColor}">${netStr}</span><button class="hist-del" onclick="deleteBetById('${b.id}')">🗑</button></div>`;
@@ -2077,7 +2075,7 @@ function addToQueue() {
     const projStaked    = existingWeek.totalStaked + queuedStaked + (isBonus ? 0 : betVal);
     const projReturn    = existingWeek.totalReturn  + queuedReturn + ret;
     impliedResult = projStaked >= pool
-      ? (projReturn >= pool*2 ? 'Win' : projReturn >= pool ? 'Success' : 'Loss')
+      ? (projReturn >= pool ? 'Win' : 'Loss')
       : 'Pending';
   }
 
@@ -2214,7 +2212,7 @@ function renderWeekMgmtStatus() {
   el.innerHTML = `
     ${baselineStr}
     <div style="margin-bottom:4px"><strong>Now:</strong> Week ${week} · ${punter} is up</div>
-    <div style="margin-bottom:4px"><strong>Status:</strong> $${s.totalStaked.toFixed(0)}/$${pool} staked · ${s.isComplete ? (s.goesAgain?'🔥 Goes again':s.isSuccess?'✅ Success':'❌ Loss') : '⏳ In progress'}</div>
+    <div style="margin-bottom:4px"><strong>Status:</strong> $${s.totalStaked.toFixed(0)}/$${pool} staked · ${s.isComplete ? (s.goesAgain?'🔥 Goes again':s.isSuccess?'✅ Win':'❌ Loss') : '⏳ In progress'}</div>
     ${last ? `<div style="font-size:11px;color:var(--muted)">Last completed: ${last.punter} Wk${last.week} · $${last.returned.toFixed(0)} return</div>` : ''}`;
 }
 
@@ -2279,14 +2277,14 @@ function generateReport() {
   const gW=allValid.filter(b=>b.result==='Win').length,gL=allValid.filter(b=>b.result==='Loss').length;
   const tBet=allValid.reduce((a,b)=>a+b.bet,0),tRet=allValid.reduce((a,b)=>a+b.returnAmt,0);
   const gNet=tRet-tBet,gRoi=tBet>0?(gNet/tBet*100).toFixed(1):'0.0';
-  const weekNet=weekBets.reduce((a,b)=>a+(b.returnAmt-b.bet),0);
+  const weekNet=weekBets.filter(b=>b.result!=='Void').reduce((a,b)=>a+(b.returnAmt-b.bet),0);
   const maxRoi=Math.max(...allStats.map(s=>Math.abs(s.roi)),1);
   const reportDate=weekBets[0]?.date||'';
   const gen=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  const weekRows=[...weekBets].sort((a,b)=>b.returnAmt-a.returnAmt).map(b=>{const net=b.returnAmt-b.bet,roi=b.bet>0?(net/b.bet*100).toFixed(0):0,win=b.result==='Win';return`<tr><td style="font-weight:700">${b.punter}</td><td>$${b.bet.toFixed(2)}</td><td>$${b.returnAmt.toFixed(2)}</td><td style="font-weight:800;color:${net>=0?'#16A34A':'#DC2626'}">${net>=0?'+':'-'}$${Math.abs(net).toFixed(2)}</td><td style="font-weight:700;color:${net>=0?'#16A34A':'#DC2626'}">${roi>0?'+':''}${roi}%</td><td><span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;background:${win?'#DCFCE7':'#FEE2E2'};color:${win?'#16A34A':'#DC2626'}">${b.result}</span></td></tr>`;}).join('');
+  const weekRows=[...weekBets].sort((a,b)=>b.returnAmt-a.returnAmt).map(b=>{const isVoid=b.result==='Void',net=isVoid?0:b.returnAmt-b.bet,roi=(!isVoid&&b.bet>0)?(net/b.bet*100).toFixed(0):0,win=b.result==='Win',bg=isVoid?'#F1F5F9':win?'#DCFCE7':'#FEE2E2',col=isVoid?'#64748B':win?'#16A34A':'#DC2626';return`<tr><td style="font-weight:700">${b.punter}</td><td>$${b.bet.toFixed(2)}</td><td>${isVoid?'—':'$'+b.returnAmt.toFixed(2)}</td><td style="font-weight:800;color:${isVoid?'#64748B':net>=0?'#16A34A':'#DC2626'}">${isVoid?'$0.00':(net>=0?'+':'-')+'$'+Math.abs(net).toFixed(2)}</td><td style="font-weight:700;color:${isVoid?'#64748B':net>=0?'#16A34A':'#DC2626'}">${isVoid?'—':(roi>0?'+':'')+roi+'%'}</td><td><span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;background:${bg};color:${col}">${b.result}</span></td></tr>`;}).join('');
   const lbRows=allStats.map((s,i)=>{const m=['🥇','🥈','🥉','4','5','6'];const net=s.net===0?'$0.00':(s.net>0?'+$':'-$')+Math.abs(s.net).toFixed(2);const roi=s.bets===0?'–':(s.roi>=0?'+':'')+s.roi.toFixed(1)+'%';const bp=Math.min(Math.abs(s.roi)/maxRoi*100,100),bc=s.roi>=0?'#16A34A':'#DC2626';const st=s.streak>1?` · ${s.streak}× ${s.streakType==='Win'?'🔥':'❄️'}`:'';return`<tr style="background:${i%2===0?'#F8FAFC':'#FFF'}"><td style="text-align:center;font-size:16px">${m[i]}</td><td style="font-weight:800">${s.name}${st}</td><td style="text-align:center">${s.wins}W / ${s.losses}L</td><td style="text-align:right;font-weight:800;color:${s.net>=0?'#16A34A':'#DC2626'}">${net}</td><td style="text-align:right;font-weight:800;color:${s.roi>=0?'#16A34A':'#DC2626'}">${roi}</td><td style="padding:0 8px 0 4px"><div style="background:#E2E8F0;border-radius:4px;height:10px;overflow:hidden"><div style="width:${bp}%;height:100%;background:${bc};border-radius:4px"></div></div></td></tr>`;}).join('');
   const ps=allStats.find(s=>s.name===nextPunter);const psStr=ps&&ps.bets>0?`${ps.wins}W / ${ps.losses}L · ${ps.roi>=0?'+':''}${ps.roi.toFixed(1)}% ROI`:'First bet coming up';
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Bus Bois Betting — Week ${reportWeek}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#F1F5F9;color:#1E293B}@media print{body{background:white}.no-print{display:none}@page{margin:10mm;size:A4}}.wrap{max-width:720px;margin:0 auto;padding:16px}.hdr{background:linear-gradient(135deg,#0A1628 0%,#163356 60%,#1B3A5C 100%);border-radius:16px;padding:22px 24px 18px;color:white;margin-bottom:14px;position:relative;overflow:hidden}.hdr::before{content:'🏇';position:absolute;right:16px;top:10px;font-size:64px;opacity:.08}.hdr-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}.rh-title{font-size:22px;font-weight:900;color:#D4A017}.rh-sub{font-size:12px;color:rgba(255,255,255,.5);margin-top:2px}.rh-wn{font-size:36px;font-weight:900;color:white;line-height:1;text-align:right}.rh-wl{font-size:10px;font-weight:700;color:rgba(212,160,23,.7);text-transform:uppercase;letter-spacing:1px}.rh-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.rh-stat{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 8px;text-align:center}.rh-sv{font-size:18px;font-weight:800;color:white;line-height:1}.rh-sl{font-size:9px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}.acct{background:linear-gradient(135deg,${account>=opening?'#14532D,#16A34A':'#7F1D1D,#DC2626'});border-radius:14px;padding:14px 18px;color:white;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}.ab-lbl{font-size:9px;font-weight:800;opacity:.6;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}.ab-bal{font-size:28px;font-weight:900;line-height:1}.ab-split{font-size:20px;font-weight:800;text-align:right}.ab-sl{font-size:9px;opacity:.6;text-transform:uppercase;letter-spacing:.5px}.ab-pnl{font-size:13px;font-weight:700;margin-top:3px;opacity:.85}.sec{background:white;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.06)}.sec-title{font-size:11px;font-weight:800;color:#2563A8;text-transform:uppercase;letter-spacing:1px;padding-bottom:8px;border-bottom:1px solid #E2E8F0;margin-bottom:12px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#F8FAFC;font-size:10px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:.5px;padding:7px 10px;text-align:left;border-bottom:2px solid #E2E8F0}td{padding:9px 10px;border-bottom:1px solid #F1F5F9;vertical-align:middle}tr:last-child td{border-bottom:none}.wk-res{text-align:center;padding:10px 0 4px}.wr-lbl{font-size:10px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}.wr-net{font-size:32px;font-weight:900;color:${weekNet>=0?'#16A34A':'#DC2626'}}.wr-sub{font-size:12px;color:#64748B;margin-top:2px}.nu{background:linear-gradient(135deg,#0F2040,#163356);border-radius:12px;padding:14px 18px;color:white;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.nu-lbl{font-size:10px;font-weight:800;color:rgba(212,160,23,.7);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}.nu-name{font-size:22px;font-weight:900;color:white}.nu-sub{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px}.footer{text-align:center;font-size:10px;color:#94A3B8;padding:8px 0 4px}.pbtn{display:block;width:100%;padding:14px;background:linear-gradient(135deg,#163356,#2563A8);color:white;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:14px;text-align:center}</style></head><body><div class="wrap"><button class="pbtn no-print" onclick="window.print()">🖨️ Save as PDF / Print</button><div class="hdr"><div class="hdr-top"><div><div class="rh-title">🏇 Bus Bois Betting</div><div class="rh-sub">2026 Season · Generated ${gen}</div></div><div><div class="rh-wl">Week</div><div class="rh-wn">${reportWeek}</div></div></div><div class="rh-stats"><div class="rh-stat"><div class="rh-sv">${gW}/${gL}</div><div class="rh-sl">Group W/L</div></div><div class="rh-stat"><div class="rh-sv">${gRoi}%</div><div class="rh-sl">Season ROI</div></div><div class="rh-stat"><div class="rh-sv">$${Math.abs(gNet).toFixed(0)}</div><div class="rh-sl">${gNet>=0?'Profit':'Loss'}</div></div><div class="rh-stat"><div class="rh-sv">${state.bets.length}</div><div class="rh-sl">Total Bets</div></div></div></div><div class="acct"><div><div class="ab-lbl">Account Balance</div><div class="ab-bal">$${account.toFixed(2)}</div></div><div><div class="ab-split">$${split.toFixed(2)}</div><div class="ab-sl">split per person</div><div class="ab-pnl">${pnl>=0?'+':'-'}$${Math.abs(pnl).toFixed(2)} each vs opening</div></div></div><div class="sec"><div class="sec-title">📅 Week ${reportWeek} — ${reportDate}</div><div class="wk-res"><div class="wr-lbl">Week Net Result</div><div class="wr-net">${weekNet>=0?'+':'-'}$${Math.abs(weekNet).toFixed(2)}</div><div class="wr-sub">${weekBets.length} bet${weekBets.length!==1?'s':''} · ${weekBets.filter(b=>b.result==='Win').length}W / ${weekBets.filter(b=>b.result==='Loss').length}L</div></div><table style="margin-top:12px"><thead><tr><th>Punter</th><th>Bet</th><th>Return</th><th>Net</th><th>ROI</th><th>Result</th></tr></thead><tbody>${weekRows}</tbody></table></div><div class="sec"><div class="sec-title">🏆 Season Leaderboard</div><table><thead><tr><th style="width:32px"></th><th>Punter</th><th style="text-align:center">W/L</th><th style="text-align:right">Net P&L</th><th style="text-align:right">ROI</th><th style="width:100px">Bar</th></tr></thead><tbody>${lbRows}</tbody></table></div><div class="nu"><div><div class="nu-lbl">Up Next — Week ${reportWeek+1}</div><div class="nu-name">${nextPunter}</div><div class="nu-sub">$${getPoolSize()} pool</div></div><div style="text-align:right;font-size:11px;color:rgba(255,255,255,.4)">${psStr}</div></div><div class="footer">Bus Bois Betting 2026 · Week ${reportWeek} · ${gen}</div></div></body></html>`;
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Bus Bois Betting — Week ${reportWeek}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#F1F5F9;color:#1E293B}@media print{body{background:white}.no-print{display:none}@page{margin:10mm;size:A4}}.wrap{max-width:720px;margin:0 auto;padding:16px}.hdr{background:linear-gradient(135deg,#0A1628 0%,#163356 60%,#1B3A5C 100%);border-radius:16px;padding:22px 24px 18px;color:white;margin-bottom:14px;position:relative;overflow:hidden}.hdr::before{content:'🏇';position:absolute;right:16px;top:10px;font-size:64px;opacity:.08}.hdr-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}.rh-title{font-size:22px;font-weight:900;color:#D4A017}.rh-sub{font-size:12px;color:rgba(255,255,255,.5);margin-top:2px}.rh-wn{font-size:36px;font-weight:900;color:white;line-height:1;text-align:right}.rh-wl{font-size:10px;font-weight:700;color:rgba(212,160,23,.7);text-transform:uppercase;letter-spacing:1px}.rh-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.rh-stat{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 8px;text-align:center}.rh-sv{font-size:18px;font-weight:800;color:white;line-height:1}.rh-sl{font-size:9px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}.acct{background:linear-gradient(135deg,${account>=opening?'#14532D,#16A34A':'#7F1D1D,#DC2626'});border-radius:14px;padding:14px 18px;color:white;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}.ab-lbl{font-size:9px;font-weight:800;opacity:.6;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}.ab-bal{font-size:28px;font-weight:900;line-height:1}.ab-split{font-size:20px;font-weight:800;text-align:right}.ab-sl{font-size:9px;opacity:.6;text-transform:uppercase;letter-spacing:.5px}.ab-pnl{font-size:13px;font-weight:700;margin-top:3px;opacity:.85}.sec{background:white;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.06)}.sec-title{font-size:11px;font-weight:800;color:#2563A8;text-transform:uppercase;letter-spacing:1px;padding-bottom:8px;border-bottom:1px solid #E2E8F0;margin-bottom:12px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#F8FAFC;font-size:10px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:.5px;padding:7px 10px;text-align:left;border-bottom:2px solid #E2E8F0}td{padding:9px 10px;border-bottom:1px solid #F1F5F9;vertical-align:middle}tr:last-child td{border-bottom:none}.wk-res{text-align:center;padding:10px 0 4px}.wr-lbl{font-size:10px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}.wr-net{font-size:32px;font-weight:900;color:${weekNet>=0?'#16A34A':'#DC2626'}}.wr-sub{font-size:12px;color:#64748B;margin-top:2px}.nu{background:linear-gradient(135deg,#0F2040,#163356);border-radius:12px;padding:14px 18px;color:white;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.nu-lbl{font-size:10px;font-weight:800;color:rgba(212,160,23,.7);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}.nu-name{font-size:22px;font-weight:900;color:white}.nu-sub{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px}.footer{text-align:center;font-size:10px;color:#94A3B8;padding:8px 0 4px}.pbtn{display:block;width:100%;padding:14px;background:linear-gradient(135deg,#163356,#2563A8);color:white;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:14px;text-align:center}</style></head><body><div class="wrap"><button class="pbtn no-print" onclick="window.print()">🖨️ Save as PDF / Print</button><div class="hdr"><div class="hdr-top"><div><div class="rh-title">🏇 Bus Bois Betting</div><div class="rh-sub">2026 Season · Generated ${gen}</div></div><div><div class="rh-wl">Week</div><div class="rh-wn">${reportWeek}</div></div></div><div class="rh-stats"><div class="rh-stat"><div class="rh-sv">${gW}/${gL}</div><div class="rh-sl">Group W/L</div></div><div class="rh-stat"><div class="rh-sv">${gRoi}%</div><div class="rh-sl">Season ROI</div></div><div class="rh-stat"><div class="rh-sv">$${Math.abs(gNet).toFixed(0)}</div><div class="rh-sl">${gNet>=0?'Profit':'Loss'}</div></div><div class="rh-stat"><div class="rh-sv">${state.bets.length}</div><div class="rh-sl">Total Bets</div></div></div></div><div class="acct"><div><div class="ab-lbl">Account Balance</div><div class="ab-bal">$${account.toFixed(2)}</div></div><div><div class="ab-split">$${split.toFixed(2)}</div><div class="ab-sl">split per person</div><div class="ab-pnl">${pnl>=0?'+':'-'}$${Math.abs(pnl).toFixed(2)} each vs opening</div></div></div><div class="sec"><div class="sec-title">📅 Week ${reportWeek} — ${reportDate}</div><div class="wk-res"><div class="wr-lbl">Week Net Result</div><div class="wr-net">${weekNet>=0?'+':'-'}$${Math.abs(weekNet).toFixed(2)}</div><div class="wr-sub">${weekBets.length} bet${weekBets.length!==1?'s':''} · ${weekBets.filter(b=>b.result==='Win').length}W / ${weekBets.filter(b=>b.result==='Loss').length}L${weekBets.filter(b=>b.result==='Void').length>0?' / '+weekBets.filter(b=>b.result==='Void').length+'V':''}</div></div><table style="margin-top:12px"><thead><tr><th>Punter</th><th>Bet</th><th>Return</th><th>Net</th><th>ROI</th><th>Result</th></tr></thead><tbody>${weekRows}</tbody></table></div><div class="sec"><div class="sec-title">🏆 Season Leaderboard</div><table><thead><tr><th style="width:32px"></th><th>Punter</th><th style="text-align:center">W/L</th><th style="text-align:right">Net P&L</th><th style="text-align:right">ROI</th><th style="width:100px">Bar</th></tr></thead><tbody>${lbRows}</tbody></table></div><div class="nu"><div><div class="nu-lbl">Up Next — Week ${reportWeek+1}</div><div class="nu-name">${nextPunter}</div><div class="nu-sub">$${getPoolSize()} pool</div></div><div style="text-align:right;font-size:11px;color:rgba(255,255,255,.4)">${psStr}</div></div><div class="footer">Bus Bois Betting 2026 · Week ${reportWeek} · ${gen}</div></div></body></html>`;
   const w=window.open('','_blank');w.document.write(html);w.document.close();
 }
 
