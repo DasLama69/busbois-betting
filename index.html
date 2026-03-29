@@ -2153,20 +2153,38 @@ function getAvatar(name, size=36) {
 function renderManagePunters() {
   const el = document.getElementById('manage-punters-list');
   if (!el) return;
+
+  // Build rows safely — don't embed base64 avatar data in template literals
   el.innerHTML = getPunters().map((p, i) => {
-    const av = state.punterAvatars?.[p];
+    const hasAv = !!state.punterAvatars?.[p];
+    const avatarHtml = hasAv
+      ? `<img class="mp-avatar" id="mp-av-img-${i}" onerror="this.style.display='none'">`
+      : `<div class="mp-avatar-ini">${INI(p)}</div>`;
+    const removeBtn = hasAv
+      ? `<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+           <button onclick="removeAvatar('${p}')" style="background:var(--red-lt);color:var(--red);border:none;border-radius:6px;padding:4px 8px;font-size:10px;font-weight:800;cursor:pointer">✕ Photo</button>
+           <button onclick="removePunter(${i})" style="background:var(--red-lt);color:var(--red);border:none;border-radius:6px;padding:4px 8px;font-size:10px;font-weight:800;cursor:pointer">🗑 Remove</button>
+         </div>`
+      : `<button onclick="removePunter(${i})" style="background:var(--red-lt);color:var(--red);border:none;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0">🗑</button>`;
     return `<div class="mp-row">
       <div class="mp-avatar-wrap" onclick="document.getElementById('av-upload-${i}').click()" title="Tap to upload photo">
-        ${av
-          ? `<img class="mp-avatar" src="${av}" onerror="this.style.display='none'">`
-          : `<div class="mp-avatar-ini">${INI(p)}</div>`}
+        ${avatarHtml}
         <div class="mp-avatar-edit">📷</div>
         <input type="file" id="av-upload-${i}" accept="image/*" style="display:none" onchange="handleAvatarUpload(event,'${p}',${i})">
       </div>
       <input class="mp-name-input" id="mp-name-${i}" value="${p}" placeholder="Name" maxlength="20">
-      ${av ? `<button onclick="removeAvatar('${p}')" style="background:var(--red-lt);color:var(--red);border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0">✕</button>` : ''}
+      ${removeBtn}
     </div>`;
   }).join('');
+
+  // Set avatar src separately to avoid base64 breaking template literals
+  getPunters().forEach((p, i) => {
+    const av = state.punterAvatars?.[p];
+    if (av) {
+      const img = document.getElementById(`mp-av-img-${i}`);
+      if (img) img.src = av;
+    }
+  });
 }
 
 function handleAvatarUpload(event, punterName, idx) {
