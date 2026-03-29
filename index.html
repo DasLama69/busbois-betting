@@ -167,13 +167,6 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .hist-net { font-weight:700; font-size:12px; }
 .hist-del { background:none; border:none; color:var(--muted); font-size:14px; cursor:pointer; padding:2px 4px; border-radius:4px; flex-shrink:0; }
 
-/* ── AI ── */
-.ai-card { background:linear-gradient(135deg,#1e0a3c,#2D1B69,#1a3a6b); border-radius:14px; padding:14px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.08); }
-.ai-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-.ai-title { font-size:10px; font-weight:800; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:1px; }
-.ai-refresh { background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.15); border-radius:20px; padding:4px 12px; font-size:10px; font-weight:700; cursor:pointer; }
-.ai-text { font-size:13px; line-height:1.55; color:rgba(255,255,255,0.88); min-height:40px; }
-.ai-loading { color:rgba(255,255,255,0.4); font-style:italic; }
 
 /* ── ADMIN ── */
 .admin-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--gray); }
@@ -395,14 +388,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div class="card-title">📅 Recent Bets</div>
     <div id="home-recent"><div class="empty">No bets yet</div></div>
   </div>
-
-  <div class="ai-card">
-    <div class="ai-header">
-      <div class="ai-title">✨ AI Weekly Insight</div>
-      <button class="ai-refresh" onclick="getAIInsight()">🔮 Generate</button>
-    </div>
-    <div class="ai-text" id="ai-insight"><span class="ai-loading">Tap Generate for this week's analysis…</span></div>
-  </div>
+</div>
 </div>
 
 <!-- LOG BET -->
@@ -1140,16 +1126,6 @@ function exportCSV() {
   const csv=[hdrs,...rows].map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`BusBois_${new Date().toISOString().slice(0,10)}.csv`;a.click();
   showToast('✅ CSV downloaded!');
-}
-
-// ═══════════════ AI INSIGHT ═══════════════
-async function getAIInsight() {
-  const el=document.getElementById('ai-insight');
-  el.innerHTML='<span class="ai-loading">🔮 Generating…</span>';
-  const{week,punter}=computeCurrentState(),stats=getPunterStats(),account=getAccountTotal();
-  const prompt=`You're the cheeky stats analyst for "Bus Bois Betting", an Aussie horse racing group. 6 mates: Cass, Hoops, Pedro, Benji, Billy, CC. $${getPoolSize()}/week pool, rotate who bets, any profit = Win & stays on, loss = next person.\n\nWeek: ${week} | Next up: ${punter} | Account: $${account.toFixed(2)} | Opening: $${state.openingBalance}\n\nStats:\n${stats.map(s=>`${s.name}: ${s.wins}W/${s.losses}L, Net $${s.net.toFixed(2)}, ROI ${s.roi.toFixed(1)}%${s.streak>1?`, ${s.streak}× ${s.streakType} streak`:''}`).join('\n')}\n\nRecent: ${state.bets.slice(-6).map(b=>`${b.punter} Wk${b.week} ${b.result} ($${(b.returnAmt-b.bet>=0?'+':"")+(b.returnAmt-b.bet).toFixed(0)})`).join(', ')||'none yet'}\n\n2-3 sentences. Cheeky Aussie tone. Name names. Short punchy sentences.`;
-  try{const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});const data=await res.json();el.textContent=data.content?.map(c=>c.text||'').join('')||'Could not generate.';}
-  catch(e){el.textContent="Couldn't connect.";}
 }
 
 // ═══════════════ WEEKLY REPORT ═══════════════
