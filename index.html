@@ -1872,8 +1872,8 @@ function renderBoard() {
   histEl.innerHTML = sortedGroups.map(g => {
     const s = getWeekSummary(g.punter, g.week);
     const weekNet = (s.totalReturn - s.totalStaked) + s.bonusReturn;
-    const weekCls = s.goesAgain || s.isSuccess ? 'win' : 'loss';
-    const weekResult = !s.isComplete ? 'In Progress' : s.goesAgain ? '🔥 Win' : s.isSuccess ? '✅ Win' : '❌ Loss';
+    const weekCls = s.goesAgain || isWeekProfitable(s) ? 'win' : 'loss';
+    const weekResult = !s.isComplete ? 'In Progress' : s.goesAgain ? '🔥 Win' : isWeekProfitable(s) ? '✅ Win' : '❌ Loss';
     const netStr = (weekNet >= 0 ? '+$' : '-$') + Math.abs(weekNet).toFixed(2);
     const netCol = weekNet >= 0 ? 'var(--green)' : 'var(--red)';
 
