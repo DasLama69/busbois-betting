@@ -655,6 +655,10 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div class="card-title">🎯 Fun Stats</div>
     <div id="fun-stats"></div>
   </div>
+  <div class="card">
+    <div class="card-title">📋 Bet History</div>
+    <div id="board-history"><div class="empty">No bets yet</div></div>
+  </div>
 </div>
 
 <!-- ADMIN -->
@@ -1846,6 +1850,75 @@ function renderBoard() {
     ['🏆 Most Wins',(()=>{const s=getPunterStats().sort((a,b)=>b.wins-a.wins)[0];return s.wins>0?`${s.name} (${s.wins}W)`:'–';})()],
     ['🔥 Hot Streak',(()=>{const s=getPunterStats().filter(p=>p.streakType==='Win').sort((a,b)=>b.streak-a.streak)[0];return s&&s.streak>1?`${s.name} ${s.streak}× Win`:'No active streak';})()],
   ].map(([l,v])=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--gray)"><span style="font-size:12px;color:var(--muted)">${l}</span><span style="font-size:12px;font-weight:800;color:var(--dark)">${v}</span></div>`).join('');
+
+  // ── Bet History by week block ──────────────────────────────────────────────
+  const histEl = document.getElementById('board-history');
+  if (!state.bets.length) { histEl.innerHTML = '<div class="empty">No bets yet</div>'; return; }
+
+  // Group bets by week+punter
+  const groups = {};
+  state.bets.forEach(b => {
+    const key = `${String(b.week).padStart(4,'0')}:${b.punter}`;
+    if (!groups[key]) groups[key] = { week: b.week, punter: b.punter, bets: [] };
+    groups[key].bets.push(b);
+  });
+
+  // Sort groups: most recent week first, then by punter order within same week
+  const punterOrder = getPunters();
+  const sortedGroups = Object.values(groups).sort((a, b) =>
+    b.week !== a.week ? b.week - a.week : punterOrder.indexOf(a.punter) - punterOrder.indexOf(b.punter)
+  );
+
+  histEl.innerHTML = sortedGroups.map(g => {
+    const s = getWeekSummary(g.punter, g.week);
+    const weekNet = (s.totalReturn - s.totalStaked) + s.bonusReturn;
+    const weekCls = s.goesAgain || s.isSuccess ? 'win' : 'loss';
+    const weekResult = !s.isComplete ? 'In Progress' : s.goesAgain ? '🔥 Win' : s.isSuccess ? '✅ Win' : '❌ Loss';
+    const netStr = (weekNet >= 0 ? '+$' : '-$') + Math.abs(weekNet).toFixed(2);
+    const netCol = weekNet >= 0 ? 'var(--green)' : 'var(--red)';
+
+    // Also show void bets in this block
+    const allGroupBets = [...g.bets].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+    const betRows = allGroupBets.map(b => {
+      const isVoid = b.result === 'Void';
+      const bNet = isVoid ? 0 : b.isBonus ? b.returnAmt : (b.returnAmt - b.bet);
+      const bNetStr = isVoid ? '—' : (bNet >= 0 ? '+$' : '-$') + Math.abs(bNet).toFixed(2);
+      const bNetCol = isVoid ? 'var(--muted)' : bNet >= 0 ? 'var(--green)' : 'var(--red)';
+      const cls = b.result === 'Win' ? 'win' : (b.result === 'Void' || b.result === 'Pending') ? 'void' : 'loss';
+      const stakedStr = isVoid ? 'void'
+        : b.isBonus ? (b.bonusStake > 0 ? `🎟️ $${b.bonusStake.toFixed(0)} token` : '🎟️ bonus')
+        : `$${b.bet.toFixed(0)} staked`;
+      const retStr = isVoid ? '—' : `→ $${b.returnAmt.toFixed(2)}`;
+      const detailParts = [b.sport, b.betType || null, b.odds ? `@ ${b.odds}` : null, b.notes].filter(Boolean);
+      const detailLine = detailParts.length
+        ? `<div class="bet-meta" style="margin-top:2px">${detailParts.join(' · ')}</div>` : '';
+      return `<div class="bet-row">
+        <div class="bet-avatar ${cls}">${INI(b.punter)}</div>
+        <div class="bet-info">
+          <div class="bet-name"><span class="pill pill-${cls}">${b.isBonus ? 'Bonus' : b.result}</span></div>
+          <div class="bet-meta">${b.date} · ${stakedStr} ${retStr}</div>
+          ${detailLine}
+        </div>
+        <div class="bet-amount">
+          <div class="bet-net" style="color:${bNetCol}">${bNetStr}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--navy);border-radius:10px 10px 0 0;padding:9px 12px">
+        <span style="font-size:12px;font-weight:800;color:white;letter-spacing:0.5px">WEEK ${g.week} · ${g.punter}</span>
+        <span style="display:flex;align-items:center;gap:8px">
+          <span class="pill pill-${weekCls}" style="font-size:10px">${weekResult}</span>
+          <span style="font-size:12px;font-weight:800;color:${netCol}">${netStr}</span>
+        </span>
+      </div>
+      <div style="border:1px solid var(--gray);border-top:none;border-radius:0 0 10px 10px;padding:0 10px">
+        ${betRows}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ═══════════════ ADMIN ═══════════════
