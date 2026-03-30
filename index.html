@@ -268,6 +268,20 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .wai-name { font-size:10px; font-weight:700; color:rgba(255,255,255,0.5); margin-top:3px; }
 .wai-btn.selected .wai-name { color:var(--navy); }
 
+/* ── Punter Profile Modal ── */
+.profile-overlay { display:flex; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:700; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.2s; }
+.profile-overlay.open { opacity:1; pointer-events:all; }
+.profile-sheet { background:white; border-radius:20px 20px 0 0; width:100%; max-width:480px; max-height:88vh; overflow-y:auto; padding:20px 16px 32px; transform:translateY(20px); transition:transform 0.25s; }
+.profile-overlay.open .profile-sheet { transform:translateY(0); }
+
+/* ── Achievement Badges ── */
+.badge-row { display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
+.badge-chip { display:inline-flex; align-items:center; gap:3px; padding:2px 7px; border-radius:20px; font-size:9px; font-weight:800; letter-spacing:0.3px; }
+.badge-gold { background:rgba(212,160,23,0.15); color:#B8860B; }
+.badge-positive { background:rgba(22,163,74,0.12); color:#16A34A; }
+.badge-negative { background:rgba(220,38,38,0.12); color:#DC2626; }
+.badge-blue { background:rgba(37,99,168,0.12); color:#2563A8; }
+
 /* ── YOUR TURN BANNER ── */
 .your-turn-banner { background:linear-gradient(135deg,#78350F,var(--gold)); border-radius:14px; padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; gap:12px; }
 .your-turn-banner.visible { animation:glow 2s ease-in-out infinite; }
@@ -656,6 +670,10 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div id="fun-stats"></div>
   </div>
   <div class="card">
+    <div class="card-title">🏅 Breakdown</div>
+    <div id="breakdown-content"><div class="empty">No bets yet</div></div>
+  </div>
+  <div class="card">
     <div class="card-title">📋 Bet History</div>
     <div id="board-history"><div class="empty">No bets yet</div></div>
   </div>
@@ -882,7 +900,12 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 </div>
 
 </div><!-- scroll area -->
-<div style="text-align:center;padding:8px 0 16px;font-size:10px;color:rgba(255,255,255,0.18);letter-spacing:0.5px">Bus Bois Betting · v1.3.0</div>
+<div style="text-align:center;padding:8px 0 16px;font-size:10px;color:rgba(255,255,255,0.18);letter-spacing:0.5px">Bus Bois Betting · v1.4.0</div>
+
+<!-- PUNTER PROFILE MODAL -->
+<div class="profile-overlay" id="profile-overlay" onclick="closeProfile(event)">
+  <div class="profile-sheet" id="profile-sheet"></div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1817,9 +1840,190 @@ function renderMyStats(stats, sortedStats) {
   }
 }
 
+// ═══════════════ ACHIEVEMENTS ═══════════════
+function computeAchievements() {
+  const stats = getPunterStats();
+  const map = new Map(); // name → badge HTML array
+  const add = (name, html) => { if (!map.has(name)) map.set(name, []); map.get(name).push(html); };
+  const chip = (cls, icon, label) => `<span class="badge-chip ${cls}">${icon} ${label}</span>`;
+
+  // 💰 Big Gun — highest single returnAmt
+  const realBets = state.bets.filter(b => !b.isBonus && b.result !== 'Void');
+  if (realBets.length) {
+    const max = Math.max(...realBets.map(b => b.returnAmt));
+    if (max > 0) realBets.filter(b => b.returnAmt === max).forEach(b => add(b.punter, chip('badge-gold','💰','Big Gun')));
+  }
+
+  // 🎯 Sharp — highest odds on a Win bet
+  const winBets = state.bets.filter(b => b.result === 'Win' && b.odds && parseFloat(b.odds) > 0);
+  if (winBets.length) {
+    const maxOdds = Math.max(...winBets.map(b => parseFloat(b.odds)));
+    winBets.filter(b => parseFloat(b.odds) === maxOdds).forEach(b => add(b.punter, chip('badge-gold','🎯','Sharp')));
+  }
+
+  // 📈 Consistent — best ROI (min 1 completed week + 1 real bet)
+  const eligible = stats.filter(s => s.weeks >= 1 && s.bets >= 1);
+  if (eligible.length) {
+    const maxRoi = Math.max(...eligible.map(s => s.roi));
+    if (maxRoi > 0) eligible.filter(s => s.roi === maxRoi).forEach(s => add(s.name, chip('badge-positive','📈','Consistent')));
+  }
+
+  // 🔥 Streak King — longest active win streak (min 2)
+  const winners = stats.filter(s => s.streakType === 'Win' && s.streak >= 2);
+  if (winners.length) {
+    const maxStreak = Math.max(...winners.map(s => s.streak));
+    winners.filter(s => s.streak === maxStreak).forEach(s => add(s.name, chip('badge-positive','🔥','Streak King')));
+  }
+
+  // 🎟️ Bonus Boss — most bonus winnings (min > 0)
+  const bonusers = stats.filter(s => s.bonusRet > 0);
+  if (bonusers.length) {
+    const maxBonus = Math.max(...bonusers.map(s => s.bonusRet));
+    bonusers.filter(s => s.bonusRet === maxBonus).forEach(s => add(s.name, chip('badge-blue','🎟️','Bonus Boss')));
+  }
+
+  // ❄️ Cold — longest active loss streak (min 2)
+  const losers = stats.filter(s => s.streakType === 'Loss' && s.streak >= 2);
+  if (losers.length) {
+    const maxLoss = Math.max(...losers.map(s => s.streak));
+    losers.filter(s => s.streak === maxLoss).forEach(s => add(s.name, chip('badge-negative','❄️','Cold')));
+  }
+
+  return map;
+}
+
+// ═══════════════ BREAKDOWN ═══════════════
+function renderBreakdown(punterFilter) {
+  const el = !punterFilter ? document.getElementById('breakdown-content') : null;
+  const bets = state.bets.filter(b => !b.isBonus && b.result !== 'Void' && (!punterFilter || b.punter === punterFilter));
+  if (!bets.length) {
+    if (el) el.innerHTML = '<div class="empty">No bets yet</div>';
+    return '<div class="empty">No bets yet</div>';
+  }
+
+  const buildRows = (groupFn, label) => {
+    const groups = {};
+    bets.forEach(b => {
+      const key = groupFn(b);
+      if (!key) return;
+      if (!groups[key]) groups[key] = { wins:0, losses:0, net:0, count:0 };
+      const g = groups[key];
+      g.count++;
+      g.net += b.returnAmt - b.bet;
+      if (b.result === 'Win') g.wins++;
+      else g.losses++;
+    });
+    const keys = Object.keys(groups);
+    if (!keys.length) return '';
+    const maxAbs = Math.max(...keys.map(k => Math.abs(groups[k].net)), 1);
+    const rows = keys.sort((a,b) => groups[b].net - groups[a].net).map(k => {
+      const g = groups[k];
+      const roi = g.net / bets.filter(b2 => groupFn(b2) === k).reduce((a,b2)=>a+b2.bet,0) * 100;
+      const col = g.net >= 0 ? 'var(--green)' : 'var(--red)';
+      const pct = Math.min(Math.abs(g.net)/maxAbs*100,100);
+      const netStr = (g.net>=0?'+$':'-$')+Math.abs(g.net).toFixed(2);
+      const roiStr = isFinite(roi) ? (roi>=0?'+':'')+roi.toFixed(0)+'%' : '–';
+      return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--gray)">
+        <div style="width:80px;font-size:12px;font-weight:700;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${k}</div>
+        <div style="font-size:10px;color:var(--muted);width:52px;flex-shrink:0">${g.wins}W / ${g.losses}L</div>
+        <div style="flex:1;background:var(--gray);border-radius:3px;height:6px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${col};border-radius:3px"></div></div>
+        <div style="font-size:11px;font-weight:800;color:${col};width:60px;text-align:right;flex-shrink:0">${netStr}</div>
+        <div style="font-size:10px;color:var(--muted);width:36px;text-align:right;flex-shrink:0">${roiStr}</div>
+      </div>`;
+    }).join('');
+    return `<div style="font-size:10px;font-weight:800;color:var(--steel);text-transform:uppercase;letter-spacing:0.5px;margin:10px 0 2px">${label}</div>${rows}`;
+  };
+
+  const sportRows = buildRows(b => b.sport || null, 'By Sport');
+  const typeRows  = buildRows(b => b.betType || null, 'By Bet Type');
+  const html = (sportRows || typeRows)
+    ? (sportRows + typeRows)
+    : '<div class="empty" style="padding:8px 0">Log bets with sport/type details to see breakdown</div>';
+
+  if (el) el.innerHTML = html;
+  return html;
+}
+
+// ═══════════════ PUNTER PROFILE ═══════════════
+function showPunterProfile(name) {
+  const allStats = getPunterStats().sort((a,b) => b.net - a.net);
+  const s = allStats.find(p => p.name === name);
+  if (!s) return;
+  const rank = allStats.findIndex(p => p.name === name);
+  const rankLabel = rank < MEDALS.length ? MEDALS[rank] : `#${rank+1}`;
+  const achievements = computeAchievements();
+  const badges = achievements.get(name) || [];
+  const badgeHtml = badges.length ? `<div class="badge-row" style="margin-top:8px">${badges.join('')}</div>` : '';
+
+  const av = state.punterAvatars?.[name];
+  const avatarHtml = av
+    ? `<img src="${av}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:3px solid rgba(212,160,23,0.5)" onerror="this.outerHTML='<div style=\'width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--mid),var(--steel));display:flex;align-items:center;justify-content:center;color:white;font-size:18px;font-weight:800;border:3px solid rgba(212,160,23,0.5)\'>${INI(name)}</div>'">`
+    : `<div style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--mid),var(--steel));display:flex;align-items:center;justify-content:center;color:white;font-size:18px;font-weight:800;border:3px solid rgba(212,160,23,0.5)">${INI(name)}</div>`;
+
+  const netStr = s.net===0?'$0.00':(s.net>0?'+$':'-$')+Math.abs(s.net).toFixed(2);
+  const netCol = s.net>=0?'var(--green)':'var(--red)';
+  const roiStr = s.bets===0?'–':(s.roi>=0?'+':'')+s.roi.toFixed(1)+'%';
+  const roiCol = s.roi>=0?'var(--green)':'var(--red)';
+  const streakStr = s.streak > 1 ? `${s.streak}× ${s.streakType==='Win'?'🔥 Win':'❄️ Loss'}` : '–';
+
+  // Best single return
+  const pb = state.bets.filter(b=>b.punter===name&&b.result!=='Void');
+  const bestRet = pb.length ? Math.max(...pb.map(b=>b.returnAmt-b.bet)) : null;
+  const bestStr = bestRet!==null&&bestRet>0 ? `+$${bestRet.toFixed(2)}` : '–';
+
+  const stat3 = (val,lbl,col='white') => `<div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:10px 6px;text-align:center"><div style="font-size:17px;font-weight:900;color:${col};line-height:1">${val}</div><div style="font-size:8px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px">${lbl}</div></div>`;
+  const stat2 = (val,lbl) => `<div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px"><div style="font-size:9px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">${lbl}</div><div style="font-size:14px;font-weight:800;color:white">${val}</div></div>`;
+
+  // Week history for this punter only
+  const punterBets = state.bets.filter(b => b.punter === name);
+  const weekKeys = [...new Set(punterBets.map(b => b.week))].sort((a,b)=>b-a);
+  const weekBlocks = weekKeys.map(w => {
+    const s2 = getWeekSummary(name, w);
+    const weekNet = (s2.totalReturn - s2.totalStaked) + s2.bonusReturn;
+    const weekCls = s2.goesAgain || isWeekProfitable(s2) ? 'win' : 'loss';
+    const weekResult = !s2.isComplete ? 'In Progress' : s2.goesAgain ? '🔥 Win' : isWeekProfitable(s2) ? '✅ Win' : '❌ Loss';
+    const netCol2 = weekNet>=0?'var(--green)':'var(--red)';
+    const bRows = [...punterBets.filter(b=>b.week===w)].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).map(b => {
+      const isVoid = b.result==='Void', bNet=isVoid?0:b.isBonus?b.returnAmt:(b.returnAmt-b.bet);
+      const bNetStr=isVoid?'—':(bNet>=0?'+$':'-$')+Math.abs(bNet).toFixed(2);
+      const bCol=isVoid?'var(--muted)':bNet>=0?'var(--green)':'var(--red)';
+      const cls2=b.result==='Win'?'win':(b.result==='Void'||b.result==='Pending')?'void':'loss';
+      const stk=isVoid?'void':b.isBonus?(b.bonusStake>0?`🎟️ $${b.bonusStake.toFixed(0)} token`:'🎟️ bonus'):`$${b.bet.toFixed(0)} staked`;
+      const dp=[b.sport,b.betType||null,b.odds?`@ ${b.odds}`:null,b.notes].filter(Boolean);
+      const dl=dp.length?`<div class="bet-meta" style="margin-top:2px">${dp.join(' · ')}</div>`:'';
+      return `<div class="bet-row"><div class="bet-avatar ${cls2}">${INI(b.punter)}</div><div class="bet-info"><div class="bet-name"><span class="pill pill-${cls2}">${b.isBonus?'Bonus':b.result}</span></div><div class="bet-meta">${b.date} · ${stk} → ${isVoid?'—':'$'+b.returnAmt.toFixed(2)}</div>${dl}</div><div class="bet-amount"><div class="bet-net" style="color:${bCol}">${bNetStr}</div></div></div>`;
+    }).join('');
+    return `<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;background:var(--navy);border-radius:10px 10px 0 0;padding:9px 12px"><span style="font-size:12px;font-weight:800;color:white">WEEK ${w}</span><span style="display:flex;align-items:center;gap:8px"><span class="pill pill-${weekCls}" style="font-size:10px">${weekResult}</span><span style="font-size:12px;font-weight:800;color:${netCol2}">${weekNet>=0?'+$':'-$'}${Math.abs(weekNet).toFixed(2)}</span></span></div><div style="border:1px solid var(--gray);border-top:none;border-radius:0 0 10px 10px;padding:0 10px">${bRows}</div></div>`;
+  }).join('');
+
+  const breakdownHtml = renderBreakdown(name);
+
+  document.getElementById('profile-sheet').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:12px">${avatarHtml}<div><div style="font-size:22px;font-weight:900;color:var(--dark);line-height:1">${name}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">${rankLabel} · ${s.wins}W / ${s.losses}L</div>${badgeHtml}</div></div>
+      <button onclick="closeProfile()" style="background:var(--gray);border:none;border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+    </div>
+    <div style="background:linear-gradient(135deg,var(--navy2),#1a3a6b,var(--mid));border-radius:14px;padding:14px;margin-bottom:14px;border:1.5px solid rgba(212,160,23,0.35)">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">${stat3(netStr,'Net P&L',netCol)}${stat3(roiStr,'ROI',roiCol)}${stat3(s.wins+'W/'+s.losses+'L','W / L')}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${stat2('$'+s.totalBet.toFixed(0),'Total Staked')}${stat2(bestStr,'Best Return')}${stat2(s.weeks+' week'+(s.weeks!==1?'s':''),'Weeks Played')}${stat2(streakStr,'Current Streak')}</div>
+    </div>
+    ${breakdownHtml !== '<div class="empty">No bets yet</div>' ? `<div style="margin-bottom:14px"><div class="card-title" style="margin-bottom:8px">🏅 Breakdown</div>${breakdownHtml}</div>` : ''}
+    <div class="card-title" style="margin-bottom:8px">📋 Bet History</div>
+    ${weekBlocks || '<div class="empty">No bets yet</div>'}
+  `;
+  document.getElementById('profile-overlay').classList.add('open');
+}
+
+function closeProfile(event) {
+  if (!event || event.target === document.getElementById('profile-overlay')) {
+    document.getElementById('profile-overlay').classList.remove('open');
+  }
+}
+
 function renderBoard() {
   const stats=getPunterStats().sort((a,b)=>b.net-a.net);
   const maxRoi=Math.max(...stats.map(s=>Math.abs(s.roi)),1);
+  const achievements = computeAchievements();
   renderMyStats(stats, stats);
   document.getElementById('lb-list').innerHTML=stats.map((s,i)=>{
     const pb = state.bets.filter(b=>b.punter===s.name&&b.result!=='Void');
@@ -1831,7 +2035,9 @@ function renderBoard() {
     const barCol=s.roi>=0?'var(--green)':'var(--red)';
     const strk=s.streak>1?` ${s.streak}× ${s.streakType==='Win'?'🔥':'❄️'}`:''; const bonusBadge=s.bonusBets>0?` · 🎟️${s.bonusBets}`:'';
     const isMe = state.whoAmI && s.name === state.whoAmI;
-    return `<div class="lb-row" style="${isMe?'background:rgba(212,160,23,0.06);border-radius:10px;padding:11px 8px;margin:0 -8px;':''}"><div class="lb-rank">${MEDALS[i]}</div><div class="lb-avatar" style="overflow:hidden;padding:0">${state.punterAvatars?.[s.name] ? `<img src="${state.punterAvatars[s.name]}" style="width:36px;height:36px;border-radius:50%;object-fit:cover" onerror="this.parentElement.innerHTML='${INI(s.name)}'">` : INI(s.name)}</div><div class="lb-info"><div class="lb-name">${s.name}${strk}</div><div class="lb-detail">${s.wins}W / ${s.losses}L · $${s.totalBet.toFixed(0)} staked</div><div class="lb-bar-track"><div class="lb-bar-fill" style="width:${barPct}%;background:${barCol}"></div></div></div><div class="lb-right"><div class="lb-net" style="color:${s.net>=0?'var(--green)':'var(--red)'}">${netStr}</div><div class="lb-roi">${roiStr} ROI</div></div></div>`;
+    const rowBadges = (achievements.get(s.name)||[]).join('');
+    const badgeRow = rowBadges ? `<div class="badge-row" style="margin-top:3px">${rowBadges}</div>` : '';
+    return `<div class="lb-row" style="${isMe?'background:rgba(212,160,23,0.06);border-radius:10px;padding:11px 8px;margin:0 -8px;':''}cursor:pointer" onclick="showPunterProfile('${s.name}')"><div class="lb-rank">${MEDALS[i]}</div><div class="lb-avatar" style="overflow:hidden;padding:0">${state.punterAvatars?.[s.name] ? `<img src="${state.punterAvatars[s.name]}" style="width:36px;height:36px;border-radius:50%;object-fit:cover" onerror="this.parentElement.innerHTML='${INI(s.name)}'">` : INI(s.name)}</div><div class="lb-info"><div class="lb-name">${s.name}${strk}</div><div class="lb-detail">${s.wins}W / ${s.losses}L · $${s.totalBet.toFixed(0)} staked</div>${badgeRow}<div class="lb-bar-track"><div class="lb-bar-fill" style="width:${barPct}%;background:${barCol}"></div></div></div><div class="lb-right"><div class="lb-net" style="color:${s.net>=0?'var(--green)':'var(--red)'}">${netStr}</div><div class="lb-roi">${roiStr} ROI</div></div></div>`;
   }).join('');
   document.getElementById('roi-bars').innerHTML=stats.map(s=>{
     const pct=Math.min(Math.abs(s.roi)/maxRoi*100,100),col=s.roi>=0?'var(--green)':'var(--red)';
@@ -1850,6 +2056,7 @@ function renderBoard() {
     ['🏆 Most Wins',(()=>{const s=getPunterStats().sort((a,b)=>b.wins-a.wins)[0];return s.wins>0?`${s.name} (${s.wins}W)`:'–';})()],
     ['🔥 Hot Streak',(()=>{const s=getPunterStats().filter(p=>p.streakType==='Win').sort((a,b)=>b.streak-a.streak)[0];return s&&s.streak>1?`${s.name} ${s.streak}× Win`:'No active streak';})()],
   ].map(([l,v])=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--gray)"><span style="font-size:12px;color:var(--muted)">${l}</span><span style="font-size:12px;font-weight:800;color:var(--dark)">${v}</span></div>`).join('');
+  renderBreakdown();
 
   // ── Bet History by week block ──────────────────────────────────────────────
   const histEl = document.getElementById('board-history');
