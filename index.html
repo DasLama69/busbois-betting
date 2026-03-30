@@ -659,6 +659,8 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
       <!-- Bonus bets row if any -->
       <div id="my-bonus-row" style="display:none;margin-top:8px;background:rgba(212,160,23,0.1);border:1px solid rgba(212,160,23,0.25);border-radius:8px;padding:8px 10px;font-size:11px;color:rgba(212,160,23,0.8)"></div>
     </div>
+    <!-- Achievements -->
+    <div id="my-achievements" style="display:none;margin-top:2px"></div>
   </div>
 
   <div class="card">
@@ -1400,7 +1402,7 @@ function renderRotationStrip(elId, currentPunter, currentWeek) {
     const arrow = i<getPunters().length-1 ? '<div class="rs-arrow">›</div>' : '';
     const av = state.punterAvatars?.[p];
     const inner = av ? `<img src="${av}" style="width:22px;height:22px;border-radius:50%;object-fit:cover" onerror="this.outerHTML='${INI(p)}'">` : INI(p);
-    return `<div class="rs-item"><div class="rs-bubble ${cls}">${inner}</div><div class="rs-label ${lCls}">${p}</div></div>${arrow}`;
+    return `<div class="rs-item" style="cursor:pointer" onclick="showPunterProfile('${p}')"><div class="rs-bubble ${cls}">${inner}</div><div class="rs-label ${lCls}">${p}</div></div>${arrow}`;
   }).join('');
 }
 
@@ -1788,7 +1790,10 @@ function renderMyStats(stats, sortedStats) {
   const av = state.punterAvatars?.[name];
   avEl.innerHTML = av ? `<img src="${av}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : name.slice(0,2).toUpperCase();
 
-  document.getElementById('my-stats-name').textContent = name;
+  const nameEl = document.getElementById('my-stats-name');
+  nameEl.textContent = name;
+  nameEl.style.cursor = 'pointer';
+  nameEl.onclick = () => showPunterProfile(name);
 
   // Big stats
   const netEl = document.getElementById('my-net');
@@ -1838,55 +1843,95 @@ function renderMyStats(stats, sortedStats) {
   } else {
     bonusRow.style.display = 'none';
   }
+
+  // Achievements
+  const achEl = document.getElementById('my-achievements');
+  const myBadges = (computeAchievements().get(name) || []);
+  if (myBadges.length) {
+    achEl.style.display = 'block';
+    achEl.innerHTML = `<div style="font-size:10px;font-weight:800;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Achievements</div>` +
+      myBadges.map(a => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.07)">${a.chip}<span style="font-size:11px;color:rgba(255,255,255,0.55)">${a.desc}</span></div>`).join('');
+  } else {
+    achEl.style.display = 'none';
+  }
 }
 
 // ═══════════════ ACHIEVEMENTS ═══════════════
 function computeAchievements() {
   const stats = getPunterStats();
-  const map = new Map(); // name → badge HTML array
-  const add = (name, html) => { if (!map.has(name)) map.set(name, []); map.get(name).push(html); };
+  // map: name → [{chip: HTMLString, desc: String}]
+  const map = new Map();
+  const add = (name, obj) => { if (!map.has(name)) map.set(name, []); map.get(name).push(obj); };
   const chip = (cls, icon, label) => `<span class="badge-chip ${cls}">${icon} ${label}</span>`;
+  const entry = (cls, icon, label, desc) => ({ chip: chip(cls, icon, label), desc });
 
-  // 💰 Big Gun — highest single returnAmt
   const realBets = state.bets.filter(b => !b.isBonus && b.result !== 'Void');
+
+  // 💰 Big Gun — highest single return
   if (realBets.length) {
-    const max = Math.max(...realBets.map(b => b.returnAmt));
-    if (max > 0) realBets.filter(b => b.returnAmt === max).forEach(b => add(b.punter, chip('badge-gold','💰','Big Gun')));
+    const max = Math.max(...realBets.map(b => b.returnAmt - b.bet));
+    if (max > 0) {
+      const best = realBets.filter(b => b.returnAmt - b.bet === max);
+      best.forEach(b => add(b.punter, entry('badge-gold','💰','Big Gun', `Biggest single win: +$${max.toFixed(2)} (Wk${b.week})`)));
+    }
   }
 
   // 🎯 Sharp — highest odds on a Win bet
   const winBets = state.bets.filter(b => b.result === 'Win' && b.odds && parseFloat(b.odds) > 0);
   if (winBets.length) {
     const maxOdds = Math.max(...winBets.map(b => parseFloat(b.odds)));
-    winBets.filter(b => parseFloat(b.odds) === maxOdds).forEach(b => add(b.punter, chip('badge-gold','🎯','Sharp')));
+    winBets.filter(b => parseFloat(b.odds) === maxOdds).forEach(b => add(b.punter, entry('badge-gold','🎯','Sharp', `Highest winning odds: @ ${b.odds} (Wk${b.week})`)));
   }
 
-  // 📈 Consistent — best ROI (min 1 completed week + 1 real bet)
+  // 📈 Consistent — best ROI (min 1 week + 1 bet)
   const eligible = stats.filter(s => s.weeks >= 1 && s.bets >= 1);
   if (eligible.length) {
     const maxRoi = Math.max(...eligible.map(s => s.roi));
-    if (maxRoi > 0) eligible.filter(s => s.roi === maxRoi).forEach(s => add(s.name, chip('badge-positive','📈','Consistent')));
+    if (maxRoi > 0) eligible.filter(s => s.roi === maxRoi).forEach(s => add(s.name, entry('badge-positive','📈','Consistent', `Best ROI: +${maxRoi.toFixed(1)}%`)));
   }
 
   // 🔥 Streak King — longest active win streak (min 2)
   const winners = stats.filter(s => s.streakType === 'Win' && s.streak >= 2);
   if (winners.length) {
     const maxStreak = Math.max(...winners.map(s => s.streak));
-    winners.filter(s => s.streak === maxStreak).forEach(s => add(s.name, chip('badge-positive','🔥','Streak King')));
+    winners.filter(s => s.streak === maxStreak).forEach(s => add(s.name, entry('badge-positive','🔥','Streak King', `On a ${maxStreak}× win run`)));
   }
 
-  // 🎟️ Bonus Boss — most bonus winnings (min > 0)
+  // 🎟️ Bonus Boss — most bonus return (min > 0)
   const bonusers = stats.filter(s => s.bonusRet > 0);
   if (bonusers.length) {
     const maxBonus = Math.max(...bonusers.map(s => s.bonusRet));
-    bonusers.filter(s => s.bonusRet === maxBonus).forEach(s => add(s.name, chip('badge-blue','🎟️','Bonus Boss')));
+    bonusers.filter(s => s.bonusRet === maxBonus).forEach(s => add(s.name, entry('badge-blue','🎟️','Bonus Boss', `Most free winnings: +$${maxBonus.toFixed(2)}`)));
   }
 
   // ❄️ Cold — longest active loss streak (min 2)
   const losers = stats.filter(s => s.streakType === 'Loss' && s.streak >= 2);
   if (losers.length) {
     const maxLoss = Math.max(...losers.map(s => s.streak));
-    losers.filter(s => s.streak === maxLoss).forEach(s => add(s.name, chip('badge-negative','❄️','Cold')));
+    losers.filter(s => s.streak === maxLoss).forEach(s => add(s.name, entry('badge-negative','❄️','Cold', `On a ${maxLoss}× losing run`)));
+  }
+
+  // 🤡 Donkey — biggest single loss (worst net on one bet)
+  if (realBets.length) {
+    const minNet = Math.min(...realBets.map(b => b.returnAmt - b.bet));
+    if (minNet < 0) {
+      const worst = realBets.filter(b => b.returnAmt - b.bet === minNet);
+      worst.forEach(b => add(b.punter, entry('badge-negative','🤡','Donkey', `Biggest single loss: -$${Math.abs(minNet).toFixed(2)} (Wk${b.week})`)));
+    }
+  }
+
+  // 📉 Cursed — worst overall ROI (min 1 bet, must be negative)
+  const negRoi = stats.filter(s => s.bets >= 1 && s.roi < 0);
+  if (negRoi.length) {
+    const minRoi = Math.min(...negRoi.map(s => s.roi));
+    negRoi.filter(s => s.roi === minRoi).forEach(s => add(s.name, entry('badge-negative','📉','Cursed', `Worst ROI: ${minRoi.toFixed(1)}%`)));
+  }
+
+  // 🪦 Dead Money — most total $ lost overall
+  const netLosers = stats.filter(s => s.net < 0);
+  if (netLosers.length) {
+    const minNet2 = Math.min(...netLosers.map(s => s.net));
+    netLosers.filter(s => s.net === minNet2).forEach(s => add(s.name, entry('badge-negative','🪦','Dead Money', `Most $ burned: -$${Math.abs(minNet2).toFixed(2)} total`)));
   }
 
   return map;
@@ -1953,7 +1998,7 @@ function showPunterProfile(name) {
   const rankLabel = rank < MEDALS.length ? MEDALS[rank] : `#${rank+1}`;
   const achievements = computeAchievements();
   const badges = achievements.get(name) || [];
-  const badgeHtml = badges.length ? `<div class="badge-row" style="margin-top:8px">${badges.join('')}</div>` : '';
+  const badgeHtml = badges.length ? `<div class="badge-row" style="margin-top:8px">${badges.map(a=>a.chip).join('')}</div>` : '';
 
   const av = state.punterAvatars?.[name];
   const avatarHtml = av
@@ -2007,7 +2052,8 @@ function showPunterProfile(name) {
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">${stat3(netStr,'Net P&L',netCol)}${stat3(roiStr,'ROI',roiCol)}${stat3(s.wins+'W/'+s.losses+'L','W / L')}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${stat2('$'+s.totalBet.toFixed(0),'Total Staked')}${stat2(bestStr,'Best Return')}${stat2(s.weeks+' week'+(s.weeks!==1?'s':''),'Weeks Played')}${stat2(streakStr,'Current Streak')}</div>
     </div>
-    ${breakdownHtml !== '<div class="empty">No bets yet</div>' ? `<div style="margin-bottom:14px"><div class="card-title" style="margin-bottom:8px">🏅 Breakdown</div>${breakdownHtml}</div>` : ''}
+    ${badges.length ? `<div style="margin-bottom:14px"><div class="card-title" style="margin-bottom:8px">🏅 Achievements</div>${badges.map(a=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--gray)">${a.chip}<span style="font-size:11px;color:var(--muted)">${a.desc}</span></div>`).join('')}</div>` : ''}
+    ${breakdownHtml !== '<div class="empty">No bets yet</div>' ? `<div style="margin-bottom:14px"><div class="card-title" style="margin-bottom:8px">📊 Breakdown</div>${breakdownHtml}</div>` : ''}
     <div class="card-title" style="margin-bottom:8px">📋 Bet History</div>
     ${weekBlocks || '<div class="empty">No bets yet</div>'}
   `;
@@ -2035,7 +2081,7 @@ function renderBoard() {
     const barCol=s.roi>=0?'var(--green)':'var(--red)';
     const strk=s.streak>1?` ${s.streak}× ${s.streakType==='Win'?'🔥':'❄️'}`:''; const bonusBadge=s.bonusBets>0?` · 🎟️${s.bonusBets}`:'';
     const isMe = state.whoAmI && s.name === state.whoAmI;
-    const rowBadges = (achievements.get(s.name)||[]).join('');
+    const rowBadges = (achievements.get(s.name)||[]).map(a=>a.chip).join('');
     const badgeRow = rowBadges ? `<div class="badge-row" style="margin-top:3px">${rowBadges}</div>` : '';
     return `<div class="lb-row" style="${isMe?'background:rgba(212,160,23,0.06);border-radius:10px;padding:11px 8px;margin:0 -8px;':''}cursor:pointer" onclick="showPunterProfile('${s.name}')"><div class="lb-rank">${MEDALS[i]}</div><div class="lb-avatar" style="overflow:hidden;padding:0">${state.punterAvatars?.[s.name] ? `<img src="${state.punterAvatars[s.name]}" style="width:36px;height:36px;border-radius:50%;object-fit:cover" onerror="this.parentElement.innerHTML='${INI(s.name)}'">` : INI(s.name)}</div><div class="lb-info"><div class="lb-name">${s.name}${strk}</div><div class="lb-detail">${s.wins}W / ${s.losses}L · $${s.totalBet.toFixed(0)} staked</div>${badgeRow}<div class="lb-bar-track"><div class="lb-bar-fill" style="width:${barPct}%;background:${barCol}"></div></div></div><div class="lb-right"><div class="lb-net" style="color:${s.net>=0?'var(--green)':'var(--red)'}">${netStr}</div><div class="lb-roi">${roiStr} ROI</div></div></div>`;
   }).join('');
