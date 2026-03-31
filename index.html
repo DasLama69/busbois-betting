@@ -1412,7 +1412,8 @@ function renderHome() {
   const { week, punter, overridden } = computeCurrentState();
   const pool = getPoolSize();
   const account = getAccountTotal();
-  const totalContributed = state.openingBalance + (state.topups||[]).reduce((a,t) => a + t.totalAdded, 0);
+  const opening = state.openingBalance;
+  const totalContributed = opening + (state.topups||[]).reduce((a,t) => a + t.totalAdded, 0);
   const split = account / state.numPunters;
   const pnl = (account - totalContributed) / state.numPunters;
   const alreadyBet = punterAlreadyBetThisWeek(punter, week) && !overridden;
@@ -1454,12 +1455,12 @@ function renderHome() {
   if(pStats.streak>0){const hot=pStats.streakType==='Win';sb.className='streak-badge '+(hot?'hot':'cold');sv.textContent=pStats.streak+(hot?'🔥':'❄️');sl.textContent=hot?'Win Streak':'Loss Streak';}
   else{sb.className='streak-badge';sv.textContent='–';sl.textContent='No bets yet';}
 
-  document.getElementById('acct-bar-card').className='acct-bar-card'+(account<opening?' losing':'');
+  document.getElementById('acct-bar-card').className='acct-bar-card'+(account<totalContributed?' losing':'');
   document.getElementById('home-acct-bal').textContent='$'+account.toFixed(2);
   document.getElementById('home-split-val').textContent='$'+split.toFixed(2);
-  document.getElementById('home-pnl-label').textContent=(pnl>=0?'+':'-')+'$'+Math.abs(pnl).toFixed(2)+' each vs opening';
-  document.getElementById('home-acct-fill').style.width=Math.min(account/opening*100,100)+'%';
-  document.getElementById('home-acct-open-label').textContent='Opening: $'+opening.toFixed(2);
+  document.getElementById('home-pnl-label').textContent=(pnl>=0?'+':'-')+'$'+Math.abs(pnl).toFixed(2)+' each vs contributed';
+  document.getElementById('home-acct-fill').style.width=Math.min(account/totalContributed*100,100)+'%';
+  document.getElementById('home-acct-open-label').textContent='Contributed: $'+totalContributed.toFixed(2);
 
   const allValid=state.bets.filter(b=>b.result!=='Void');
   const gW=allValid.filter(b=>b.result==='Win').length,gL=allValid.filter(b=>b.result==='Loss').length;
@@ -2178,7 +2179,8 @@ function renderBoard() {
 // ═══════════════ ADMIN ═══════════════
 function renderAdmin() {
   const account=getAccountTotal();
-  const totalContributed=state.openingBalance+(state.topups||[]).reduce((a,t)=>a+t.totalAdded,0);
+  const opening=state.openingBalance;
+  const totalContributed=opening+(state.topups||[]).reduce((a,t)=>a+t.totalAdded,0);
   const gamblingPnL=account-totalContributed;
   const split=account/state.numPunters;
   const pnl=gamblingPnL/state.numPunters;
@@ -2606,7 +2608,7 @@ function generateReport() {
   if(reportWeek<1){showToast('⚠️ Enter a valid week number');return;}
   const weekBets=state.bets.filter(b=>b.week===reportWeek);
   if(!weekBets.length){showToast(`⚠️ No bets found for Week ${reportWeek}`);return;}
-  const account=getAccountTotal(),split=account/state.numPunters,opening=state.openingBalance,pnl=split-(opening/state.numPunters);
+  const account=getAccountTotal(),opening=state.openingBalance,totalContributed=opening+(state.topups||[]).reduce((a,t)=>a+t.totalAdded,0),split=account/state.numPunters,pnl=(account-totalContributed)/state.numPunters;
   const allStats=getPunterStats().sort((a,b)=>b.net-a.net);
   const allValid=state.bets.filter(b=>b.result!=='Void');
   const gW=allValid.filter(b=>b.result==='Win').length,gL=allValid.filter(b=>b.result==='Loss').length;
