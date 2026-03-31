@@ -1412,9 +1412,9 @@ function renderHome() {
   const { week, punter, overridden } = computeCurrentState();
   const pool = getPoolSize();
   const account = getAccountTotal();
+  const totalContributed = state.openingBalance + (state.topups||[]).reduce((a,t) => a + t.totalAdded, 0);
   const split = account / state.numPunters;
-  const opening = state.openingBalance;
-  const pnl = split - (opening / state.numPunters);
+  const pnl = (account - totalContributed) / state.numPunters;
   const alreadyBet = punterAlreadyBetThisWeek(punter, week) && !overridden;
 
   // Your turn banner
@@ -2177,10 +2177,14 @@ function renderBoard() {
 
 // ═══════════════ ADMIN ═══════════════
 function renderAdmin() {
-  const account=getAccountTotal(),opening=state.openingBalance,split=account/state.numPunters,pnl=split-(opening/state.numPunters);
+  const account=getAccountTotal();
+  const totalContributed=state.openingBalance+(state.topups||[]).reduce((a,t)=>a+t.totalAdded,0);
+  const gamblingPnL=account-totalContributed;
+  const split=account/state.numPunters;
+  const pnl=gamblingPnL/state.numPunters;
   const bigEl=document.getElementById('acct-big');
-  bigEl.textContent='$'+account.toFixed(2);bigEl.style.color=account>=opening?'var(--green)':'var(--red)';
-  document.getElementById('acct-big-sub').textContent=(account>=opening?'Up':'Down')+' $'+Math.abs(account-opening).toFixed(2)+' from $'+opening.toFixed(2)+' opening';
+  bigEl.textContent='$'+account.toFixed(2);bigEl.style.color=gamblingPnL>=0?'var(--green)':'var(--red)';
+  document.getElementById('acct-big-sub').textContent=(gamblingPnL>=0?'Up':'Down')+' $'+Math.abs(gamblingPnL).toFixed(2)+' from $'+totalContributed.toFixed(2)+' contributed';
   document.getElementById('acct-split2').textContent='$'+split.toFixed(2);
   const pe=document.getElementById('acct-pnl2');pe.textContent=(pnl>=0?'+$':'-$')+Math.abs(pnl).toFixed(2);pe.style.color=pnl>=0?'var(--green)':'var(--red)';
   renderWeekMgmtStatus();
@@ -2260,23 +2264,24 @@ async function clearHistory() {
 // ═══════════════ NEW PUNTER BUY-IN ═══════════════
 function initBuyInCard() {
   const account = getAccountTotal();
-  const curPunters = state.numPunters;
-  const newPunters = curPunters + 1;
-  const suggested = account / curPunters;  // fair share = current balance ÷ current punters
+  // The new punter is already in punterOrder (added via Add Punter), so numPunters already
+  // includes them. existingPunters = members before the new person joined.
+  const existingPunters = state.numPunters - 1;
+  const suggested = existingPunters > 0 ? account / existingPunters : account;  // fair share = what each existing member holds
 
   const _bal = document.getElementById('buyin-current-bal'); if(_bal) _bal.textContent = '$' + account.toFixed(2);
-  const _cp = document.getElementById('buyin-current-punters'); if(_cp) _cp.textContent = curPunters;
-  const _np = document.getElementById('buyin-new-punters'); if(_np) _np.textContent = newPunters;
-  const _sg = document.getElementById('buyin-suggested'); if(_sg) _sg.textContent = '$' + (account / curPunters).toFixed(2);
+  const _cp = document.getElementById('buyin-current-punters'); if(_cp) _cp.textContent = existingPunters > 0 ? existingPunters : state.numPunters;
+  const _np = document.getElementById('buyin-new-punters'); if(_np) _np.textContent = state.numPunters;
+  const _sg = document.getElementById('buyin-suggested'); if(_sg) _sg.textContent = '$' + suggested.toFixed(2);
   document.getElementById('buyin-date').value = new Date().toISOString().split('T')[0];
 
   // Populate punter dropdown — show all punters as options
   const sel = document.getElementById('buyin-punter');
   sel.innerHTML = getPunters().map(p => `<option value="${p}">${p}</option>`).join('');
 
-  // Auto-fill suggested amount = balance ÷ current punters
+  // Auto-fill suggested amount = balance ÷ existing punters
   const amtEl = document.getElementById('buyin-amount');
-  if (!amtEl.value) amtEl.value = (account / curPunters).toFixed(2);
+  if (!amtEl.value) amtEl.value = suggested.toFixed(2);
 
   updateBuyInPreview();
 }
@@ -2285,8 +2290,9 @@ function updateBuyInPreview() {
   const punter = document.getElementById('buyin-punter')?.value;
   const amt = parseFloat(document.getElementById('buyin-amount')?.value);
   const account = getAccountTotal();
-  const curPunters = state.numPunters;
-  const newPunters = curPunters + 1;
+  // existingPunters = members before the new one (new person already counted in numPunters)
+  const curPunters = Math.max(state.numPunters - 1, 1);
+  const newPunters = state.numPunters;
   const suggested = account / curPunters;  // fair share = what each current member holds
   const preview = document.getElementById('buyin-preview');
   if (!preview || !punter || isNaN(amt)) { if(preview) preview.style.display='none'; return; }
@@ -2321,10 +2327,10 @@ async function processBuyIn() {
   if (!amt || isNaN(amt) || amt <= 0) { showToast('⚠️ Enter buy-in amount'); return; }
 
   const account = getAccountTotal();
-  const newPunters = state.numPunters + 1;
+  const totalPunters = state.punterOrder.length;  // already includes the new person
   const newBalance = account + amt;
 
-  if (!confirm(`Process buy-in for ${punter}?\n\nBuy-in: $${amt.toFixed(2)}\nNew balance: $${newBalance.toFixed(2)}\nNew punter count: ${newPunters}\n\nThis will update the group size and add the buy-in to the pool.`)) return;
+  if (!confirm(`Process buy-in for ${punter}?\n\nBuy-in: $${amt.toFixed(2)}\nNew balance: $${newBalance.toFixed(2)}\nGroup size: ${totalPunters} punters\n\nThis adds the buy-in to the pool.`)) return;
 
   const btn = document.getElementById('buyin-btn');
   btn.disabled = true; btn.textContent = '⏳ Processing...';
@@ -2342,12 +2348,12 @@ async function processBuyIn() {
     });
     if (error) throw error;
 
-    // Update punter count in settings
-    state.numPunters = newPunters;
+    // Sync punter count to actual list (addPunter() already incremented it when the name was added)
+    state.numPunters = state.punterOrder.length;
     // Pool size stays the same per punter — don't auto-change it
     await saveSettingsToSupabase();
 
-    showToast(`✅ ${punter} buy-in processed! Group is now ${newPunters} punters`);
+    showToast(`✅ ${punter} buy-in processed! Group is now ${state.punterOrder.length} punters`);
     document.getElementById('buyin-note').value = '';
     document.getElementById('buyin-amount').value = '';
     await loadFromSupabase();
