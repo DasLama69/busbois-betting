@@ -1912,12 +1912,12 @@ function computeAchievements() {
     losers.filter(s => s.streak === maxLoss).forEach(s => add(s.name, entry('badge-negative','❄️','Cold', `On a ${maxLoss}× losing run`)));
   }
 
-  // 🤡 Donkey — biggest single loss (worst net on one bet)
+  // 🫏 Donkey — biggest single loss (worst net on one bet)
   if (realBets.length) {
     const minNet = Math.min(...realBets.map(b => b.returnAmt - b.bet));
     if (minNet < 0) {
       const seen = new Set();
-      realBets.filter(b => b.returnAmt - b.bet === minNet).forEach(b => { if (!seen.has(b.punter)) { seen.add(b.punter); add(b.punter, entry('badge-negative','🤡','Donkey', `Biggest single loss: -$${Math.abs(minNet).toFixed(2)} (Wk${b.week})`)); } });
+      realBets.filter(b => b.returnAmt - b.bet === minNet).forEach(b => { if (!seen.has(b.punter)) { seen.add(b.punter); add(b.punter, entry('badge-negative','🫏','Donkey', `Biggest single loss: -$${Math.abs(minNet).toFixed(2)} (Wk${b.week})`)); } });
     }
   }
 
