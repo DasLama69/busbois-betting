@@ -846,8 +846,8 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
       <input type="number" id="settings-opening" class="form-control" step="0.01" value="600">
     </div>
     <div class="form-group">
-      <label class="form-label">Weekly Pool ($)</label>
-      <input type="number" id="settings-pool" class="form-control" step="1" value="60">
+      <label class="form-label">Pool Per Person ($) <span>total = this × members</span></label>
+      <input type="number" id="settings-pool" class="form-control" step="1" value="10">
     </div>
     <div class="form-group">
       <label class="form-label">Number of Punters</label>
@@ -939,7 +939,7 @@ let state = {
   topups: [],
   openingBalance: 600,
   numPunters: 5,  // default to 5 until loaded from DB
-  poolSize: 50,  // default to 50 until loaded from DB
+  poolSize: 10,  // per-person pool contribution ($); total pool = poolSize × numPunters
   override: null,
   baselineWeek: null,
   baselinePunter: null,
@@ -969,7 +969,10 @@ async function loadFromSupabase() {
     if (settingsData) {
       state.openingBalance = parseFloat(settingsData.opening_balance) || 500;
       state.numPunters     = parseInt(settingsData.num_punters) || state.punterOrder.length || 5;
-      state.poolSize       = parseInt(settingsData.pool_size) || 50;
+      const _rawPool = parseInt(settingsData.pool_size) || 10;
+      // Migrate: old data stored the total pool (e.g. 50 for 5 people). If the stored
+      // value looks like a total (> 20), convert it to per-person by dividing by numPunters.
+      state.poolSize = _rawPool > 20 ? Math.round(_rawPool / (state.punterOrder.length || state.numPunters || 5)) : _rawPool;
       state.override       = settingsData.override_punter
         ? { punter: settingsData.override_punter, week: settingsData.override_week }
         : null;
@@ -1161,7 +1164,7 @@ function refreshCurrentTab() {
 }
 
 // ═══════════════ GAME LOGIC ═══════════════
-function getPoolSize() { return state.poolSize || 50; }
+function getPoolSize() { return state.numPunters * (state.poolSize || 10); }
 
 // ── Week summary: aggregate all real (non-bonus) bets for a punter in a week ──
 function getWeekSummary(punter, week) {
@@ -2197,7 +2200,7 @@ function renderAdmin() {
   renderTopUpHistory();
   document.getElementById('settings-opening').value=opening;
   document.getElementById('settings-punters').value=state.numPunters;
-  document.getElementById('settings-pool').value=getPoolSize();
+  document.getElementById('settings-pool').value=state.poolSize||10;
   const {week:cw,punter:cp}=computeCurrentState();
   // Populate baseline selects
   const bpSel = document.getElementById('baseline-punter');
@@ -2231,7 +2234,7 @@ function renderAdmin() {
 async function saveSettings() {
   state.openingBalance=parseFloat(document.getElementById('settings-opening').value)||600;
   state.numPunters=parseInt(document.getElementById('settings-punters').value)||state.punterOrder.length||5;
-  state.poolSize=parseFloat(document.getElementById('settings-pool').value)||50;
+  state.poolSize=parseFloat(document.getElementById('settings-pool').value)||10;
   try{await saveSettingsToSupabase();showToast('✅ Settings saved');renderAdmin();}
   catch(e){console.error(e);showToast('❌ Save failed — run the SQL migrations in Supabase first');}
 }
