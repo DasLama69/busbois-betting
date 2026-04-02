@@ -2945,8 +2945,10 @@ function renderSparkline() {
     <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="3" fill="${lineCol}"/>`;
 
   // "overall" = gambling P&L only (excludes buy-ins/topups)
+  // Use getAccountTotal() so the buy-in amount is included in the base before subtracting.
+  // last (from history) = openingBalance + bet results only, so last - totalContributed is wrong.
   const totalContributed = state.openingBalance + (state.topups||[]).reduce((a,t)=>a+t.totalAdded,0);
-  const gamblingDiff = last - totalContributed;
+  const gamblingDiff = getAccountTotal() - totalContributed;
   const isUpGambling = gamblingDiff >= 0;
   rangeEl.textContent = `${isUpGambling?'+':'-'}$${Math.abs(gamblingDiff).toFixed(0)} overall`;
   rangeEl.style.color = isUpGambling ? 'var(--green)' : 'var(--red)';
