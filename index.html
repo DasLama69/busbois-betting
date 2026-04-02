@@ -335,6 +335,14 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .topup-history-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--gray); font-size:12px; }
 .topup-history-row:last-child { border-bottom:none; }
 .topup-badge { background:linear-gradient(135deg,#1D4ED8,var(--steel)); color:white; border-radius:6px; padding:2px 8px; font-size:9px; font-weight:800; flex-shrink:0; }
+
+/* ── IMPORT CARD ── */
+.import-preview-table { width:100%; border-collapse:collapse; font-size:0.72rem; margin-top:8px; }
+.import-preview-table th { padding:4px 6px; border-bottom:1px solid rgba(255,255,255,0.2); text-align:left; color:var(--muted); font-weight:600; }
+.import-preview-table td { padding:4px 6px; border-bottom:1px solid rgba(255,255,255,0.07); }
+.import-preview-table tr.dup td { opacity:0.35; }
+.import-row-status-new { color:#4ade80; font-weight:700; }
+.import-row-status-dup { color:#94a3b8; }
 </style>
 </head>
 <body>
@@ -891,6 +899,20 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
         <option value="Void">🚫 Void</option>
       </select>
       <button onclick="applyBetStatusChange()" style="background:rgba(212,160,23,0.15);color:var(--gold);border:1px solid rgba(212,160,23,0.4);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap">✏️ Update</button>
+    </div>
+  </div>
+
+  <!-- Import Bets -->
+  <div class="card">
+    <div class="card-header"><span>📥 Import Bets</span></div>
+    <div class="card-body">
+      <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:8px;line-height:1.4">Paste transaction history or a CSV export. Select the punter for pasted text (CSV has no punter — you'll need to assign manually after).</p>
+      <textarea id="import-input" rows="6" placeholder="Paste text or CSV here…" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px;color:var(--text-primary);font-size:0.72rem;resize:vertical;box-sizing:border-box"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <select id="import-punter-select" class="input-field" style="flex:1;min-width:120px"></select>
+        <button class="btn btn-primary" onclick="parseImportInput()" style="flex:1;min-width:80px">Parse</button>
+      </div>
+      <div id="import-preview"></div>
     </div>
   </div>
 
@@ -2191,14 +2213,20 @@ function renderAdmin() {
       }).join('');
   }
   const histEl=document.getElementById('acct-history');
-  if(!state.bets.length){histEl.innerHTML='<div class="empty">No bets yet</div>';return;}
-  histEl.innerHTML=[...state.bets].reverse().map(b=>{
+  if(!state.bets.length){histEl.innerHTML='<div class="empty">No bets yet</div>';}
+  else{histEl.innerHTML=[...state.bets].reverse().map(b=>{
     const net=b.result==='Void'?0:(b.returnAmt-b.bet);
     const cls=b.result==='Win'?'win':b.result==='Loss'?'loss':'void';
     const netColor=b.result==='Void'?'rgba(255,255,255,0.4)':net>=0?'var(--green)':'var(--red)';
     const netStr=b.result==='Void'?'—':(net>=0?'+':'-')+'$'+Math.abs(net).toFixed(2);
     return `<div class="hist-row"><span class="hist-wk">Wk${b.week}</span><span class="hist-name">${b.punter}${b.isBonus?' 🎟️':''}</span><span class="pill pill-${cls}">${b.isBonus?'Bonus':b.result}</span><span class="hist-net" style="color:${netColor}">${netStr}</span><button class="hist-del" onclick="deleteBetById('${b.id}')">🗑</button></div>`;
-  }).join('');
+  }).join('');}
+  // populate import punter select
+  const impSel = document.getElementById('import-punter-select');
+  if (impSel && state.punterOrder.length) {
+    const cur = impSel.value;
+    impSel.innerHTML = state.punterOrder.map(p => `<option value="${p}"${p===cur?' selected':''}>${p}</option>`).join('');
+  }
 }
 
 // applyOverride removed — replaced by setBaseline
@@ -3018,6 +3046,277 @@ function renderTopUpHistory() {
       <span style="color:var(--muted)">$${t.amountEach.toFixed(0)} × ${t.numPunters}</span>
       <span style="color:var(--muted);font-size:10px;margin-left:6px">${t.date}</span>
     </div>${t.note ? `<div style="font-size:10px;color:var(--muted);padding:2px 0 6px 0">${t.note}</div>` : ''}`).join('');
+}
+
+// ═══════════════ BET IMPORT ═══════════════
+
+function detectImportFormat(text) {
+  const first = text.trim().split('\n')[0].toLowerCase();
+  return (first.includes('time') && first.includes('summary')) ? 'csv' : 'text';
+}
+
+// Parse pasted text blocks (7-8 lines each)
+// Block structure:
+//   [i+0] description/notes
+//   [i+1] day, date month year (e.g. "Wednesday, 1 January 2025")
+//   [i+2] HH:MM:SS TZ (e.g. "14:32:11 AEDT")
+//   [i+3] bet type label
+//   [i+4] amount ("$0.00" | "-$X.XX" | "+$X.XX")
+//   [i+5] balance after
+function parseTextFormat(lines, punter) {
+  const rows = [];
+  const tzRe = /^\d{2}:\d{2}:\d{2}\s+(ACDT|AEST|AEDT|AWST)$/;
+  let i = 0;
+  while (i < lines.length) {
+    // detect block start: line i+2 should be time+tz
+    if (i + 5 < lines.length && tzRe.test(lines[i + 2].trim())) {
+      const notes   = lines[i].trim();
+      const dateStr = lines[i + 1].trim();
+      const amtStr  = lines[i + 4].trim();
+      rows.push({ notes, dateStr, amtStr, punter });
+      i += 6;
+      // skip optional 7th/8th lines that aren't a new block start
+      while (i < lines.length && !tzRe.test((lines[i + 2] || '').trim()) && !/^\d{2}:\d{2}:\d{2}/.test(lines[i].trim())) {
+        // if this looks like it could be a floating extra line, skip it
+        if (i + 2 < lines.length && tzRe.test(lines[i + 2].trim())) break;
+        if (rows.length && !lines[i].trim()) { i++; continue; }
+        break;
+      }
+    } else {
+      i++;
+    }
+  }
+  return rows;
+}
+
+// Parse CSV rows, pairing Bet Stake + Bet Return by Bet ID
+function parseCSVFormat(text, punter) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  // find column indices from header
+  const headerRaw = lines[0];
+  const header = splitCSVRow(headerRaw).map(h => h.trim().toLowerCase());
+  const idx = name => header.indexOf(name);
+  const iTime    = idx('time');
+  const iSummary = idx('summary');
+  const iType    = idx('type');
+  const iAmount  = idx('amount');
+  const iBetId   = idx('bet id');
+
+  const stakes = {};
+  const rows = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = splitCSVRow(lines[i]);
+    if (!cols.length) continue;
+    const type    = (cols[iType]    || '').trim();
+    const summary = (cols[iSummary] || '').trim();
+    const amtStr  = (cols[iAmount]  || '').trim();
+    const timeStr = (cols[iTime]    || '').trim();
+    const betId   = iBetId >= 0 ? (cols[iBetId] || '').trim() : '';
+
+    if (type === 'Bet Stake') {
+      stakes[betId] = { notes: summary, dateStr: timeStr, amtStr, punter, betId };
+    } else if (type === 'Bet Return' && stakes[betId]) {
+      const s = stakes[betId];
+      rows.push({ notes: s.notes, dateStr: s.dateStr, stakeAmtStr: s.amtStr, returnAmtStr: amtStr, punter, betId });
+      delete stakes[betId];
+    }
+  }
+  // remaining stakes with no return = pending
+  for (const betId of Object.keys(stakes)) {
+    rows.push({ notes: stakes[betId].notes, dateStr: stakes[betId].dateStr, stakeAmtStr: stakes[betId].amtStr, returnAmtStr: null, punter, betId });
+  }
+  return rows;
+}
+
+function splitCSVRow(line) {
+  const cols = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQ = !inQ; }
+    else if (ch === ',' && !inQ) { cols.push(cur); cur = ''; }
+    else { cur += ch; }
+  }
+  cols.push(cur);
+  return cols;
+}
+
+function parseAmountStr(str) {
+  // returns signed float; "$0.00" = 0, "-$1.50" = -1.5, "+$2.00" = 2
+  const m = str.replace(/\s/g,'').match(/^([+-]?)\$?([\d.]+)$/);
+  if (!m) return 0;
+  return parseFloat((m[1] === '-' ? '-' : '') + m[2]);
+}
+
+function parseDateStr(str) {
+  // Handles "Wednesday, 1 January 2025" or "2025-01-01 14:32:11" etc.
+  const iso = str.match(/(\d{4}-\d{2}-\d{2})/);
+  if (iso) return iso[1];
+  const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+  const m = str.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/i);
+  if (m) {
+    const d = m[1].padStart(2, '0');
+    const mo = (months.indexOf(m[2].toLowerCase()) + 1).toString().padStart(2, '0');
+    const y = m[3];
+    return `${y}-${mo}-${d}`;
+  }
+  return new Date().toISOString().slice(0, 10); // fallback today
+}
+
+function mapTextRowToBet(row) {
+  const perPerson = getPoolSize() / Math.max(state.numPunters, 1);
+  const amt = parseAmountStr(row.amtStr);
+  let result, bet, returnAmt;
+  if (amt === 0) {
+    result = 'Pending'; bet = perPerson; returnAmt = 0;
+  } else if (amt < 0) {
+    result = 'Loss'; bet = Math.abs(amt); returnAmt = 0;
+  } else {
+    // positive = net win; we don't know the original stake so estimate per-person share
+    result = 'Win'; bet = perPerson; returnAmt = perPerson + amt;
+  }
+  return {
+    punter:    row.punter,
+    week:      state.currentWeek || 1,
+    date:      parseDateStr(row.dateStr),
+    bet,
+    returnAmt,
+    result,
+    notes:     row.notes,
+    sport:     'Other',
+    isBonus:   false
+  };
+}
+
+function mapCSVRowToBet(row) {
+  const perPerson = getPoolSize() / Math.max(state.numPunters, 1);
+  const stakeAmt  = Math.abs(parseAmountStr(row.stakeAmtStr));
+  let result, bet, returnAmt;
+  if (row.returnAmtStr === null) {
+    result = 'Pending'; bet = stakeAmt || perPerson; returnAmt = 0;
+  } else {
+    const ret = parseAmountStr(row.returnAmtStr);
+    if (ret <= 0) {
+      result = 'Loss'; bet = stakeAmt; returnAmt = 0;
+    } else {
+      result = 'Win'; bet = stakeAmt; returnAmt = ret;
+    }
+  }
+  return {
+    punter:    row.punter,
+    week:      state.currentWeek || 1,
+    date:      parseDateStr(row.dateStr),
+    bet,
+    returnAmt,
+    result,
+    notes:     row.notes,
+    sport:     'Other',
+    isBonus:   false
+  };
+}
+
+function buildExistingBetKeys() {
+  return new Set(state.bets.map(b =>
+    `${b.punter}|${b.date}|${b.bet.toFixed(2)}|${(b.notes||'').slice(0,25).toLowerCase()}`
+  ));
+}
+
+function betKey(b) {
+  return `${b.punter}|${b.date}|${b.bet.toFixed(2)}|${(b.notes||'').slice(0,25).toLowerCase()}`;
+}
+
+function parseImportInput() {
+  const raw = (document.getElementById('import-input').value || '').trim();
+  if (!raw) { showToast('⚠️ Nothing to parse'); return; }
+  const punter = document.getElementById('import-punter-select').value || (state.punterOrder[0] || 'Unknown');
+  const fmt = detectImportFormat(raw);
+  let bets = [];
+  if (fmt === 'csv') {
+    const rows = parseCSVFormat(raw, punter);
+    bets = rows.map(mapCSVRowToBet);
+  } else {
+    const lines = raw.split('\n');
+    const rows = parseTextFormat(lines, punter);
+    bets = rows.map(mapTextRowToBet);
+  }
+  if (!bets.length) { showToast('⚠️ No transactions found — check the format'); return; }
+  const existing = buildExistingBetKeys();
+  const tagged = bets.map(b => ({ ...b, _isDup: existing.has(betKey(b)) }));
+  renderImportPreview(tagged);
+}
+
+function renderImportPreview(bets) {
+  const el = document.getElementById('import-preview');
+  if (!bets.length) { el.innerHTML = '<p style="font-size:0.78rem;color:var(--muted);margin-top:8px">No rows parsed.</p>'; return; }
+  const newCount = bets.filter(b => !b._isDup).length;
+  const rows = bets.map(b => {
+    const net = b.result === 'Win' ? b.returnAmt - b.bet : b.result === 'Loss' ? -b.bet : 0;
+    const netStr = b.result === 'Pending' ? 'Pending' : (net >= 0 ? '+' : '') + '$' + net.toFixed(2);
+    const statusHtml = b._isDup
+      ? `<span class="import-row-status-dup">already exists</span>`
+      : `<span class="import-row-status-new">✓ new</span>`;
+    const cls = b._isDup ? 'dup' : 'new';
+    return `<tr class="${cls}">
+      <td>${b.punter}</td>
+      <td>${b.date}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${b.notes.replace(/"/g,'&quot;')}">${b.notes}</td>
+      <td>$${b.bet.toFixed(2)}</td>
+      <td>${b.result !== 'Loss' ? '$' + b.returnAmt.toFixed(2) : '—'}</td>
+      <td>${b.result}</td>
+      <td>${statusHtml}</td>
+    </tr>`;
+  }).join('');
+
+  const btnDisabled = newCount === 0 ? 'disabled style="opacity:0.4;cursor:not-allowed"' : '';
+  el.innerHTML = `
+    <div style="overflow-x:auto;margin-top:8px">
+      <table class="import-preview-table">
+        <thead><tr><th>Punter</th><th>Date</th><th>Notes</th><th>Stake</th><th>Return</th><th>Result</th><th>Status</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+      <button class="btn btn-primary" onclick="confirmImport()" ${btnDisabled} style="flex:1">
+        Import ${newCount} new bet${newCount !== 1 ? 's' : ''}
+      </button>
+      <button onclick="clearImport()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:7px 14px;font-size:12px;color:var(--text-secondary);cursor:pointer">Clear</button>
+    </div>`;
+  // store parsed bets on the element for confirmImport to access
+  el._importBets = bets;
+}
+
+async function confirmImport() {
+  const el = document.getElementById('import-preview');
+  const bets = el._importBets;
+  if (!bets) return;
+  const toAdd = bets.filter(b => !b._isDup);
+  if (!toAdd.length) { showToast('Nothing new to import'); return; }
+  showToast(`⏳ Importing ${toAdd.length} bet${toAdd.length !== 1 ? 's' : ''}…`);
+  let ok = 0, fail = 0;
+  for (const bet of toAdd) {
+    try {
+      const id = await saveBetToSupabase(bet);
+      state.bets.push({ ...bet, id });
+      ok++;
+    } catch(e) {
+      console.error('Import bet failed:', e, bet);
+      fail++;
+    }
+  }
+  // mark all as dup now so re-import shows them as existing
+  el._importBets = bets.map(b => ({ ...b, _isDup: true }));
+  renderImportPreview(el._importBets);
+  renderHome();
+  showToast(fail ? `✅ ${ok} imported, ❌ ${fail} failed` : `✅ ${ok} bet${ok !== 1 ? 's' : ''} imported`);
+}
+
+function clearImport() {
+  document.getElementById('import-input').value = '';
+  const el = document.getElementById('import-preview');
+  el.innerHTML = '';
+  el._importBets = null;
 }
 
 // ═══════════════ PERSONAL BEST ON LEADERBOARD ═══════════════
