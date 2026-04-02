@@ -807,7 +807,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
         <span id="buyin-current-bal" style="font-weight:800;color:var(--dark)">$–</span>
       </div>
       <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-        <span style="color:var(--muted)">Current punters</span>
+        <span style="color:var(--muted)">Group size (incl. joiner)</span>
         <span id="buyin-current-punters" style="font-weight:800;color:var(--dark)">–</span>
       </div>
       <div style="height:1px;background:var(--gray);margin:6px 0"></div>
@@ -1274,49 +1274,21 @@ function getAccountTotal() {
 
 // Balance history points for sparkline (one per bet + topup event, in order)
 function getBalanceHistory() {
-  const events = [];
-  // Merge bets and topups by index (bets are already in created_at order, topups too)
-  // Use a simple approach: interleave by their sequence
-  let bal = state.openingBalance;
-  events.push(bal);
-  // Build a timeline: bets have week/date, topups have date
-  // For simplicity, add topups between bets based on their position in array
-  let topupIdx = 0;
-  const topups = state.topups || [];
-  for (const b of state.bets) {
-    // Add any topups that happened before this bet (simple: add first half of topups before midpoint)
-    if (b.result !== 'Void') bal += (b.returnAmt - b.bet);
-    events.push(bal);
-  }
-  // Also add topup bumps at appropriate points
-  // Rebuild properly: sort all events by created_at isn't available in state, so approximate
-  // by applying topups proportionally — rebuild from scratch with correct order
+  // Track gambling P&L only — topups/buy-ins are capital injections, not winnings,
+  // so they are excluded from the running balance (but still marked as dashed lines).
   const allEvents = [];
   let runBal = state.openingBalance;
-  allEvents.push({ bal: runBal });
-  // We'll just interleave: apply topups after every (bets.length/topups.length) bets
-  const betCount = state.bets.filter(b=>b.result!=='Void').length;
-  const topupCount = topups.length;
-  let tIdx = 0;
-  let bIdx = 0;
+  allEvents.push(runBal);
   for (const b of state.bets) {
-    if (b.result !== 'Void') {
+    if (b.result === 'Void') continue;
+    if (b.isBonus) {
+      runBal += b.returnAmt;
+    } else {
       runBal += (b.returnAmt - b.bet);
-      bIdx++;
-      // Insert topup after proportional point
-      if (topupCount > 0 && tIdx < topupCount) {
-        const threshold = Math.round((tIdx + 1) * betCount / topupCount);
-        if (bIdx >= threshold) {
-          runBal += topups[tIdx].totalAdded;
-          tIdx++;
-        }
-      }
     }
-    allEvents.push({ bal: runBal });
+    allEvents.push(runBal);
   }
-  // Append remaining topups
-  while (tIdx < topupCount) { runBal += topups[tIdx].totalAdded; allEvents.push({ bal: runBal }); tIdx++; }
-  return allEvents.map(e => e.bal);
+  return allEvents;
 }
 
 // ── Week-profitability helpers ────────────────────────────────────────────────
@@ -2269,13 +2241,15 @@ async function clearHistory() {
 // ═══════════════ NEW PUNTER BUY-IN ═══════════════
 function initBuyInCard() {
   const account = getAccountTotal();
-  // The new punter is already in punterOrder (added via Add Punter), so numPunters already
-  // includes them. existingPunters = members before the new person joined.
-  const existingPunters = state.numPunters - 1;
-  const suggested = existingPunters > 0 ? account / existingPunters : account;  // fair share = what each existing member holds
+  // numPunters already includes the new person (added via Add Punter).
+  // existingPunters = the N-1 members who have already contributed money.
+  // The joining person pays account/existingPunters so everyone equalises.
+  const existingPunters = Math.max(state.numPunters - 1, 1);
+  const suggested = account / existingPunters;
 
   const _bal = document.getElementById('buyin-current-bal'); if(_bal) _bal.textContent = '$' + account.toFixed(2);
-  const _cp = document.getElementById('buyin-current-punters'); if(_cp) _cp.textContent = existingPunters > 0 ? existingPunters : state.numPunters;
+  // Show the full current group size (including the person about to buy in)
+  const _cp = document.getElementById('buyin-current-punters'); if(_cp) _cp.textContent = state.numPunters;
   const _np = document.getElementById('buyin-new-punters'); if(_np) _np.textContent = state.numPunters;
   const _sg = document.getElementById('buyin-suggested'); if(_sg) _sg.textContent = '$' + suggested.toFixed(2);
   document.getElementById('buyin-date').value = new Date().toISOString().split('T')[0];
@@ -2295,9 +2269,9 @@ function updateBuyInPreview() {
   const punter = document.getElementById('buyin-punter')?.value;
   const amt = parseFloat(document.getElementById('buyin-amount')?.value);
   const account = getAccountTotal();
-  // existingPunters = members before the new one (new person already counted in numPunters)
+  // existingPunters = members who have already contributed (numPunters - 1 since new person is pre-added)
   const curPunters = Math.max(state.numPunters - 1, 1);
-  const newPunters = state.numPunters;
+  const newPunters = state.numPunters;  // stays the same — person already counted
   const suggested = account / curPunters;  // fair share = what each current member holds
   const preview = document.getElementById('buyin-preview');
   if (!preview || !punter || isNaN(amt)) { if(preview) preview.style.display='none'; return; }
@@ -2970,9 +2944,12 @@ function renderSparkline() {
     ${topupMarkers}
     <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="3" fill="${lineCol}"/>`;
 
-  const diff = last - first;
-  rangeEl.textContent = `${isUp?'+':'-'}$${Math.abs(diff).toFixed(0)} overall`;
-  rangeEl.style.color = isUp ? 'var(--green)' : 'var(--red)';
+  // "overall" = gambling P&L only (excludes buy-ins/topups)
+  const totalContributed = state.openingBalance + (state.topups||[]).reduce((a,t)=>a+t.totalAdded,0);
+  const gamblingDiff = last - totalContributed;
+  const isUpGambling = gamblingDiff >= 0;
+  rangeEl.textContent = `${isUpGambling?'+':'-'}$${Math.abs(gamblingDiff).toFixed(0)} overall`;
+  rangeEl.style.color = isUpGambling ? 'var(--green)' : 'var(--red)';
 }
 
 // ═══════════════ TOP-UPS ═══════════════
