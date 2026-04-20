@@ -1315,11 +1315,11 @@ function getBalanceHistory() {
 
 // ── Week-profitability helpers ────────────────────────────────────────────────
 function shouldCountWeek(s) {
-  // Count a week if: pool fully spent, OR any single bet >= pool (legacy), OR bonus-only week
-  return s.isComplete || s.realBets.some(b => b.bet >= getPoolSize()) || (s.realBets.length === 0 && s.bonusBets.length > 0);
+  return s.realBets.length > 0 || s.bonusBets.length > 0;
 }
 function isWeekProfitable(s) {
-  return (s.totalReturn + s.bonusReturn) > s.totalStaked;
+  // Win = total return exceeds the pool allocation for the week
+  return (s.totalReturn + s.bonusReturn) > getPoolSize();
 }
 
 function getPunterStats() {
@@ -1361,7 +1361,7 @@ function getPunterStats() {
 
     return {
       name,
-      bets: realBets.length,
+      bets: realBets.length + bonusBets.length,
       weeks: completedWeeks,
       wins, losses,
       totalBet, totalRet, bonusRet, net, roi,
@@ -1467,14 +1467,14 @@ const gV=allBets.filter(b=>b.result==='Void').length;
 const winPct = allBets.length > 0 ? Math.round(gW/allBets.length*100) : 0;
 document.getElementById('st-winrate-sub').innerHTML=`${gW}W - ${gL}L - ${gV}V<br>${winPct}% win rate`;
 
-  // Group W/L: count profitable weeks (total return > total staked for that week across all punters)
+  // Group W/L: win = total return for the week exceeds pool allocation
   const allWeeks = [...new Set(state.bets.filter(b=>b.result!=='Void').map(b=>b.week))];
+  const gPool = getPoolSize();
   let gwWins=0, gwLosses=0;
   allWeeks.forEach(w => {
     const weekBets = state.bets.filter(b=>b.week===w && b.result!=='Void');
-    const wStaked = weekBets.filter(b=>!b.isBonus).reduce((a,b)=>a+b.bet,0);
     const wReturn = weekBets.reduce((a,b)=>a+b.returnAmt,0);
-    if (wReturn > wStaked) gwWins++; else gwLosses++;
+    if (wReturn > gPool) gwWins++; else gwLosses++;
   });
   document.getElementById('st-wl').textContent=gwWins+'/'+gwLosses;
 
@@ -1484,9 +1484,8 @@ document.getElementById('st-winrate-sub').innerHTML=`${gW}W - ${gL}L - ${gV}V<br
   for(let i=sortedWeeks.length-1;i>=0;i--){
     const w=sortedWeeks[i];
     const weekBets=state.bets.filter(b=>b.week===w&&b.result!=='Void');
-    const wStaked=weekBets.filter(b=>!b.isBonus).reduce((a,b)=>a+b.bet,0);
     const wReturn=weekBets.reduce((a,b)=>a+b.returnAmt,0);
-    const outcome=wReturn>wStaked?'Win':'Loss';
+    const outcome=wReturn>gPool?'Win':'Loss';
     if(gt===null){gt=outcome;gs=1;}else if(outcome===gt)gs++;else break;
   }
   document.getElementById('st-streak-sub').textContent=gs>1?`${gs}× ${gt} streak`:'No streak';
@@ -1720,20 +1719,8 @@ async function submitBet() {
     ? new Date(dateRaw).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'})
     : new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'});
 
-  // Void bets are refunds — no P/L impact, fixed result
-  let impliedResult;
-  if (isVoid) {
-    impliedResult = 'Void';
-  } else {
-    // Derive implicit result for display
-    const pool = getPoolSize();
-    const existingWeek = getWeekSummary(punter, week);
-    const projStaked = existingWeek.totalStaked + (isBonus ? 0 : betVal);
-    const projReturn = existingWeek.totalReturn + ret;
-    impliedResult = projStaked >= pool
-      ? (projReturn >= pool ? 'Win' : 'Loss')
-      : 'Pending';
-  }
+  // Derive result from the individual bet's return
+  const impliedResult = isVoid ? 'Void' : (ret > 0 ? 'Win' : 'Loss');
 
   try {
     if (state.override) { state.override = null; await saveSettingsToSupabase(); }
@@ -1864,13 +1851,14 @@ function computeAchievements() {
   const entry = (cls, icon, label, desc) => ({ chip: chip(cls, icon, label), desc });
 
   const realBets = state.bets.filter(b => !b.isBonus && b.result !== 'Void');
+  const allBets  = state.bets.filter(b => b.result !== 'Void'); // includes bonus
 
-  // 💰 Big Gun — highest single return
-  if (realBets.length) {
-    const max = Math.max(...realBets.map(b => b.returnAmt - b.bet));
+  // 💰 Big Gun — highest single net win (bonus bets included — bet=0 so net=returnAmt)
+  if (allBets.length) {
+    const max = Math.max(...allBets.map(b => b.returnAmt - b.bet));
     if (max > 0) {
       const seen = new Set();
-      realBets.filter(b => b.returnAmt - b.bet === max).forEach(b => { if (!seen.has(b.punter)) { seen.add(b.punter); add(b.punter, entry('badge-gold','💰','Big Gun', `Biggest single win: +$${max.toFixed(2)} (Wk${b.week})`)); } });
+      allBets.filter(b => b.returnAmt - b.bet === max).forEach(b => { if (!seen.has(b.punter)) { seen.add(b.punter); add(b.punter, entry('badge-gold','💰','Big Gun', `Biggest single win: +$${max.toFixed(2)} (Wk${b.week})`)); } });
     }
   }
 
