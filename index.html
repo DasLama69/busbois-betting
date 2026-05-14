@@ -3171,8 +3171,8 @@ function parseBetListFormat(lines, punter) {
     const nonEmpty = block.filter(l => l);
     if (!nonEmpty.length) continue;
 
-    let betType = 'Multi', odds = null, stake = 0, isBonus = false;
-    let notes = '', dateStr = '', cashReturn = 0, result = 'Pending';
+    let betType = 'Multi', odds = null, stake = 0, isBonus = false, numLegs = 0;
+    let matchName = '', dateStr = '', cashReturn = 0, result = 'Pending';
 
     for (let i = 0; i < nonEmpty.length; i++) {
       const l = nonEmpty[i];
@@ -3184,6 +3184,7 @@ function parseBetListFormat(lines, punter) {
       // Legs + stake: "5 Legs • Stake $5.00 Bonus Bet"
       const legM = l.match(/(\d+) Legs? [•·] Stake \$([\d.]+)(\s*Bonus Bet)?/i);
       if (legM) {
+        numLegs = parseInt(legM[1]);
         stake = parseFloat(legM[2]);
         isBonus = !!legM[3];
         betType = betType || 'Multi';
@@ -3206,15 +3207,17 @@ function parseBetListFormat(lines, punter) {
       // "Event / T&Cs" suffix — skip
       if (/Event \/ T&Cs/.test(l)) continue;
       // Match name (anything else non-empty that isn't "Next Leg:")
-      if (l && l !== 'Next Leg:' && !notes) notes = l;
+      if (l && l !== 'Next Leg:' && !matchName) matchName = l;
     }
 
     if (!dateStr) continue; // skip blocks without a date
-    const perPerson = getPoolSize() / Math.max(state.numPunters, 1);
     result = cashReturn > 0 ? 'Win' : 'Pending';
+    const legStr = numLegs ? ` - ${numLegs} leg${numLegs !== 1 ? 's' : ''}` : '';
+    const matchStr = matchName ? ` - ${matchName}` : '';
+    const stakeStr = `Stake $${stake.toFixed(2)}${isBonus ? ' Bonus Bet' : ''}`;
     rows.push({
       punter, dateStr,
-      notes: notes || betType,
+      notes: `${betType}${legStr}${matchStr} - ${stakeStr}`,
       betType, odds,
       stake: isBonus ? 0 : stake,
       bonusStake: isBonus ? stake : 0,
