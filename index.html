@@ -3264,8 +3264,10 @@ function mapAccountRowToBet(row) {
   } else {
     result = 'Win'; bet = perPerson; returnAmt = perPerson + amt;
   }
+  // Normalise punter name against known punters (case-insensitive)
+  const knownPunter = state.punterOrder.find(p => p.toLowerCase() === (row.punter||'').toLowerCase()) || row.punter;
   return {
-    punter: row.punter, week: state.currentWeek || 1,
+    punter: knownPunter, week: 1,
     date: parseDateStr(row.dateStr), bet, returnAmt, result,
     notes: row.notes, sport: '', betType: 'Multi', odds: null, isBonus: false, bonusStake: 0
   };
@@ -3330,21 +3332,21 @@ function parseImportInput() {
   const raw = (document.getElementById('import-input').value || '').trim();
   if (!raw) { showToast('⚠️ Nothing to parse'); return; }
   const punter = document.getElementById('import-punter-select').value || (state.punterOrder[0] || 'Unknown');
+  const currentWeek = computeCurrentState().week;
   const fmt = detectImportFormat(raw);
   let bets = [];
   if (fmt === 'csv') {
-    bets = parseCSVFormat(raw, punter).map(mapCSVRowToBet);
+    bets = parseCSVFormat(raw, punter).map(r => ({ ...mapCSVRowToBet(r), week: currentWeek }));
   } else if (fmt === 'betlist') {
     bets = parseBetListFormat(raw.split('\n'), punter);
-    // map to standard bet shape
     bets = bets.map(r => ({
-      punter: r.punter, week: state.currentWeek || 1,
+      punter: r.punter, week: currentWeek,
       date: parseDateStr(r.dateStr), bet: r.stake, returnAmt: r.returnAmt,
       result: r.result, notes: r.notes, sport: '',
       betType: r.betType || 'Multi', odds: r.odds, isBonus: r.isBonus, bonusStake: r.bonusStake || 0
     }));
   } else {
-    bets = parseAccountFormat(raw.split('\n')).map(mapAccountRowToBet);
+    bets = parseAccountFormat(raw.split('\n')).map(r => ({ ...mapAccountRowToBet(r), week: currentWeek }));
   }
   if (!bets.length) { showToast('⚠️ No bets found — check the format'); return; }
   const existing = buildExistingBetKeys();
@@ -3390,6 +3392,8 @@ function renderQueueRow(b, idx) {
       ${statusHtml}
       <select class="iq-field" style="flex:1" onchange="updateQueueItem(${idx},'punter',this.value)">${punterOpts}</select>
       <input class="iq-field" type="text" value="${b.date}" style="width:80px" onchange="updateQueueItem(${idx},'date',this.value)" placeholder="YYYY-MM-DD">
+      <label style="font-size:0.68rem;color:var(--muted);flex-shrink:0">Wk</label>
+      <input class="iq-field" type="number" value="${b.week||1}" style="width:38px" min="1" step="1" onchange="updateQueueItem(${idx},'week',parseInt(this.value)||1)">
       <button onclick="removeQueueItem(${idx})" style="background:none;border:none;color:rgba(255,255,255,0.35);font-size:14px;cursor:pointer;padding:0 2px;flex-shrink:0">×</button>
     </div>
     <div style="margin-bottom:4px">
