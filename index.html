@@ -3382,6 +3382,9 @@ function renderQueueRow(b, idx) {
     `<option value="${p}"${p===b.punter?' selected':''}>${p}</option>`).join('');
   const resultOpts = ['Win','Loss','Void','Pending'].map(r =>
     `<option value="${r}"${r===b.result?' selected':''}>${r}</option>`).join('');
+  const sportOpts = ['','AFL','NRL','Racing','Cricket','Soccer','NBA','Other'].map(s =>
+    `<option value="${s}"${s===(b.sport||'')?' selected':''}>${s||'— Sport —'}</option>`).join('');
+  const oddsVal = b.odds != null ? b.odds : '';
   return `<div class="iq-row ${dupCls}" id="iq-row-${idx}">
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
       ${statusHtml}
@@ -3391,6 +3394,11 @@ function renderQueueRow(b, idx) {
     </div>
     <div style="margin-bottom:4px">
       <input class="iq-field" type="text" value="${(b.notes||'').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box" onchange="updateQueueItem(${idx},'notes',this.value)" placeholder="Notes / match name">
+    </div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:4px">
+      <select class="iq-field" onchange="updateQueueItem(${idx},'sport',this.value)">${sportOpts}</select>
+      <label style="font-size:0.68rem;color:var(--muted)">Odds</label>
+      <input class="iq-field" type="number" value="${oddsVal}" style="width:60px" step="0.01" min="1" placeholder="—" onchange="updateQueueItem(${idx},'odds',parseFloat(this.value)||null)">
     </div>
     <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
       <label style="font-size:0.68rem;color:var(--muted)">Stake</label>
