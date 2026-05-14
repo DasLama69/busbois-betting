@@ -343,6 +343,11 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .import-preview-table tr.dup td { opacity:0.35; }
 .import-row-status-new { color:#4ade80; font-weight:700; }
 .import-row-status-dup { color:#94a3b8; }
+.iq-row { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px; margin-bottom:6px; }
+.iq-row.dup { opacity:0.4; }
+.iq-row.dup .iq-status { color:#94a3b8; }
+.iq-row.new .iq-status { color:#4ade80; font-weight:700; }
+.iq-field { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); border-radius:5px; color:var(--text-primary); font-size:0.72rem; padding:3px 6px; }
 </style>
 </head>
 <body>
@@ -3079,38 +3084,165 @@ function renderTopUpHistory() {
 
 // ═══════════════ BET IMPORT ═══════════════
 
+// Module-level queue so edits survive re-renders
+window._importQueue = [];
+
+// ── Format detection ──────────────────────────────────────────────────────────
 function detectImportFormat(text) {
-  const first = text.trim().split('\n')[0].toLowerCase();
-  return (first.includes('time') && first.includes('summary')) ? 'csv' : 'text';
+  const lines = text.split('\n').map(l => l.trim());
+  const first = lines[0].toLowerCase();
+  if (first.includes('time') && first.includes('summary')) return 'csv';
+  // Format B: has timestamp with seconds + timezone
+  if (lines.some(l => /^\d{2}:\d{2}:\d{2}\s+(ACDT|AEST|AEDT|AWST|ACST|AWDT)$/.test(l))) return 'account';
+  // Format A: has odds pattern or legs pattern
+  if (lines.some(l => / @ \d/.test(l) || /\d Legs? [•·]/.test(l))) return 'betlist';
+  return 'account'; // fallback
 }
 
-// Parse pasted text blocks (7-8 lines each)
-// Block structure:
-//   [i+0] description/notes
-//   [i+1] day, date month year (e.g. "Wednesday, 1 January 2025")
-//   [i+2] HH:MM:SS TZ (e.g. "14:32:11 AEDT")
-//   [i+3] bet type label
-//   [i+4] amount ("$0.00" | "-$X.XX" | "+$X.XX")
-//   [i+5] balance after
-function parseTextFormat(lines, punter) {
+// ── Date parsing ──────────────────────────────────────────────────────────────
+function parseDateStr(str) {
+  if (!str) return new Date().toISOString().slice(0, 10);
+  // ISO date embedded
+  const iso = str.match(/(\d{4}-\d{2}-\d{2})/);
+  if (iso) return iso[1];
+  const MONTHS = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+  const SHORT  = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  const yr = new Date().getFullYear();
+  // "Sun, 10 May" or "Fri, 8 May"
+  const m1 = str.match(/^(?:\w+,\s*)?(\d{1,2})\s+(\w+)(?:\s+(\d{4}))?/i);
+  if (m1) {
+    const d = m1[1].padStart(2,'0');
+    const mon = m1[2].toLowerCase();
+    const y = m1[3] || yr;
+    const mi = SHORT.indexOf(mon.slice(0,3)) + 1 || MONTHS.indexOf(mon) + 1;
+    if (mi > 0) return `${y}-${String(mi).padStart(2,'0')}-${d}`;
+  }
+  // "1 January 2025" (full month)
+  const m2 = str.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/i);
+  if (m2) {
+    const d = m2[1].padStart(2,'0');
+    const mi = MONTHS.indexOf(m2[2].toLowerCase()) + 1;
+    if (mi > 0) return `${m2[3]}-${String(mi).padStart(2,'0')}-${d}`;
+  }
+  return new Date().toISOString().slice(0, 10);
+}
+
+// ── Amount parsing ────────────────────────────────────────────────────────────
+function parseAmountStr(str) {
+  const m = (str||'').replace(/\s/g,'').match(/^([+-]?)\$?([\d.]+)$/);
+  if (!m) return 0;
+  return parseFloat((m[1] === '-' ? '-' : '') + m[2]);
+}
+
+// ── CSV helpers ───────────────────────────────────────────────────────────────
+function splitCSVRow(line) {
+  const cols = []; let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQ = !inQ; }
+    else if (ch === ',' && !inQ) { cols.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  cols.push(cur);
+  return cols;
+}
+
+// ── Format A — "My Bets" list ─────────────────────────────────────────────────
+// Blocks separated by "More" or "See Tracker & More" (standalone lines)
+function parseBetListFormat(lines, punter) {
   const rows = [];
-  const tzRe = /^\d{2}:\d{2}:\d{2}\s+(ACDT|AEST|AEDT|AWST)$/;
+  const isSep = l => /^(See Tracker & )?More$/.test(l.trim());
+  const isDate = l => /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s*\d{1,2}\s+\w+/i.test(l.trim());
+  const isTime = l => /^\d{1,2}:\d{2}$/.test(l.trim());
+  const isAmount = l => /^[-+]?\$[\d.]+$/.test(l.trim());
+  const isOdds = l => /^[\d]+\.[\d]+$/.test(l.trim());
+  const isLeg = l => /\d Legs? [•·] Stake \$/i.test(l);
+
+  // Split into blocks
+  const blocks = [];
+  let cur = [];
+  for (const line of lines) {
+    if (isSep(line)) { if (cur.length) { blocks.push(cur); cur = []; } }
+    else cur.push(line.trim());
+  }
+  if (cur.length) blocks.push(cur);
+
+  for (const block of blocks) {
+    const nonEmpty = block.filter(l => l);
+    if (!nonEmpty.length) continue;
+
+    let betType = 'Multi', odds = null, stake = 0, isBonus = false;
+    let notes = '', dateStr = '', cashReturn = 0, result = 'Pending';
+
+    for (let i = 0; i < nonEmpty.length; i++) {
+      const l = nonEmpty[i];
+      // Title line: "Same Game Multi @ 22.00"
+      const oddsM = l.match(/^(.+?) @ ([\d.]+)/);
+      if (oddsM && !betType.includes('@')) { betType = oddsM[1].trim(); odds = parseFloat(oddsM[2]); continue; }
+      // Revised odds (just a number after title)
+      if (isOdds(l) && betType && odds !== null) { odds = parseFloat(l); continue; }
+      // Legs + stake: "5 Legs • Stake $5.00 Bonus Bet"
+      const legM = l.match(/(\d+) Legs? [•·] Stake \$([\d.]+)(\s*Bonus Bet)?/i);
+      if (legM) {
+        stake = parseFloat(legM[2]);
+        isBonus = !!legM[3];
+        betType = betType || 'Multi';
+        continue;
+      }
+      // Date
+      if (isDate(l)) { dateStr = l; continue; }
+      // Time (skip — we don't store time)
+      if (isTime(l)) continue;
+      // "No Return"
+      if (l === 'No Return') { cashReturn = 0; continue; }
+      // Cash return or bonus refund line "+ $25.00" or "$18.75"
+      if (isAmount(l) || /^\+\s*\$/.test(l)) {
+        const v = parseFloat(l.replace(/[^0-9.]/g,''));
+        if (!isNaN(v) && v > 0) { cashReturn = v; }
+        continue;
+      }
+      // "Bet Return • ..." info — skip
+      if (/^Bet Return/.test(l)) continue;
+      // "Event / T&Cs" suffix — skip
+      if (/Event \/ T&Cs/.test(l)) continue;
+      // Match name (anything else non-empty that isn't "Next Leg:")
+      if (l && l !== 'Next Leg:' && !notes) notes = l;
+    }
+
+    if (!dateStr) continue; // skip blocks without a date
+    const perPerson = getPoolSize() / Math.max(state.numPunters, 1);
+    result = cashReturn > 0 ? 'Win' : 'Pending';
+    rows.push({
+      punter, dateStr,
+      notes: notes || betType,
+      betType, odds,
+      stake: isBonus ? 0 : stake,
+      bonusStake: isBonus ? stake : 0,
+      isBonus,
+      returnAmt: cashReturn,
+      result
+    });
+  }
+  return rows;
+}
+
+// ── Format B — account statement with punter name ────────────────────────────
+function parseAccountFormat(lines) {
+  const rows = [];
+  const tzRe = /^\d{2}:\d{2}:\d{2}\s+(ACDT|AEST|AEDT|AWST|ACST|AWDT)$/;
   let i = 0;
   while (i < lines.length) {
-    // detect block start: line i+2 should be time+tz
     if (i + 5 < lines.length && tzRe.test(lines[i + 2].trim())) {
-      const notes   = lines[i].trim();
+      const punter  = lines[i].trim();
       const dateStr = lines[i + 1].trim();
-      const amtStr  = lines[i + 4].trim();
-      rows.push({ notes, dateStr, amtStr, punter });
-      i += 6;
-      // skip optional 7th/8th lines that aren't a new block start
-      while (i < lines.length && !tzRe.test((lines[i + 2] || '').trim()) && !/^\d{2}:\d{2}:\d{2}/.test(lines[i].trim())) {
-        // if this looks like it could be a floating extra line, skip it
-        if (i + 2 < lines.length && tzRe.test(lines[i + 2].trim())) break;
-        if (rows.length && !lines[i].trim()) { i++; continue; }
-        break;
-      }
+      // Detect 7-line vs 8-line block
+      const amtIdx = /^[-+]?\$[\d.]+$/.test(lines[i + 5].trim()) ? 5 : 6;
+      const subType = amtIdx === 6 ? lines[i + 5].trim() : '';
+      const desc    = lines[i + 4].trim();
+      const notes   = subType ? `${desc} — ${subType}` : desc;
+      const amtStr  = lines[i + amtIdx].trim();
+      rows.push({ punter, dateStr, amtStr, notes });
+      i += amtIdx + 2; // skip balance line too
     } else {
       i++;
     }
@@ -3118,83 +3250,7 @@ function parseTextFormat(lines, punter) {
   return rows;
 }
 
-// Parse CSV rows, pairing Bet Stake + Bet Return by Bet ID
-function parseCSVFormat(text, punter) {
-  const lines = text.trim().split('\n');
-  if (lines.length < 2) return [];
-  // find column indices from header
-  const headerRaw = lines[0];
-  const header = splitCSVRow(headerRaw).map(h => h.trim().toLowerCase());
-  const idx = name => header.indexOf(name);
-  const iTime    = idx('time');
-  const iSummary = idx('summary');
-  const iType    = idx('type');
-  const iAmount  = idx('amount');
-  const iBetId   = idx('bet id');
-
-  const stakes = {};
-  const rows = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const cols = splitCSVRow(lines[i]);
-    if (!cols.length) continue;
-    const type    = (cols[iType]    || '').trim();
-    const summary = (cols[iSummary] || '').trim();
-    const amtStr  = (cols[iAmount]  || '').trim();
-    const timeStr = (cols[iTime]    || '').trim();
-    const betId   = iBetId >= 0 ? (cols[iBetId] || '').trim() : '';
-
-    if (type === 'Bet Stake') {
-      stakes[betId] = { notes: summary, dateStr: timeStr, amtStr, punter, betId };
-    } else if (type === 'Bet Return' && stakes[betId]) {
-      const s = stakes[betId];
-      rows.push({ notes: s.notes, dateStr: s.dateStr, stakeAmtStr: s.amtStr, returnAmtStr: amtStr, punter, betId });
-      delete stakes[betId];
-    }
-  }
-  // remaining stakes with no return = pending
-  for (const betId of Object.keys(stakes)) {
-    rows.push({ notes: stakes[betId].notes, dateStr: stakes[betId].dateStr, stakeAmtStr: stakes[betId].amtStr, returnAmtStr: null, punter, betId });
-  }
-  return rows;
-}
-
-function splitCSVRow(line) {
-  const cols = [];
-  let cur = '', inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') { inQ = !inQ; }
-    else if (ch === ',' && !inQ) { cols.push(cur); cur = ''; }
-    else { cur += ch; }
-  }
-  cols.push(cur);
-  return cols;
-}
-
-function parseAmountStr(str) {
-  // returns signed float; "$0.00" = 0, "-$1.50" = -1.5, "+$2.00" = 2
-  const m = str.replace(/\s/g,'').match(/^([+-]?)\$?([\d.]+)$/);
-  if (!m) return 0;
-  return parseFloat((m[1] === '-' ? '-' : '') + m[2]);
-}
-
-function parseDateStr(str) {
-  // Handles "Wednesday, 1 January 2025" or "2025-01-01 14:32:11" etc.
-  const iso = str.match(/(\d{4}-\d{2}-\d{2})/);
-  if (iso) return iso[1];
-  const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
-  const m = str.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/i);
-  if (m) {
-    const d = m[1].padStart(2, '0');
-    const mo = (months.indexOf(m[2].toLowerCase()) + 1).toString().padStart(2, '0');
-    const y = m[3];
-    return `${y}-${mo}-${d}`;
-  }
-  return new Date().toISOString().slice(0, 10); // fallback today
-}
-
-function mapTextRowToBet(row) {
+function mapAccountRowToBet(row) {
   const perPerson = getPoolSize() / Math.max(state.numPunters, 1);
   const amt = parseAmountStr(row.amtStr);
   let result, bet, returnAmt;
@@ -3203,59 +3259,70 @@ function mapTextRowToBet(row) {
   } else if (amt < 0) {
     result = 'Loss'; bet = Math.abs(amt); returnAmt = 0;
   } else {
-    // positive = net win; we don't know the original stake so estimate per-person share
     result = 'Win'; bet = perPerson; returnAmt = perPerson + amt;
   }
   return {
-    punter:    row.punter,
-    week:      state.currentWeek || 1,
-    date:      parseDateStr(row.dateStr),
-    bet,
-    returnAmt,
-    result,
-    notes:     row.notes,
-    sport:     'Other',
-    isBonus:   false
+    punter: row.punter, week: state.currentWeek || 1,
+    date: parseDateStr(row.dateStr), bet, returnAmt, result,
+    notes: row.notes, sport: '', betType: 'Multi', odds: null, isBonus: false, bonusStake: 0
   };
+}
+
+// ── CSV format ────────────────────────────────────────────────────────────────
+function parseCSVFormat(text, punter) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  const header = splitCSVRow(lines[0]).map(h => h.trim().toLowerCase());
+  const idx = n => header.indexOf(n);
+  const iTime=idx('time'),iSummary=idx('summary'),iType=idx('type'),iAmount=idx('amount'),iBetId=idx('bet id');
+  const stakes = {}, rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = splitCSVRow(lines[i]);
+    if (!cols.length) continue;
+    const type=cols[iType]?.trim(), summary=cols[iSummary]?.trim(),
+          amtStr=cols[iAmount]?.trim(), timeStr=cols[iTime]?.trim(),
+          betId=iBetId>=0?cols[iBetId]?.trim():'';
+    if (type==='Bet Stake') { stakes[betId]={notes:summary,dateStr:timeStr,amtStr,punter,betId}; }
+    else if (type==='Bet Return' && stakes[betId]) {
+      const s=stakes[betId];
+      rows.push({notes:s.notes,dateStr:s.dateStr,stakeAmtStr:s.amtStr,returnAmtStr:amtStr,punter,betId});
+      delete stakes[betId];
+    }
+  }
+  for (const betId of Object.keys(stakes)) {
+    rows.push({...stakes[betId],stakeAmtStr:stakes[betId].amtStr,returnAmtStr:null});
+  }
+  return rows;
 }
 
 function mapCSVRowToBet(row) {
   const perPerson = getPoolSize() / Math.max(state.numPunters, 1);
-  const stakeAmt  = Math.abs(parseAmountStr(row.stakeAmtStr));
+  const stakeAmt = Math.abs(parseAmountStr(row.stakeAmtStr));
   let result, bet, returnAmt;
   if (row.returnAmtStr === null) {
-    result = 'Pending'; bet = stakeAmt || perPerson; returnAmt = 0;
+    result='Pending'; bet=stakeAmt||perPerson; returnAmt=0;
   } else {
     const ret = parseAmountStr(row.returnAmtStr);
-    if (ret <= 0) {
-      result = 'Loss'; bet = stakeAmt; returnAmt = 0;
-    } else {
-      result = 'Win'; bet = stakeAmt; returnAmt = ret;
-    }
+    result = ret>0?'Win':'Loss'; bet=stakeAmt; returnAmt=ret>0?ret:0;
   }
   return {
-    punter:    row.punter,
-    week:      state.currentWeek || 1,
-    date:      parseDateStr(row.dateStr),
-    bet,
-    returnAmt,
-    result,
-    notes:     row.notes,
-    sport:     'Other',
-    isBonus:   false
+    punter:row.punter, week:state.currentWeek||1,
+    date:parseDateStr(row.dateStr), bet, returnAmt, result,
+    notes:row.notes, sport:'', betType:'Multi', odds:null, isBonus:false, bonusStake:0
   };
 }
 
+// ── Dedup helpers ─────────────────────────────────────────────────────────────
 function buildExistingBetKeys() {
   return new Set(state.bets.map(b =>
-    `${b.punter}|${b.date}|${b.bet.toFixed(2)}|${(b.notes||'').slice(0,25).toLowerCase()}`
+    `${b.punter}|${b.date}|${(b.notes||'').slice(0,25).toLowerCase()}`
   ));
 }
-
 function betKey(b) {
-  return `${b.punter}|${b.date}|${b.bet.toFixed(2)}|${(b.notes||'').slice(0,25).toLowerCase()}`;
+  return `${b.punter}|${b.date}|${(b.notes||'').slice(0,25).toLowerCase()}`;
 }
 
+// ── Parse entry point ─────────────────────────────────────────────────────────
 function parseImportInput() {
   const raw = (document.getElementById('import-input').value || '').trim();
   if (!raw) { showToast('⚠️ Nothing to parse'); return; }
@@ -3263,66 +3330,112 @@ function parseImportInput() {
   const fmt = detectImportFormat(raw);
   let bets = [];
   if (fmt === 'csv') {
-    const rows = parseCSVFormat(raw, punter);
-    bets = rows.map(mapCSVRowToBet);
+    bets = parseCSVFormat(raw, punter).map(mapCSVRowToBet);
+  } else if (fmt === 'betlist') {
+    bets = parseBetListFormat(raw.split('\n'), punter);
+    // map to standard bet shape
+    bets = bets.map(r => ({
+      punter: r.punter, week: state.currentWeek || 1,
+      date: parseDateStr(r.dateStr), bet: r.stake, returnAmt: r.returnAmt,
+      result: r.result, notes: r.notes, sport: '',
+      betType: r.betType || 'Multi', odds: r.odds, isBonus: r.isBonus, bonusStake: r.bonusStake || 0
+    }));
   } else {
-    const lines = raw.split('\n');
-    const rows = parseTextFormat(lines, punter);
-    bets = rows.map(mapTextRowToBet);
+    bets = parseAccountFormat(raw.split('\n')).map(mapAccountRowToBet);
   }
-  if (!bets.length) { showToast('⚠️ No transactions found — check the format'); return; }
+  if (!bets.length) { showToast('⚠️ No bets found — check the format'); return; }
   const existing = buildExistingBetKeys();
-  const tagged = bets.map(b => ({ ...b, _isDup: existing.has(betKey(b)) }));
-  renderImportPreview(tagged);
+  window._importQueue = bets.map((b, idx) => ({ ...b, _id: idx, _isDup: existing.has(betKey(b)) }));
+  renderImportQueue();
 }
 
-function renderImportPreview(bets) {
+// ── Editable queue ────────────────────────────────────────────────────────────
+function renderImportQueue() {
   const el = document.getElementById('import-preview');
-  if (!bets.length) { el.innerHTML = '<p style="font-size:0.78rem;color:var(--muted);margin-top:8px">No rows parsed.</p>'; return; }
-  const newCount = bets.filter(b => !b._isDup).length;
-  const rows = bets.map(b => {
-    const net = b.result === 'Win' ? b.returnAmt - b.bet : b.result === 'Loss' ? -b.bet : 0;
-    const netStr = b.result === 'Pending' ? 'Pending' : (net >= 0 ? '+' : '') + '$' + net.toFixed(2);
-    const statusHtml = b._isDup
-      ? `<span class="import-row-status-dup">already exists</span>`
-      : `<span class="import-row-status-new">✓ new</span>`;
-    const cls = b._isDup ? 'dup' : 'new';
-    return `<tr class="${cls}">
-      <td>${b.punter}</td>
-      <td>${b.date}</td>
-      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${b.notes.replace(/"/g,'&quot;')}">${b.notes}</td>
-      <td>$${b.bet.toFixed(2)}</td>
-      <td>${b.result !== 'Loss' ? '$' + b.returnAmt.toFixed(2) : '—'}</td>
-      <td>${b.result}</td>
-      <td>${statusHtml}</td>
-    </tr>`;
-  }).join('');
-
-  const btnDisabled = newCount === 0 ? 'disabled style="opacity:0.4;cursor:not-allowed"' : '';
+  const q = window._importQueue;
+  if (!q.length) { el.innerHTML = '<p style="font-size:0.78rem;color:var(--muted);margin-top:8px">No bets parsed.</p>'; return; }
+  const newCount = q.filter(b => !b._isDup).length;
+  const btnDis = newCount === 0 ? 'disabled style="opacity:0.4;cursor:not-allowed"' : '';
+  const rows = q.map((b, idx) => renderQueueRow(b, idx)).join('');
   el.innerHTML = `
-    <div style="overflow-x:auto;margin-top:8px">
-      <table class="import-preview-table">
-        <thead><tr><th>Punter</th><th>Date</th><th>Notes</th><th>Stake</th><th>Return</th><th>Result</th><th>Status</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
+    <div style="margin-top:10px;font-size:0.72rem;color:var(--muted);margin-bottom:6px">
+      ${q.length} parsed · <span style="color:#4ade80;font-weight:700">${newCount} new</span> · ${q.length-newCount} already exist
     </div>
-    <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
-      <button class="btn btn-primary" onclick="confirmImport()" ${btnDisabled} style="flex:1">
-        Import ${newCount} new bet${newCount !== 1 ? 's' : ''}
+    <div id="iq-rows">${rows}</div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-primary" onclick="confirmImportQueue()" ${btnDis} style="flex:1">
+        Import ${newCount} new bet${newCount!==1?'s':''}
       </button>
-      <button onclick="clearImport()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:7px 14px;font-size:12px;color:var(--text-secondary);cursor:pointer">Clear</button>
+      <button onclick="clearImport()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--text-secondary);cursor:pointer">Clear</button>
     </div>`;
-  // store parsed bets on the element for confirmImport to access
-  el._importBets = bets;
 }
 
-async function confirmImport() {
-  const el = document.getElementById('import-preview');
-  const bets = el._importBets;
-  if (!bets) return;
-  const toAdd = bets.filter(b => !b._isDup);
+function renderQueueRow(b, idx) {
+  const dupCls = b._isDup ? 'dup' : 'new';
+  const statusHtml = b._isDup
+    ? `<span style="font-size:9px;color:#94a3b8">⟳ exists</span>`
+    : `<span style="font-size:9px;color:#4ade80;font-weight:700">✓ new</span>`;
+  const punterOpts = state.punterOrder.map(p =>
+    `<option value="${p}"${p===b.punter?' selected':''}>${p}</option>`).join('');
+  const resultOpts = ['Win','Loss','Void','Pending'].map(r =>
+    `<option value="${r}"${r===b.result?' selected':''}>${r}</option>`).join('');
+  return `<div class="iq-row ${dupCls}" id="iq-row-${idx}">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+      ${statusHtml}
+      <select class="iq-field" style="flex:1" onchange="updateQueueItem(${idx},'punter',this.value)">${punterOpts}</select>
+      <input class="iq-field" type="text" value="${b.date}" style="width:80px" onchange="updateQueueItem(${idx},'date',this.value)" placeholder="YYYY-MM-DD">
+      <button onclick="removeQueueItem(${idx})" style="background:none;border:none;color:rgba(255,255,255,0.35);font-size:14px;cursor:pointer;padding:0 2px;flex-shrink:0">×</button>
+    </div>
+    <div style="margin-bottom:4px">
+      <input class="iq-field" type="text" value="${(b.notes||'').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box" onchange="updateQueueItem(${idx},'notes',this.value)" placeholder="Notes / match name">
+    </div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+      <label style="font-size:0.68rem;color:var(--muted)">Stake</label>
+      <input class="iq-field" type="number" value="${b.bet.toFixed(2)}" style="width:60px" step="0.01" min="0" onchange="updateQueueItem(${idx},'bet',parseFloat(this.value)||0)">
+      <label style="font-size:0.68rem;color:var(--muted)">Return</label>
+      <input class="iq-field" type="number" value="${b.returnAmt.toFixed(2)}" style="width:60px" step="0.01" min="0" onchange="updateQueueItem(${idx},'returnAmt',parseFloat(this.value)||0)">
+      <select class="iq-field" onchange="updateQueueItem(${idx},'result',this.value)">${resultOpts}</select>
+      <label style="font-size:0.68rem;color:var(--muted);display:flex;align-items:center;gap:3px;cursor:pointer">
+        <input type="checkbox" ${b.isBonus?'checked':''} onchange="updateQueueItem(${idx},'isBonus',this.checked)"> Bonus
+      </label>
+    </div>
+  </div>`;
+}
+
+function updateQueueItem(idx, field, value) {
+  if (!window._importQueue[idx]) return;
+  window._importQueue[idx][field] = value;
+  // re-evaluate dup status
+  const existing = buildExistingBetKeys();
+  window._importQueue[idx]._isDup = existing.has(betKey(window._importQueue[idx]));
+  // refresh just this row
+  const rowEl = document.getElementById(`iq-row-${idx}`);
+  if (rowEl) {
+    const b = window._importQueue[idx];
+    rowEl.className = `iq-row ${b._isDup ? 'dup' : 'new'}`;
+    rowEl.querySelector('span[style*="color"]').outerHTML = b._isDup
+      ? `<span style="font-size:9px;color:#94a3b8">⟳ exists</span>`
+      : `<span style="font-size:9px;color:#4ade80;font-weight:700">✓ new</span>`;
+  }
+  // update button count
+  const newCount = window._importQueue.filter(b => !b._isDup).length;
+  const btn = document.querySelector('#import-preview .btn.btn-primary');
+  if (btn) {
+    btn.textContent = `Import ${newCount} new bet${newCount!==1?'s':''}`;
+    btn.disabled = newCount === 0;
+    btn.style.opacity = newCount === 0 ? '0.4' : '1';
+  }
+}
+
+function removeQueueItem(idx) {
+  window._importQueue.splice(idx, 1);
+  renderImportQueue();
+}
+
+async function confirmImportQueue() {
+  const toAdd = window._importQueue.filter(b => !b._isDup);
   if (!toAdd.length) { showToast('Nothing new to import'); return; }
-  showToast(`⏳ Importing ${toAdd.length} bet${toAdd.length !== 1 ? 's' : ''}…`);
+  showToast(`⏳ Importing ${toAdd.length} bet${toAdd.length!==1?'s':''}…`);
   let ok = 0, fail = 0;
   for (const bet of toAdd) {
     try {
@@ -3330,22 +3443,21 @@ async function confirmImport() {
       state.bets.push({ ...bet, id });
       ok++;
     } catch(e) {
-      console.error('Import bet failed:', e, bet);
+      console.error('Import failed:', e, bet);
       fail++;
     }
   }
-  // mark all as dup now so re-import shows them as existing
-  el._importBets = bets.map(b => ({ ...b, _isDup: true }));
-  renderImportPreview(el._importBets);
+  const existing = buildExistingBetKeys();
+  window._importQueue = window._importQueue.map(b => ({ ...b, _isDup: existing.has(betKey(b)) || true }));
+  renderImportQueue();
   renderHome();
-  showToast(fail ? `✅ ${ok} imported, ❌ ${fail} failed` : `✅ ${ok} bet${ok !== 1 ? 's' : ''} imported`);
+  showToast(fail ? `✅ ${ok} imported, ❌ ${fail} failed` : `✅ ${ok} bet${ok!==1?'s':''} imported`);
 }
 
 function clearImport() {
   document.getElementById('import-input').value = '';
-  const el = document.getElementById('import-preview');
-  el.innerHTML = '';
-  el._importBets = null;
+  window._importQueue = [];
+  document.getElementById('import-preview').innerHTML = '';
 }
 
 // ═══════════════ PERSONAL BEST ON LEADERBOARD ═══════════════
