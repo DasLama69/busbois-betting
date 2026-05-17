@@ -466,6 +466,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 
   <div class="card">
     <div class="card-title">📅 Recent Bets</div>
+    <div id="home-filter-ui"></div>
     <div id="home-recent"><div class="empty">No bets yet</div></div>
   </div>
 </div>
@@ -1614,24 +1615,76 @@ document.getElementById('st-winrate-sub').innerHTML=`${gW}W - ${gL}L - ${gV}V<br
   if(ranked.length>0){document.getElementById('st-leader').textContent=ranked[0].name;document.getElementById('st-leader-net').textContent=(ranked[0].net>=0?'+$':'-$')+Math.abs(ranked[0].net).toFixed(2);}
 
   renderSparkline();
-  const recent=[...state.bets].reverse().slice(0,8);
-  document.getElementById('home-recent').innerHTML = recent.length ? recent.map(b=>{
+  window._homeFilter = window._homeFilter || { text: '', result: 'all', punter: 'all', sport: 'all' };
+  renderHomeFilterUI();
+  renderHomeRecent();
+  } catch(e) { console.error('renderHome error:', e); }
+}
+
+function renderHomeFilterUI() {
+  const el = document.getElementById('home-filter-ui');
+  if (!el) return;
+  const f = window._homeFilter;
+  const punters = ['all', ...getPunters()];
+  const sports  = ['all','AFL','NRL','Racing','Cricket','Soccer','NBA','Other'];
+  const results = ['all','Win','Loss','Pending','Void'];
+  el.innerHTML = `
+    <div style="margin-bottom:10px">
+      <input type="text" value="${(f.text||'').replace(/"/g,'&quot;')}" placeholder="🔍 Search punter, notes, sport…"
+        oninput="updateHomeFilterText(this.value)"
+        style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;color:var(--dark);font-size:12px;margin-bottom:8px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <select class="iq-field" style="flex:1;min-width:90px" onchange="setHomeFilter('punter',this.value)">
+          ${punters.map(p=>`<option value="${p}"${f.punter===p?' selected':''}>${p==='all'?'All punters':p}</option>`).join('')}
+        </select>
+        <select class="iq-field" style="flex:1;min-width:90px" onchange="setHomeFilter('sport',this.value)">
+          ${sports.map(s=>`<option value="${s}"${f.sport===s?' selected':''}>${s==='all'?'All sports':s}</option>`).join('')}
+        </select>
+        <select class="iq-field" style="flex:1;min-width:90px" onchange="setHomeFilter('result',this.value)">
+          ${results.map(r=>`<option value="${r}"${f.result===r?' selected':''}>${r==='all'?'All results':r}</option>`).join('')}
+        </select>
+      </div>
+    </div>`;
+}
+
+function renderHomeRecent() {
+  const f = window._homeFilter || { text:'', result:'all', punter:'all', sport:'all' };
+  const txt = (f.text||'').toLowerCase();
+  const filtered = [...state.bets].reverse().filter(b => {
+    if (f.result !== 'all' && b.result !== f.result) return false;
+    if (f.punter !== 'all' && b.punter !== f.punter) return false;
+    if (f.sport  !== 'all' && (b.sport||'') !== f.sport) return false;
+    if (txt && !`${b.punter} ${b.notes||''} ${b.sport||''} ${b.betType||''}`.toLowerCase().includes(txt)) return false;
+    return true;
+  }).slice(0, 15);
+  const el = document.getElementById('home-recent');
+  if (!el) return;
+  el.innerHTML = filtered.length ? filtered.map(b => {
     const isVoid = b.result === 'Void';
     const cost = b.isBonus ? 0 : b.bet;
     const net = isVoid ? 0 : b.isBonus ? b.returnAmt : (b.returnAmt - b.bet);
     const roi = cost > 0 ? (net / cost * 100).toFixed(0) : 0;
     const cls = b.result === 'Win' ? 'win' : (b.result === 'Void' || b.result === 'Pending') ? 'void' : 'loss';
-    const stakedStr = isVoid ? 'void'
-      : b.isBonus ? (b.bonusStake > 0 ? `🎟️ $${b.bonusStake.toFixed(0)} token` : '🎟️ bonus')
-      : '$' + b.bet.toFixed(0) + ' staked';
+    const stakedStr = isVoid ? 'void' : b.isBonus ? (b.bonusStake > 0 ? `🎟️ $${b.bonusStake.toFixed(0)} token` : '🎟️ bonus') : '$' + b.bet.toFixed(0) + ' staked';
     const netColor = isVoid ? 'rgba(255,255,255,0.4)' : net >= 0 ? 'var(--green)' : 'var(--red)';
     const netStr = isVoid ? '—' : (net >= 0 ? '+' : '-') + '$' + Math.abs(net).toFixed(2);
     const roiStr = (isVoid || b.isBonus) ? '—' : (roi > 0 ? '+' : '') + roi + '% ROI';
-    const extraParts = [b.sport, b.betType || null, b.odds ? `@ ${b.odds}` : null, b.notes].filter(Boolean);
+    const extraParts = [b.sport, b.betType||null, b.odds ? `@ ${b.odds}` : null, b.notes].filter(Boolean);
     const extraLine = extraParts.length ? `<div class="bet-meta" style="margin-top:2px">${extraParts.join(' · ')}</div>` : '';
-    return `<div class="bet-row"><div class="bet-avatar ${cls}">${INI(b.punter)}</div><div class="bet-info"><div class="bet-name">${b.punter} <span class="pill pill-${cls}">${b.result}</span>${b.isBonus ? ' 🎟️' : ''}</div><div class="bet-meta">Wk${b.week} · ${b.date} · ${stakedStr}</div>${extraLine}</div><div class="bet-amount"><div class="bet-net" style="color:${netColor}">${netStr}</div><div class="bet-roi">${roiStr}</div></div></div>`;
-  }).join('') : '<div class="empty">No bets yet</div>';
-  } catch(e) { console.error('renderHome error:', e); }
+    return `<div class="bet-row"><div class="bet-avatar ${cls}">${INI(b.punter)}</div><div class="bet-info"><div class="bet-name">${b.punter} <span class="pill pill-${cls}">${b.result}</span>${b.isBonus?' 🎟️':''}</div><div class="bet-meta">Wk${b.week} · ${b.date} · ${stakedStr}</div>${extraLine}</div><div class="bet-amount"><div class="bet-net" style="color:${netColor}">${netStr}</div><div class="bet-roi">${roiStr}</div></div></div>`;
+  }).join('') : '<div class="empty">No bets match</div>';
+}
+
+function updateHomeFilterText(val) {
+  window._homeFilter = window._homeFilter || { text:'', result:'all', punter:'all', sport:'all' };
+  window._homeFilter.text = val;
+  renderHomeRecent();
+}
+
+function setHomeFilter(key, val) {
+  window._homeFilter = window._homeFilter || { text:'', result:'all', punter:'all', sport:'all' };
+  window._homeFilter[key] = val;
+  renderHomeRecent();
 }
 
 // ═══════════════ ENTRY FORM ═══════════════
@@ -2282,7 +2335,7 @@ function renderBoard() {
   document.getElementById('board-filter-ui').innerHTML = `
     <div style="margin-bottom:10px">
       <input type="text" value="${f.text.replace(/"/g,'&quot;')}" placeholder="🔍 Search notes, punter, sport…"
-        oninput="setBoardFilter('text',this.value)"
+        oninput="updateBoardFilterText(this.value)"
         style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;color:var(--dark);font-size:12px;margin-bottom:8px">
       <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">${resultChips}</div>
       <div style="display:flex;gap:5px;flex-wrap:wrap">${punterChips}</div>
@@ -2296,6 +2349,12 @@ window._boardFilter = window._boardFilter || { text: '', result: 'all', punter: 
 function setBoardFilter(key, val) {
   window._boardFilter[key] = val;
   renderBoard();
+}
+
+function updateBoardFilterText(val) {
+  window._boardFilter = window._boardFilter || { text:'', result:'all', punter:'all' };
+  window._boardFilter.text = val;
+  renderBoardHistory();
 }
 
 function renderBoardHistory() {
