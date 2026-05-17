@@ -348,6 +348,12 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .iq-row.dup .iq-status { color:#94a3b8; }
 .iq-row.new .iq-status { color:#4ade80; font-weight:700; }
 .iq-field { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); border-radius:5px; color:var(--text-primary); font-size:0.72rem; padding:3px 6px; }
+.edit-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:300;display:none }
+.edit-overlay.open { display:flex;align-items:flex-end }
+.edit-sheet { background:var(--mid);border-radius:18px 18px 0 0;padding:20px;width:100%;max-height:85vh;overflow-y:auto;box-sizing:border-box }
+.filter-chip { padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap }
+.filter-chip.active { background:var(--steel);color:#fff;border-color:var(--steel) }
+.week-dot { width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0 }
 </style>
 </head>
 <body>
@@ -466,127 +472,135 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 
 <!-- LOG BET -->
 <div class="page" id="tab-enter">
+
+  <!-- Guide Preamble -->
   <div class="card-dark" style="margin-top:2px">
-    <div style="color:rgba(255,255,255,0.5);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Log a Bet</div>
-    <div style="color:var(--gold-lt);font-size:13px;font-weight:700" id="enter-auto-label">Auto-filled from rotation · adjust if needed</div>
-    <div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:4px">Tip: use <strong style="color:var(--gold-lt)">➕ Add to Queue</strong> to log multiple bets at once before saving</div>
+    <div style="color:rgba(255,255,255,0.5);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">📋 How to Log Bets</div>
+    <ol style="color:rgba(255,255,255,0.72);font-size:12px;line-height:1.75;margin:0 0 10px 18px;padding:0">
+      <li>Open <strong style="color:var(--gold-lt)">Sportsbet</strong> → <strong style="color:var(--gold-lt)">My Bets</strong> <em>or</em> <strong style="color:var(--gold-lt)">Account → Transaction History</strong></li>
+      <li>Select your bets for the week and copy all the text</li>
+      <li>Paste below and tap <strong style="color:var(--gold-lt)">Parse</strong> — each bet appears as a review card</li>
+      <li>Check week, sport and result, then tap <strong style="color:var(--gold-lt)">Import</strong></li>
+    </ol>
+    <div style="color:rgba(255,255,255,0.4);font-size:11px;border-top:1px solid rgba(255,255,255,0.08);padding-top:8px">
+      Anyone can log — you don't need to be the admin. &nbsp;·&nbsp;
+      <span style="color:var(--gold-lt)">Format A</span> = My Bets copy &nbsp;·&nbsp; <span style="color:var(--gold-lt)">Format B</span> = Account Statement copy
+    </div>
   </div>
 
+  <!-- Paste & Import (primary) -->
   <div class="card">
-    <div class="card-title">📋 Bet Details</div>
-    <div class="form-row" style="margin-bottom:12px">
-      <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Week # <span>(editable)</span></label>
-        <input type="number" id="entry-week" class="form-control editable-auto" min="1" value="2">
-      </div>
-      <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Date</label>
-        <input type="date" id="entry-date" class="form-control">
-      </div>
+    <div class="card-title">📥 Paste &amp; Import</div>
+    <textarea id="import-input" rows="5" placeholder="Paste your bet history here…" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px;color:var(--text-primary);font-size:0.72rem;resize:vertical;box-sizing:border-box"></textarea>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+      <select id="import-punter-select" class="form-control" style="flex:1;min-width:120px;font-size:12px"></select>
+      <button class="btn btn-primary" onclick="parseImportInput()" style="flex:1;min-width:80px">Parse</button>
     </div>
-    <div class="form-group">
-      <label class="form-label">Punter <span>(auto from rotation)</span></label>
-      <select id="entry-punter" class="form-control auto" onchange="onPunterChange()"></select>
-    </div>
-    <div class="form-row">
-      <div class="form-group" style="margin-bottom:0">
-        <label class="form-label" id="bet-amount-label">Bet ($) <span>(adjust ok)</span></label>
-        <input type="number" id="entry-bet" class="form-control editable-auto" step="0.01" value="60" oninput="updatePreview()">
-      </div>
-      <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Return ($)</label>
-        <input type="number" id="entry-return" class="form-control" placeholder="0.00" step="0.01" oninput="updatePreview()">
-      </div>
-    </div>
-    <div style="margin-top:10px">
-      <label for="entry-is-bonus" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--dark);font-weight:600">
-        <input type="checkbox" id="entry-is-bonus" onchange="onBonusChange()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--gold)">
-        🎟️ Is this a bonus bet?
-      </label>
-      <div id="bonus-notice" style="display:none;background:rgba(212,160,23,0.12);border:1px solid rgba(212,160,23,0.3);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:12px;color:var(--gold-lt)">
-        🎟️ <strong>Bonus Bet</strong> — free token, $0 cost to the account. Only winnings count as real income.
-      </div>
-    </div>
-    <div style="margin-top:8px">
-      <label for="entry-is-void" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--dark);font-weight:600">
-        <input type="checkbox" id="entry-is-void" style="width:16px;height:16px;cursor:pointer;accent-color:#94a3b8">
-        🚫 Mark as void (refund — no P/L impact)
-      </label>
-    </div>
-    <div class="form-group" style="margin-bottom:0;margin-top:12px">
-      <label class="form-label">Odds <span>(optional)</span></label>
-      <input type="number" id="entry-odds" class="form-control" placeholder="e.g. 6.50" step="0.01" min="1" oninput="updatePreview()">
-      <div class="odds-presets" id="odds-presets"></div>
-    </div>
+    <div id="import-preview"></div>
   </div>
 
-  <!-- More Details collapsible -->
-  <button class="more-details-toggle" id="more-details-toggle" onclick="toggleMoreDetails()">
-    <span id="more-details-icon">▶</span> More Details (bet type, sport, notes)
-  </button>
-  <div class="more-details-section" id="more-details-section">
-    <div class="card" style="margin-bottom:10px">
-      <div class="card-title">📋 Optional Details</div>
+  <!-- Manual Entry (collapsed) -->
+  <div class="card" style="margin-top:8px">
+    <div onclick="toggleManualEntry()" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+      <span class="card-title" style="margin-bottom:0">✏️ Manual Entry</span>
+      <span id="manual-chevron" style="color:var(--muted);font-size:13px">▼</span>
+    </div>
+    <div id="manual-entry-body" style="display:none;margin-top:14px">
+      <div style="color:var(--gold-lt);font-size:13px;font-weight:700;margin-bottom:4px" id="enter-auto-label">Auto-filled from rotation · adjust if needed</div>
+      <div style="color:rgba(255,255,255,0.4);font-size:11px;margin-bottom:14px">Tip: use <strong style="color:var(--gold-lt)">➕ Add to Queue</strong> to log multiple bets at once before saving</div>
       <div class="form-row" style="margin-bottom:12px">
         <div class="form-group" style="margin-bottom:0">
-          <label class="form-label">Bet Type <span>(default: Multi)</span></label>
-          <select id="entry-bet-type" class="form-control">
-            <option value="Multi">Multi</option>
-            <option value="Single">Single</option>
-            <option value="Parlay">Parlay</option>
-            <option value="System">System</option>
-            <option value="Other">Other</option>
-          </select>
+          <label class="form-label">Week # <span>(editable)</span></label>
+          <input type="number" id="entry-week" class="form-control editable-auto" min="1" value="2">
         </div>
         <div class="form-group" style="margin-bottom:0">
-          <label class="form-label">Sport / League <span>(optional)</span></label>
-          <select id="entry-sport" class="form-control">
-            <option value="">— Select —</option>
-            <option value="AFL">AFL</option>
-            <option value="NRL">NRL</option>
-            <option value="Racing">Racing</option>
-            <option value="Cricket">Cricket</option>
-            <option value="Soccer">Soccer</option>
-            <option value="NBA">NBA</option>
-            <option value="Other">Other</option>
-          </select>
+          <label class="form-label">Date</label>
+          <input type="date" id="entry-date" class="form-control">
         </div>
       </div>
-      <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Notes <span>(optional)</span></label>
-        <input type="text" id="entry-notes" class="form-control" placeholder="e.g. Collingwood to win, game 3 finals">
+      <div class="form-group">
+        <label class="form-label">Punter <span>(auto from rotation)</span></label>
+        <select id="entry-punter" class="form-control auto" onchange="onPunterChange()"></select>
       </div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label" id="bet-amount-label">Bet ($) <span>(adjust ok)</span></label>
+          <input type="number" id="entry-bet" class="form-control editable-auto" step="0.01" value="60" oninput="updatePreview()">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Return ($)</label>
+          <input type="number" id="entry-return" class="form-control" placeholder="0.00" step="0.01" oninput="updatePreview()">
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <label for="entry-is-bonus" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--dark);font-weight:600">
+          <input type="checkbox" id="entry-is-bonus" onchange="onBonusChange()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--gold)">
+          🎟️ Is this a bonus bet?
+        </label>
+        <div id="bonus-notice" style="display:none;background:rgba(212,160,23,0.12);border:1px solid rgba(212,160,23,0.3);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:12px;color:var(--gold-lt)">
+          🎟️ <strong>Bonus Bet</strong> — free token, $0 cost to the account. Only winnings count as real income.
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <label for="entry-is-void" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--dark);font-weight:600">
+          <input type="checkbox" id="entry-is-void" style="width:16px;height:16px;cursor:pointer;accent-color:#94a3b8">
+          🚫 Mark as void (refund — no P/L impact)
+        </label>
+      </div>
+      <div class="form-group" style="margin-bottom:0;margin-top:12px">
+        <label class="form-label">Odds <span>(optional)</span></label>
+        <input type="number" id="entry-odds" class="form-control" placeholder="e.g. 6.50" step="0.01" min="1" oninput="updatePreview()">
+        <div class="odds-presets" id="odds-presets"></div>
+      </div>
+      <button class="more-details-toggle" id="more-details-toggle" onclick="toggleMoreDetails()" style="margin-top:10px">
+        <span id="more-details-icon">▶</span> More Details (bet type, sport, notes)
+      </button>
+      <div class="more-details-section" id="more-details-section">
+        <div class="card" style="margin-bottom:10px">
+          <div class="card-title">📋 Optional Details</div>
+          <div class="form-row" style="margin-bottom:12px">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Bet Type <span>(default: Multi)</span></label>
+              <select id="entry-bet-type" class="form-control">
+                <option value="Multi">Multi</option><option value="Single">Single</option>
+                <option value="Parlay">Parlay</option><option value="System">System</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Sport / League <span>(optional)</span></label>
+              <select id="entry-sport" class="form-control">
+                <option value="">— Select —</option><option value="AFL">AFL</option>
+                <option value="NRL">NRL</option><option value="Racing">Racing</option>
+                <option value="Cricket">Cricket</option><option value="Soccer">Soccer</option>
+                <option value="NBA">NBA</option><option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Notes <span>(optional)</span></label>
+            <input type="text" id="entry-notes" class="form-control" placeholder="e.g. Collingwood to win, game 3 finals">
+          </div>
+        </div>
+      </div>
+      <div id="week-status-card" class="card" style="padding:12px 14px">
+        <div id="week-status-content"></div>
+      </div>
+      <div class="card" id="preview-card" style="display:none">
+        <div class="card-title">👁 Preview</div>
+        <div class="preview-grid" id="preview-grid"></div>
+        <div style="margin-top:10px;padding:8px;background:var(--off);border-radius:8px;font-size:11px;color:var(--muted)" id="preview-next"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <button class="btn btn-primary" id="queue-btn" onclick="addToQueue()" style="background:linear-gradient(135deg,#1a6b3a,#16A34A);box-shadow:0 4px 12px rgba(22,163,74,0.35)">➕ Add to Queue</button>
+        <button class="btn btn-primary" id="save-btn" onclick="submitBet()" style="background:linear-gradient(135deg,var(--mid),var(--steel))">💾 Save Bet</button>
+      </div>
+      <div style="text-align:center;font-size:10px;color:rgba(255,255,255,0.35);margin-bottom:12px;margin-top:-4px">Queue multiple bets then save all at once · or save individually</div>
     </div>
-  </div>
-
-  <!-- Week status for this punter -->
-  <div id="week-status-card" class="card" style="padding:12px 14px">
-    <div id="week-status-content"></div>
-  </div>
-
-  <div class="card" id="preview-card" style="display:none">
-    <div class="card-title">👁 Preview</div>
-    <div class="preview-grid" id="preview-grid"></div>
-    <div style="margin-top:10px;padding:8px;background:var(--off);border-radius:8px;font-size:11px;color:var(--muted)" id="preview-next"></div>
-  </div>
-
-  <!-- Action buttons — queue is primary for multi-bet entry -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-    <button class="btn btn-primary" id="queue-btn" onclick="addToQueue()"
-      style="background:linear-gradient(135deg,#1a6b3a,#16A34A);box-shadow:0 4px 12px rgba(22,163,74,0.35)">
-      ➕ Add to Queue
-    </button>
-    <button class="btn btn-primary" id="save-btn" onclick="submitBet()"
-      style="background:linear-gradient(135deg,var(--mid),var(--steel))">
-      💾 Save Bet
-    </button>
-  </div>
-  <div style="text-align:center;font-size:10px;color:rgba(255,255,255,0.35);margin-bottom:12px;margin-top:-4px">
-    Queue multiple bets then save all at once · or save individually
   </div>
 
   <!-- Queue -->
-  <div id="queue-card" style="display:none;margin-bottom:12px">
+  <div id="queue-card" style="display:none;margin-bottom:12px;margin-top:8px">
     <div style="background:linear-gradient(135deg,var(--navy2),var(--mid));border-radius:14px;padding:14px;border:1px solid rgba(22,163,74,0.3)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <div>
@@ -596,10 +610,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
         <div id="queue-count" style="background:#16A34A;color:white;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:900">0</div>
       </div>
       <div id="queue-list" style="margin-bottom:10px"></div>
-      <button class="btn btn-primary" onclick="saveQueue()" id="save-queue-btn"
-        style="background:linear-gradient(135deg,#1a6b3a,#16A34A);box-shadow:0 4px 12px rgba(22,163,74,0.35)">
-        💾 Save All Bets
-      </button>
+      <button class="btn btn-primary" onclick="saveQueue()" id="save-queue-btn" style="background:linear-gradient(135deg,#1a6b3a,#16A34A);box-shadow:0 4px 12px rgba(22,163,74,0.35)">💾 Save All Bets</button>
     </div>
   </div>
 
@@ -690,6 +701,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   </div>
   <div class="card">
     <div class="card-title">📋 Bet History</div>
+    <div id="board-filter-ui"></div>
     <div id="board-history"><div class="empty">No bets yet</div></div>
   </div>
 </div>
@@ -907,18 +919,11 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     </div>
   </div>
 
-  <!-- Import Bets -->
+  <!-- Import Bets moved to Log Bet tab -->
   <div class="card">
-    <div class="card-header"><span>📥 Import Bets</span></div>
-    <div class="card-body">
-      <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:8px;line-height:1.4">Paste transaction history or a CSV export. Select the punter for pasted text (CSV has no punter — you'll need to assign manually after).</p>
-      <textarea id="import-input" rows="6" placeholder="Paste text or CSV here…" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px;color:var(--text-primary);font-size:0.72rem;resize:vertical;box-sizing:border-box"></textarea>
-      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-        <select id="import-punter-select" class="input-field" style="flex:1;min-width:120px"></select>
-        <button class="btn btn-primary" onclick="parseImportInput()" style="flex:1;min-width:80px">Parse</button>
-      </div>
-      <div id="import-preview"></div>
-    </div>
+    <div class="card-title">📥 Import Bets</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.5">Use the <strong style="color:var(--gold-lt)">Log Bet</strong> tab to paste and import bets. The paste &amp; import tool lives there as the primary workflow.</div>
+    <button class="btn btn-primary" onclick="switchTab('enter')" style="margin-top:10px;margin-bottom:0">Go to Log Bet →</button>
   </div>
 
   <!-- Full history -->
@@ -935,6 +940,12 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 <div class="profile-overlay" id="profile-overlay" onclick="closeProfile(event)">
   <div class="profile-sheet" id="profile-sheet"></div>
 </div>
+
+<!-- EDIT BET MODAL -->
+<div class="edit-overlay" id="edit-overlay" onclick="closeEditBet(event)">
+  <div class="edit-sheet" id="edit-sheet"></div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1108,6 +1119,108 @@ async function updateBetStatusInSupabase(id, newResult) {
     setSyncStatus('error', 'Update failed — tap to retry');
     throw e;
   }
+}
+
+async function updateBetInSupabase(id, patch) {
+  setSyncStatus('syncing', 'Saving...');
+  try {
+    const { error } = await supa.from('bets').update(patch).eq('id', id);
+    if (error) throw error;
+    setSyncStatus('connected', `Live · ${state.bets.length} bet${state.bets.length!==1?'s':''}`);
+  } catch(e) {
+    setSyncStatus('error', 'Update failed');
+    throw e;
+  }
+}
+
+function openEditBet(id) {
+  const b = state.bets.find(x => x.id === id);
+  if (!b) return;
+  const punterOpts = state.punterOrder.map(p => `<option value="${p}"${p===b.punter?' selected':''}>${p}</option>`).join('');
+  const resultOpts = ['Win','Loss','Void','Pending'].map(r => `<option value="${r}"${r===b.result?' selected':''}>${r}</option>`).join('');
+  const typeOpts = ['Multi','Single','Parlay','System','Other'].map(t => `<option value="${t}"${t===(b.betType||'Multi')?' selected':''}>${t}</option>`).join('');
+  const sportOpts = ['','AFL','NRL','Racing','Cricket','Soccer','NBA','Other'].map(s => `<option value="${s}"${s===(b.sport||'')?' selected':''}>${s||'— Sport —'}</option>`).join('');
+  document.getElementById('edit-sheet').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:16px;font-weight:800;color:white">✏️ Edit Bet</div>
+      <button onclick="closeEditBet()" style="background:rgba(255,255,255,0.1);border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;color:white;display:flex;align-items:center;justify-content:center">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div><label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px">Punter</label><select id="eb-punter" class="iq-field" style="width:100%">${punterOpts}</select></div>
+      <div><label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px">Week</label><input id="eb-week" class="iq-field" type="number" value="${b.week||1}" min="1" style="width:100%"></div>
+      <div><label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px">Date</label><input id="eb-date" class="iq-field" type="date" value="${b.date||''}" style="width:100%"></div>
+      <div><label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px">Result</label><select id="eb-result" class="iq-field" style="width:100%">${resultOpts}</select></div>
+      <div><label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px">Stake ($)</label><input id="eb-bet" class="iq-field" type="number" value="${b.bet.toFixed(2)}" step="0.01" min="0" style="width:100%"></div>
+      <div><label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px">Return ($)</label><input id="eb-return" class="iq-field" type="number" value="${b.returnAmt.toFixed(2)}" step="0.01" min="0" style="width:100%"></div>
+      <div><label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px">Odds</label><input id="eb-odds" class="iq-field" type="number" value="${b.odds||''}" step="0.01" min="1" placeholder="—" style="width:100%"></div>
+      <div><label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px">Bet Type</label><select id="eb-type" class="iq-field" style="width:100%">${typeOpts}</select></div>
+    </div>
+    <div style="margin-bottom:10px"><label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px">Sport</label><select id="eb-sport" class="iq-field" style="width:100%">${sportOpts}</select></div>
+    <div style="margin-bottom:14px"><label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px">Notes</label><input id="eb-notes" class="iq-field" type="text" value="${(b.notes||'').replace(/"/g,'&quot;')}" placeholder="Match / details" style="width:100%;box-sizing:border-box"></div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:rgba(255,255,255,0.7);margin-bottom:14px;cursor:pointer">
+      <input type="checkbox" id="eb-bonus" ${b.isBonus?'checked':''} style="width:15px;height:15px;accent-color:var(--gold)"> Bonus bet
+    </label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button onclick="closeEditBet()" style="padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.6);font-size:13px;cursor:pointer">Cancel</button>
+      <button onclick="saveEditBet('${id}')" class="btn btn-primary" style="padding:10px">💾 Save</button>
+    </div>`;
+  document.getElementById('edit-overlay').classList.add('open');
+}
+
+async function saveEditBet(id) {
+  const patch = {
+    punter:     document.getElementById('eb-punter').value,
+    week:       parseInt(document.getElementById('eb-week').value) || 1,
+    date:       document.getElementById('eb-date').value,
+    result:     document.getElementById('eb-result').value,
+    bet:        parseFloat(document.getElementById('eb-bet').value) || 0,
+    return_amt: parseFloat(document.getElementById('eb-return').value) || 0,
+    odds:       parseFloat(document.getElementById('eb-odds').value) || null,
+    bet_type:   document.getElementById('eb-type').value,
+    sport:      document.getElementById('eb-sport').value || null,
+    notes:      document.getElementById('eb-notes').value || null,
+    is_bonus:   document.getElementById('eb-bonus').checked,
+  };
+  try {
+    await updateBetInSupabase(id, patch);
+    const idx = state.bets.findIndex(x => x.id === id);
+    if (idx >= 0) Object.assign(state.bets[idx], {
+      punter: patch.punter, week: patch.week, date: patch.date, result: patch.result,
+      bet: patch.bet, returnAmt: patch.return_amt, odds: patch.odds,
+      betType: patch.bet_type, sport: patch.sport, notes: patch.notes, isBonus: patch.is_bonus,
+    });
+    closeEditBet();
+    renderHome();
+    if (document.getElementById('tab-board').classList.contains('active')) renderBoard();
+    const profEl = document.getElementById('profile-overlay');
+    if (profEl?.classList.contains('open')) showPunterProfile(patch.punter);
+    showToast('✅ Bet updated');
+  } catch(e) {
+    console.error(e);
+    showToast('❌ Save failed — check connection');
+  }
+}
+
+function closeEditBet(event) {
+  if (!event || event.target === document.getElementById('edit-overlay')) {
+    document.getElementById('edit-overlay').classList.remove('open');
+  }
+}
+
+function toggleManualEntry() {
+  const body = document.getElementById('manual-entry-body');
+  const chev = document.getElementById('manual-chevron');
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  chev.textContent = open ? '▼' : '▲';
+}
+
+function populateImportPunterSelect() {
+  const sel = document.getElementById('import-punter-select');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = state.punterOrder.map(p => `<option value="${p}"${p===cur?' selected':''}>${p}</option>`).join('');
+  if (!sel.value && state.punterOrder.length) sel.value = state.punterOrder[0];
 }
 
 async function applyBetStatusChange() {
@@ -1387,7 +1500,7 @@ function switchTab(tab) {
     el.style.touchAction = tab === 'account' ? 'none' : 'pan-y';
   });
   if(tab==='home')    renderHome();
-  if(tab==='enter')   { betQueue=[]; populateEntryForm(); }
+  if(tab==='enter')   { betQueue=[]; populateEntryForm(); populateImportPunterSelect(); }
   if(tab==='board')   renderBoard();
   if(tab==='account') renderAdmin();
 }
@@ -2028,12 +2141,74 @@ function showPunterProfile(name) {
       const stk=isVoid?'void':b.isBonus?(b.bonusStake>0?`🎟️ $${b.bonusStake.toFixed(0)} token`:'🎟️ bonus'):`$${b.bet.toFixed(0)} staked`;
       const dp=[b.sport,b.betType||null,b.odds?`@ ${b.odds}`:null,b.notes].filter(Boolean);
       const dl=dp.length?`<div class="bet-meta" style="margin-top:2px">${dp.join(' · ')}</div>`:'';
-      return `<div class="bet-row"><div class="bet-avatar ${cls2}">${INI(b.punter)}</div><div class="bet-info"><div class="bet-name"><span class="pill pill-${cls2}">${b.isBonus?'Bonus':b.result}</span></div><div class="bet-meta">${b.date} · ${stk} → ${isVoid?'—':'$'+b.returnAmt.toFixed(2)}</div>${dl}</div><div class="bet-amount"><div class="bet-net" style="color:${bCol}">${bNetStr}</div></div></div>`;
+      return `<div class="bet-row"><div class="bet-avatar ${cls2}">${INI(b.punter)}</div><div class="bet-info"><div class="bet-name"><span class="pill pill-${cls2}">${b.isBonus?'Bonus':b.result}</span></div><div class="bet-meta">${b.date} · ${stk} → ${isVoid?'—':'$'+b.returnAmt.toFixed(2)}</div>${dl}</div><div class="bet-amount"><div class="bet-net" style="color:${bCol}">${bNetStr}</div><button onclick="openEditBet('${b.id}')" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:12px;cursor:pointer;padding:2px 0;display:block;width:100%;text-align:right">✏️</button></div></div>`;
     }).join('');
     return `<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;background:var(--navy);border-radius:10px 10px 0 0;padding:9px 12px"><span style="font-size:12px;font-weight:800;color:white">WEEK ${w}</span><span style="display:flex;align-items:center;gap:8px"><span class="pill pill-${weekCls}" style="font-size:10px">${weekResult}</span><span style="font-size:12px;font-weight:800;color:${netCol2}">${weekNet>=0?'+$':'-$'}${Math.abs(weekNet).toFixed(2)}</span></span></div><div style="border:1px solid var(--gray);border-top:none;border-radius:0 0 10px 10px;padding:0 10px">${bRows}</div></div>`;
   }).join('');
 
   const breakdownHtml = renderBreakdown(name);
+
+  // ── Analytics: season heatmap ──
+  const allSeasonWeeks = [...new Set(state.bets.map(b => b.week))].sort((a,b)=>a-b);
+  const heatmapDots = allSeasonWeeks.map(w => {
+    const ws = getWeekSummary(name, w);
+    let bg, title;
+    if (!ws.realBets.length && !ws.bonusBets.length) {
+      bg = 'rgba(255,255,255,0.08)'; title = `Wk ${w} — no bets`;
+    } else if (ws.realBets.some(b=>b.result==='Pending') || ws.bonusBets.some(b=>b.result==='Pending')) {
+      bg = 'var(--orange)'; title = `Wk ${w} — pending`;
+    } else if (isWeekProfitable(ws)) {
+      const wRoi = ws.totalStaked > 0 ? Math.round((ws.totalReturn - ws.totalStaked) / ws.totalStaked * 100) : 0;
+      bg = 'var(--green)'; title = `Wk ${w} — +${wRoi}%`;
+    } else {
+      bg = 'var(--red)'; title = `Wk ${w} — loss`;
+    }
+    return `<div class="week-dot" style="background:${bg}" title="${title}">${w}</div>`;
+  }).join('');
+
+  // ── Analytics: per-week ROI sparkline ──
+  const weekRois = allSeasonWeeks.map(w => {
+    const ws = getWeekSummary(name, w);
+    return ws.totalStaked > 0 ? (ws.totalReturn - ws.totalStaked) / ws.totalStaked * 100 : null;
+  }).filter(v => v !== null);
+  let roiSparkHtml = '';
+  if (weekRois.length >= 2) {
+    const W = 260, H = 60, pad = 6;
+    const minV = Math.min(...weekRois, -10), maxV = Math.max(...weekRois, 10);
+    const xStep = (W - pad*2) / (weekRois.length - 1);
+    const yScale = v => pad + (H - pad*2) * (1 - (v - minV) / (maxV - minV));
+    const pts = weekRois.map((v, i) => `${(pad + i * xStep).toFixed(1)},${yScale(v).toFixed(1)}`).join(' ');
+    const zeroY = yScale(0).toFixed(1);
+    const lineCol = weekRois[weekRois.length-1] >= 0 ? '#4ade80' : '#f87171';
+    roiSparkHtml = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:60px;display:block">
+      <line x1="${pad}" y1="${zeroY}" x2="${W-pad}" y2="${zeroY}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="3,3"/>
+      <polyline points="${pts}" fill="none" stroke="${lineCol}" stroke-width="2" stroke-linejoin="round"/>
+      ${weekRois.map((v,i)=>`<circle cx="${(pad+i*xStep).toFixed(1)}" cy="${yScale(v).toFixed(1)}" r="3" fill="${v>=0?'#4ade80':'#f87171'}"/>`).join('')}
+    </svg>`;
+  }
+
+  // ── Analytics: odds bucket win rate ──
+  const oddsData = punterBets.filter(b => b.result !== 'Void' && b.result !== 'Pending' && b.odds > 0);
+  const buckets = [['<2',0,2],['2–5',2,5],['5–15',5,15],['15+',15,Infinity]];
+  const bucketRows = buckets.map(([lbl,lo,hi]) => {
+    const bk = oddsData.filter(b => b.odds >= lo && b.odds < hi);
+    if (!bk.length) return '';
+    const wins = bk.filter(b => b.result === 'Win').length;
+    const pct = Math.round(wins / bk.length * 100);
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+      <div style="width:32px;font-size:10px;font-weight:700;color:rgba(255,255,255,0.6);text-align:right;flex-shrink:0">${lbl}</div>
+      <div style="flex:1;background:rgba(255,255,255,0.07);border-radius:4px;height:14px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${pct>=50?'var(--green)':'var(--red)'};border-radius:4px"></div></div>
+      <div style="width:44px;font-size:10px;font-weight:800;color:${pct>=50?'var(--green)':'var(--red)'};text-align:right;flex-shrink:0">${wins}/${bk.length} (${pct}%)</div>
+    </div>`;
+  }).join('');
+
+  const analyticsHtml = `<div style="margin-bottom:14px">
+    <div class="card-title" style="margin-bottom:10px">📈 Analytics</div>
+    <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">Season Heatmap</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px">${heatmapDots || '<span style="font-size:11px;color:var(--muted)">No weeks yet</span>'}</div>
+    ${roiSparkHtml ? `<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px">ROI by Week</div><div style="margin-bottom:12px">${roiSparkHtml}</div>` : ''}
+    ${bucketRows ? `<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">Win Rate by Odds Range</div>${bucketRows}` : ''}
+  </div>`;
 
   document.getElementById('profile-sheet').innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
@@ -2046,6 +2221,7 @@ function showPunterProfile(name) {
     </div>
     ${badges.length ? `<div style="margin-bottom:14px"><div class="card-title" style="margin-bottom:8px">🏅 Achievements</div>${badges.map(a=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--gray)">${a.chip}<span style="font-size:11px;color:var(--muted)">${a.desc}</span></div>`).join('')}</div>` : ''}
     ${breakdownHtml !== '<div class="empty">No bets yet</div>' ? `<div style="margin-bottom:14px"><div class="card-title" style="margin-bottom:8px">📊 Breakdown</div>${breakdownHtml}</div>` : ''}
+    ${analyticsHtml}
     <div class="card-title" style="margin-bottom:8px">📋 Bet History</div>
     ${weekBlocks || '<div class="empty">No bets yet</div>'}
   `;
@@ -2096,22 +2272,58 @@ function renderBoard() {
   ].map(([l,v])=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--gray)"><span style="font-size:12px;color:var(--muted)">${l}</span><span style="font-size:12px;font-weight:800;color:var(--dark)">${v}</span></div>`).join('');
   renderBreakdown();
 
-  // ── Bet History by week block ──────────────────────────────────────────────
+  // ── Filter bar ─────────────────────────────────────────────────────────────
+  window._boardFilter = window._boardFilter || { text: '', result: 'all', punter: 'all' };
+  const f = window._boardFilter;
+  const punterChips = ['all', ...getPunters()].map(p =>
+    `<span class="filter-chip${f.punter===p?' active':''}" onclick="setBoardFilter('punter','${p}')">${p==='all'?'All':p}</span>`).join('');
+  const resultChips = ['all','Win','Loss','Pending','Void'].map(r =>
+    `<span class="filter-chip${f.result===r?' active':''}" onclick="setBoardFilter('result','${r}')">${r==='all'?'All':r}</span>`).join('');
+  document.getElementById('board-filter-ui').innerHTML = `
+    <div style="margin-bottom:10px">
+      <input type="text" value="${f.text.replace(/"/g,'&quot;')}" placeholder="🔍 Search notes, punter, sport…"
+        oninput="setBoardFilter('text',this.value)"
+        style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;color:var(--dark);font-size:12px;margin-bottom:8px">
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">${resultChips}</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">${punterChips}</div>
+    </div>`;
+
+  renderBoardHistory();
+}
+
+window._boardFilter = window._boardFilter || { text: '', result: 'all', punter: 'all' };
+
+function setBoardFilter(key, val) {
+  window._boardFilter[key] = val;
+  renderBoard();
+}
+
+function renderBoardHistory() {
   const histEl = document.getElementById('board-history');
   if (!state.bets.length) { histEl.innerHTML = '<div class="empty">No bets yet</div>'; return; }
 
-  // Group bets by week+punter
+  const f = window._boardFilter || { text: '', result: 'all', punter: 'all' };
+  const txt = (f.text || '').toLowerCase();
+
+  let filtered = state.bets.filter(b => {
+    if (f.result !== 'all' && b.result !== f.result) return false;
+    if (f.punter !== 'all' && b.punter !== f.punter) return false;
+    if (txt && !`${b.punter} ${b.notes||''} ${b.sport||''} ${b.betType||''}`.toLowerCase().includes(txt)) return false;
+    return true;
+  });
+
+  if (!filtered.length) { histEl.innerHTML = `<div class="empty">No bets match the current filter</div>`; return; }
+
   const groups = {};
-  state.bets.forEach(b => {
+  filtered.forEach(b => {
     const key = `${String(b.week).padStart(4,'0')}:${b.punter}`;
     if (!groups[key]) groups[key] = { week: b.week, punter: b.punter, bets: [] };
     groups[key].bets.push(b);
   });
 
-  // Sort groups: most recent week first, then by punter order within same week
-  const punterOrder = getPunters();
+  const po = getPunters();
   const sortedGroups = Object.values(groups).sort((a, b) =>
-    b.week !== a.week ? b.week - a.week : punterOrder.indexOf(a.punter) - punterOrder.indexOf(b.punter)
+    b.week !== a.week ? b.week - a.week : po.indexOf(a.punter) - po.indexOf(b.punter)
   );
 
   histEl.innerHTML = sortedGroups.map(g => {
@@ -2122,31 +2334,26 @@ function renderBoard() {
     const netStr = (weekNet >= 0 ? '+$' : '-$') + Math.abs(weekNet).toFixed(2);
     const netCol = weekNet >= 0 ? 'var(--green)' : 'var(--red)';
 
-    // Also show void bets in this block
-    const allGroupBets = [...g.bets].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-
-    const betRows = allGroupBets.map(b => {
+    const betRows = [...g.bets].sort((a, b) => (a.date||'').localeCompare(b.date||'')).map(b => {
       const isVoid = b.result === 'Void';
       const bNet = isVoid ? 0 : b.isBonus ? b.returnAmt : (b.returnAmt - b.bet);
       const bNetStr = isVoid ? '—' : (bNet >= 0 ? '+$' : '-$') + Math.abs(bNet).toFixed(2);
       const bNetCol = isVoid ? 'var(--muted)' : bNet >= 0 ? 'var(--green)' : 'var(--red)';
       const cls = b.result === 'Win' ? 'win' : (b.result === 'Void' || b.result === 'Pending') ? 'void' : 'loss';
-      const stakedStr = isVoid ? 'void'
-        : b.isBonus ? (b.bonusStake > 0 ? `🎟️ $${b.bonusStake.toFixed(0)} token` : '🎟️ bonus')
-        : `$${b.bet.toFixed(0)} staked`;
+      const stakedStr = isVoid ? 'void' : b.isBonus ? (b.bonusStake > 0 ? `🎟️ $${b.bonusStake.toFixed(0)} token` : '🎟️ bonus') : `$${b.bet.toFixed(0)} staked`;
       const retStr = isVoid ? '—' : `→ $${b.returnAmt.toFixed(2)}`;
-      const detailParts = [b.sport, b.betType || null, b.odds ? `@ ${b.odds}` : null, b.notes].filter(Boolean);
-      const detailLine = detailParts.length
-        ? `<div class="bet-meta" style="margin-top:2px">${detailParts.join(' · ')}</div>` : '';
+      const dp = [b.sport, b.betType||null, b.odds ? `@ ${b.odds}` : null, b.notes].filter(Boolean);
+      const dl = dp.length ? `<div class="bet-meta" style="margin-top:2px">${dp.join(' · ')}</div>` : '';
       return `<div class="bet-row">
         <div class="bet-avatar ${cls}">${INI(b.punter)}</div>
         <div class="bet-info">
           <div class="bet-name"><span class="pill pill-${cls}">${b.isBonus ? 'Bonus' : b.result}</span></div>
           <div class="bet-meta">${b.date} · ${stakedStr} ${retStr}</div>
-          ${detailLine}
+          ${dl}
         </div>
         <div class="bet-amount">
           <div class="bet-net" style="color:${bNetCol}">${bNetStr}</div>
+          <button onclick="openEditBet('${b.id}')" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:11px;cursor:pointer;padding:2px 0;display:block;width:100%;text-align:right">✏️</button>
         </div>
       </div>`;
     }).join('');
@@ -2159,9 +2366,7 @@ function renderBoard() {
           <span style="font-size:12px;font-weight:800;color:${netCol}">${netStr}</span>
         </span>
       </div>
-      <div style="border:1px solid var(--gray);border-top:none;border-radius:0 0 10px 10px;padding:0 10px">
-        ${betRows}
-      </div>
+      <div style="border:1px solid var(--gray);border-top:none;border-radius:0 0 10px 10px;padding:0 10px">${betRows}</div>
     </div>`;
   }).join('');
 }
@@ -2214,12 +2419,7 @@ function renderAdmin() {
     const netStr=b.result==='Void'?'—':(net>=0?'+':'-')+'$'+Math.abs(net).toFixed(2);
     return `<div class="hist-row"><span class="hist-wk">Wk${b.week}</span><span class="hist-name">${b.punter}${b.isBonus?' 🎟️':''}</span><span class="pill pill-${cls}">${b.isBonus?'Bonus':b.result}</span><span class="hist-net" style="color:${netColor}">${netStr}</span><button class="hist-del" onclick="deleteBetById('${b.id}')">🗑</button></div>`;
   }).join('');}
-  // populate import punter select
-  const impSel = document.getElementById('import-punter-select');
-  if (impSel && state.punterOrder.length) {
-    const cur = impSel.value;
-    impSel.innerHTML = state.punterOrder.map(p => `<option value="${p}"${p===cur?' selected':''}>${p}</option>`).join('');
-  }
+  populateImportPunterSelect();
 }
 
 // applyOverride removed — replaced by setBaseline
