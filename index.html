@@ -1983,7 +1983,7 @@ function renderBreakdown(punterFilter) {
 
 // ═══════════════ PUNTER PROFILE ═══════════════
 function showPunterProfile(name) {
-  const allStats = getPunterStats().sort((a,b) => b.net - a.net);
+  const allStats = getPunterStats().sort((a,b) => b.roi!==a.roi?b.roi-a.roi:b.net-a.net);
   const s = allStats.find(p => p.name === name);
   if (!s) return;
   const rank = allStats.findIndex(p => p.name === name);
@@ -2607,7 +2607,7 @@ function generateReport() {
   const weekBets=state.bets.filter(b=>b.week===reportWeek);
   if(!weekBets.length){showToast(`⚠️ No bets found for Week ${reportWeek}`);return;}
   const account=getAccountTotal(),opening=state.openingBalance,totalContributed=opening+(state.topups||[]).reduce((a,t)=>a+t.totalAdded,0),split=account/state.numPunters,pnl=(account-totalContributed)/state.numPunters;
-  const allStats=getPunterStats().sort((a,b)=>b.net-a.net);
+  const allStats=getPunterStats().sort((a,b)=>b.roi!==a.roi?b.roi-a.roi:b.net-a.net);
   const allValid=state.bets.filter(b=>b.result!=='Void');
   const gW=allValid.filter(b=>b.result==='Win').length,gL=allValid.filter(b=>b.result==='Loss').length;
   const tBet=allValid.reduce((a,b)=>a+b.bet,0),tRet=allValid.reduce((a,b)=>a+b.returnAmt,0);
