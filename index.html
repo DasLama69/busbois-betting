@@ -1497,7 +1497,7 @@ document.getElementById('st-winrate-sub').innerHTML=`${gW}W - ${gL}L - ${gV}V<br
 
   if(state.bets.length>0){const best=state.bets.reduce((a,b)=>b.returnAmt>a.returnAmt?b:a,state.bets[0]);document.getElementById('st-bestwin').textContent='$'+best.returnAmt.toFixed(0);document.getElementById('st-bestwin-who').textContent=best.punter+' Wk'+best.week;}
 
-  const ranked=getPunterStats().filter(s=>s.bets>0).sort((a,b)=>b.net-a.net);
+  const ranked=getPunterStats().filter(s=>s.bets>0).sort((a,b)=>b.roi!==a.roi?b.roi-a.roi:b.net-a.net);
   if(ranked.length>0){document.getElementById('st-leader').textContent=ranked[0].name;document.getElementById('st-leader-net').textContent=(ranked[0].net>=0?'+$':'-$')+Math.abs(ranked[0].net).toFixed(2);}
 
   renderSparkline();
@@ -2059,7 +2059,7 @@ function closeProfile(event) {
 }
 
 function renderBoard() {
-  const stats=getPunterStats().sort((a,b)=>b.net-a.net);
+  const stats=getPunterStats().sort((a,b)=>b.roi!==a.roi?b.roi-a.roi:b.net-a.net);
   const maxRoi=Math.max(...stats.map(s=>Math.abs(s.roi)),1);
   const achievements = computeAchievements();
   renderMyStats(stats, stats);
