@@ -1180,7 +1180,7 @@ async function saveEditBet(id) {
     date:       document.getElementById('eb-date').value,
     result:     document.getElementById('eb-result').value,
     bet:        parseFloat(document.getElementById('eb-bet').value) || 0,
-    return_amt: parseFloat(document.getElementById('eb-return').value) || 0,
+    return_amt: (['Loss','Void'].includes(document.getElementById('eb-result').value)) ? 0 : (parseFloat(document.getElementById('eb-return').value) || 0),
     odds:       parseFloat(document.getElementById('eb-odds').value) || null,
     bet_type:   document.getElementById('eb-type').value,
     sport:      document.getElementById('eb-sport').value || null,
@@ -1322,10 +1322,10 @@ function getPoolSize() { return state.numPunters * (state.poolSize || 10); }
 function getWeekSummary(punter, week) {
   const realBets = state.bets.filter(b => b.punter === punter && b.week === week && !b.isBonus && b.result !== 'Void');
   const totalStaked  = realBets.reduce((a, b) => a + b.bet, 0);
-  const totalReturn  = realBets.reduce((a, b) => a + b.returnAmt, 0);
+  const totalReturn  = realBets.reduce((a, b) => (b.result === 'Loss' || b.result === 'Pending') ? a : a + b.returnAmt, 0);
   // Bonus bets this week — winnings count as income but $0 cost
   const bonusBets = state.bets.filter(b => b.punter === punter && b.week === week && b.isBonus);
-  const bonusReturn = bonusBets.reduce((a, b) => a + b.returnAmt, 0);
+  const bonusReturn = bonusBets.reduce((a, b) => (b.result === 'Loss' || b.result === 'Pending') ? a : a + b.returnAmt, 0);
   const pool = getPoolSize();
   const isComplete  = totalStaked >= pool;          // spent their allocation
   const isSuccess   = totalReturn >= pool;          // return ≥ pool = successful week
@@ -1478,10 +1478,8 @@ function getPunterStats() {
     });
 
     const totalBet = realBets.reduce((a,b)=>a+b.bet,0);
-    const totalRet = realBets.reduce((a,b)=>a+b.returnAmt,0);
-    const bonusRet = bonusBets.reduce((a,b)=>a+b.returnAmt,0);
-    // Net: real returns - real costs + bonus winnings (free)
-    const net = (totalRet - totalBet) + bonusRet;
+    // Use realizedNet so Loss bets with stale returnAmt don't inflate totals
+    const net = [...realBets, ...bonusBets].reduce((a,b)=>a+realizedNet(b),0);
     const roi = totalBet > 0 ? net/totalBet*100 : 0;
     const completedWeeks = wins + losses;
 
@@ -1615,7 +1613,7 @@ document.getElementById('st-winrate-sub').innerHTML=`${gW}W - ${gL}L - ${gV}V<br
   allWeeks.forEach(w => {
     if (weekInProgress(w)) return;
     const weekBets = state.bets.filter(b=>b.week===w && b.result!=='Void');
-    const wReturn = weekBets.reduce((a,b)=>a+b.returnAmt,0);
+    const wReturn = weekBets.filter(b=>b.result==='Win').reduce((a,b)=>a+b.returnAmt,0);
     if (wReturn > gPool) gwWins++; else gwLosses++;
   });
   document.getElementById('st-wl').textContent=gwWins+'/'+gwLosses;
@@ -1627,14 +1625,14 @@ document.getElementById('st-winrate-sub').innerHTML=`${gW}W - ${gL}L - ${gV}V<br
     const w=sortedWeeks[i];
     if (weekInProgress(w)) continue;
     const weekBets=state.bets.filter(b=>b.week===w&&b.result!=='Void');
-    const wReturn=weekBets.reduce((a,b)=>a+b.returnAmt,0);
+    const wReturn=weekBets.filter(b=>b.result==='Win').reduce((a,b)=>a+b.returnAmt,0);
     const outcome=wReturn>gPool?'Win':'Loss';
     if(gt===null){gt=outcome;gs=1;}else if(outcome===gt)gs++;else break;
   }
   document.getElementById('st-streak-sub').textContent=gs>1?`${gs}× ${gt} streak`:'No streak';
 
-  const settledForBest=state.bets.filter(b=>b.result!=='Void'&&b.result!=='Pending');
-  if(settledForBest.length>0){const best=settledForBest.reduce((a,b)=>b.returnAmt>a.returnAmt?b:a);document.getElementById('st-bestwin').textContent='$'+best.returnAmt.toFixed(0);document.getElementById('st-bestwin-who').textContent=best.punter+' Wk'+best.week;}
+  const settledForBest=state.bets.filter(b=>b.result==='Win');
+  if(settledForBest.length>0){const best=settledForBest.reduce((a,b)=>realizedNet(b)>realizedNet(a)?b:a);document.getElementById('st-bestwin').textContent='$'+realizedNet(best).toFixed(0);document.getElementById('st-bestwin-who').textContent=best.punter+' Wk'+best.week;}
 
   const ranked=getPunterStats().filter(s=>s.bets>0).sort((a,b)=>b.roi!==a.roi?b.roi-a.roi:b.net-a.net);
   if(ranked.length>0){document.getElementById('st-leader').textContent=ranked[0].name;document.getElementById('st-leader-net').textContent=(ranked[0].net>=0?'+$':'-$')+Math.abs(ranked[0].net).toFixed(2);}
@@ -1753,10 +1751,7 @@ function renderBetHistoryGroups(containerEl, bets) {
       const d = (a.date||'').localeCompare(b.date||'');
       return d !== 0 ? d : po.indexOf(a.punter) - po.indexOf(b.punter);
     });
-    const weekNet = weekBets.reduce((acc, b) => {
-      if (b.result === 'Void' || b.result === 'Pending') return acc;
-      return acc + (b.isBonus ? b.returnAmt : b.returnAmt - b.bet);
-    }, 0);
+    const weekNet = weekBets.reduce((acc, b) => acc + realizedNet(b), 0);
     const netStr = (weekNet >= 0 ? '+$' : '-$') + Math.abs(weekNet).toFixed(2);
     const netCol = weekNet >= 0 ? 'var(--green)' : 'var(--red)';
     const hasPending = weekBets.some(b => b.result === 'Pending');
@@ -2075,8 +2070,8 @@ function renderMyStats(stats, sortedStats) {
 
   // Secondary stats
   document.getElementById('my-weeks').textContent = s.weeks > 0 ? `${s.weeks} week${s.weeks!==1?'s':''}` : 'No weeks yet';
-  const myBets = state.bets.filter(b => b.punter === name && b.result !== 'Void' && b.result !== 'Pending');
-  const bestNet = myBets.length ? Math.max(...myBets.map(b => b.returnAmt - b.bet)) : null;
+  const myBets = state.bets.filter(b => b.punter === name && b.result === 'Win');
+  const bestNet = myBets.length ? Math.max(...myBets.map(b => realizedNet(b))) : null;
   document.getElementById('my-best').textContent = bestNet !== null && bestNet > 0 ? '+$' + bestNet.toFixed(2) : '–';
   document.getElementById('my-staked').textContent = '$' + s.totalBet.toFixed(2);
 
@@ -2105,7 +2100,7 @@ function renderMyStats(stats, sortedStats) {
   const bonusRow = document.getElementById('my-bonus-row');
   if (s.bonusBets > 0) {
     bonusRow.style.display = 'block';
-    const bonusWinnings = state.bets.filter(b=>b.punter===name&&b.isBonus).reduce((a,b)=>a+b.returnAmt,0);
+    const bonusWinnings = state.bets.filter(b=>b.punter===name&&b.isBonus&&b.result==='Win').reduce((a,b)=>a+b.returnAmt,0);
     bonusRow.textContent = `🎟️ ${s.bonusBets} bonus bet${s.bonusBets!==1?'s':''} — +$${bonusWinnings.toFixed(2)} free winnings counted in ROI`;
   } else {
     bonusRow.style.display = 'none';
@@ -2138,10 +2133,10 @@ function computeAchievements() {
 
   // 💰 Big Gun — highest single net win (bonus bets included — bet=0 so net=returnAmt)
   if (allBets.length) {
-    const max = Math.max(...allBets.map(b => b.returnAmt - b.bet));
+    const max = Math.max(...allBets.map(b => realizedNet(b)));
     if (max > 0) {
       const seen = new Set();
-      allBets.filter(b => b.returnAmt - b.bet === max).forEach(b => { if (!seen.has(b.punter)) { seen.add(b.punter); add(b.punter, entry('badge-gold','💰','Big Gun', `Biggest single win: +$${max.toFixed(2)} (Wk${b.week})`)); } });
+      allBets.filter(b => realizedNet(b) === max).forEach(b => { if (!seen.has(b.punter)) { seen.add(b.punter); add(b.punter, entry('badge-gold','💰','Big Gun', `Biggest single win: +$${max.toFixed(2)} (Wk${b.week})`)); } });
     }
   }
 
@@ -2183,10 +2178,10 @@ function computeAchievements() {
 
   // 🫏 Donkey — biggest single loss (worst net on one bet)
   if (realBets.length) {
-    const minNet = Math.min(...realBets.map(b => b.returnAmt - b.bet));
+    const minNet = Math.min(...realBets.map(b => realizedNet(b)));
     if (minNet < 0) {
       const seen = new Set();
-      realBets.filter(b => b.returnAmt - b.bet === minNet).forEach(b => { if (!seen.has(b.punter)) { seen.add(b.punter); add(b.punter, entry('badge-negative','🫏','Donkey', `Biggest single loss: -$${Math.abs(minNet).toFixed(2)} (Wk${b.week})`)); } });
+      realBets.filter(b => realizedNet(b) === minNet).forEach(b => { if (!seen.has(b.punter)) { seen.add(b.punter); add(b.punter, entry('badge-negative','🫏','Donkey', `Biggest single loss: -$${Math.abs(minNet).toFixed(2)} (Wk${b.week})`)); } });
     }
   }
 
@@ -2224,7 +2219,7 @@ function renderBreakdown(punterFilter) {
       if (!groups[key]) groups[key] = { wins:0, losses:0, net:0, count:0 };
       const g = groups[key];
       g.count++;
-      g.net += b.returnAmt - b.bet;
+      g.net += realizedNet(b);
       if (b.result === 'Win') g.wins++;
       else g.losses++;
     });
@@ -2281,9 +2276,9 @@ function showPunterProfile(name) {
   const roiCol = s.roi>=0?'var(--green)':'var(--red)';
   const streakStr = s.streak > 1 ? `${s.streak}× ${s.streakType==='Win'?'🔥 Win':'❄️ Loss'}` : '–';
 
-  // Best single return (settled bets only)
-  const pb = state.bets.filter(b=>b.punter===name&&b.result!=='Void'&&b.result!=='Pending');
-  const bestRet = pb.length ? Math.max(...pb.map(b=>b.returnAmt-b.bet)) : null;
+  // Best single return (Win bets only — Loss bets always have negative net)
+  const pb = state.bets.filter(b=>b.punter===name&&b.result==='Win');
+  const bestRet = pb.length ? Math.max(...pb.map(b=>realizedNet(b))) : null;
   const bestStr = bestRet!==null&&bestRet>0 ? `+$${bestRet.toFixed(2)}` : '–';
 
   const stat3 = (val,lbl,col='white') => `<div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:10px 6px;text-align:center"><div style="font-size:17px;font-weight:900;color:${col};line-height:1">${val}</div><div style="font-size:8px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px">${lbl}</div></div>`;
@@ -2409,8 +2404,8 @@ function renderBoard() {
   const achievements = computeAchievements();
   renderMyStats(stats, stats);
   document.getElementById('lb-list').innerHTML=stats.map((s,i)=>{
-    const pb = state.bets.filter(b=>b.punter===s.name&&b.result!=='Void'&&b.result!=='Pending');
-    const bestRet = pb.length ? Math.max(...pb.map(b=>b.returnAmt-b.bet)) : null;
+    const pb = state.bets.filter(b=>b.punter===s.name&&b.result==='Win');
+    const bestRet = pb.length ? Math.max(...pb.map(b=>realizedNet(b))) : null;
     const pbStr = bestRet!==null&&bestRet>0 ? `Best: +$${bestRet.toFixed(0)}` : '';
     const netStr=s.net===0?'$0.00':(s.net>0?'+$':'-$')+Math.abs(s.net).toFixed(2);
     const roiStr=s.bets===0?'–':(s.roi>=0?'+':'')+s.roi.toFixed(1)+'%';
@@ -2431,11 +2426,12 @@ function renderBoard() {
   if(!allValid.length){document.getElementById('fun-stats').innerHTML='<div class="empty">Stats appear once bets are logged</div>';return;}
   // Biggest win/loss only consider settled bets (pending have no final result yet)
   const settled=allValid.filter(b=>b.result!=='Pending');
-  const best=settled.length?settled.reduce((a,b)=>b.returnAmt-b.bet>a.returnAmt-a.bet?b:a):null;
-  const worst=settled.length?settled.reduce((a,b)=>b.returnAmt-b.bet<a.returnAmt-a.bet?b:a):null;
+  const best=settled.length?settled.reduce((a,b)=>realizedNet(b)>realizedNet(a)?b:a):null;
+  const worst=settled.length?settled.reduce((a,b)=>realizedNet(b)<realizedNet(a)?b:a):null;
+  const bestNet=best?realizedNet(best):0,worstNet=worst?realizedNet(worst):0;
   document.getElementById('fun-stats').innerHTML=[
-    ['💰 Biggest Win',best?`+$${(best.returnAmt-best.bet).toFixed(2)} — ${best.punter} Wk${best.week}`:'–'],
-    ['💸 Biggest Loss',worst?`-$${Math.abs(worst.returnAmt-worst.bet).toFixed(2)} — ${worst.punter} Wk${worst.week}`:'–'],
+    ['💰 Biggest Win',best&&bestNet>0?`+$${bestNet.toFixed(2)} — ${best.punter} Wk${best.week}`:'–'],
+    ['💸 Biggest Loss',worst&&worstNet<0?`-$${Math.abs(worstNet).toFixed(2)} — ${worst.punter} Wk${worst.week}`:'–'],
     ['📈 Group W/L',`${allValid.filter(b=>b.result==='Win').length}W / ${allValid.filter(b=>b.result==='Loss').length}L`],
     ['💵 Total Staked',`$${allValid.reduce((a,b)=>a+b.bet,0).toFixed(2)}`],
     ['🏆 Most Wins',(()=>{const s=getPunterStats().sort((a,b)=>b.wins-a.wins)[0];return s.wins>0?`${s.name} (${s.wins}W)`:'–';})()],
@@ -2499,13 +2495,13 @@ function renderAdmin() {
   if (bpSel) bpSel.innerHTML = getPunters().map(p=>`<option value="${p}" ${p===(state.baselinePunter||cp)?'selected':''}>${p}</option>`).join('');
   const bwEl = document.getElementById('baseline-week');
   if (bwEl) bwEl.value = state.baselineWeek || cw;
-  if(state.bets.length>0){const last=state.bets[state.bets.length-1];const n=last.returnAmt-last.bet;document.getElementById('last-bet-preview').textContent=`${last.punter} · Wk${last.week} · ${last.result} · ${n>=0?'+':''}$${n.toFixed(2)}`;}
+  if(state.bets.length>0){const last=state.bets[state.bets.length-1];const n=realizedNet(last);document.getElementById('last-bet-preview').textContent=`${last.punter} · Wk${last.week} · ${last.result} · ${n>=0?'+':''}$${n.toFixed(2)}`;}
   // Populate bet status change dropdown
   const betSel = document.getElementById('admin-bet-select');
   if (betSel) {
     betSel.innerHTML = '<option value="">— Select a bet —</option>' +
       [...state.bets].reverse().map(b => {
-        const net = b.result === 'Void' ? 0 : (b.returnAmt - b.bet);
+        const net = realizedNet(b);
         const netStr = (net >= 0 ? '+$' : '-$') + Math.abs(net).toFixed(2);
         return `<option value="${b.id}">${b.punter} · Wk${b.week} · ${b.date} · ${b.result} · ${netStr}</option>`;
       }).join('');
@@ -2513,10 +2509,10 @@ function renderAdmin() {
   const histEl=document.getElementById('acct-history');
   if(!state.bets.length){histEl.innerHTML='<div class="empty">No bets yet</div>';}
   else{histEl.innerHTML=[...state.bets].reverse().map(b=>{
-    const net=b.result==='Void'?0:(b.returnAmt-b.bet);
+    const net=realizedNet(b);
     const cls=b.result==='Win'?'win':b.result==='Loss'?'loss':'void';
-    const netColor=b.result==='Void'?'rgba(255,255,255,0.4)':net>=0?'var(--green)':'var(--red)';
-    const netStr=b.result==='Void'?'—':(net>=0?'+':'-')+'$'+Math.abs(net).toFixed(2);
+    const netColor=(b.result==='Void'||b.result==='Pending')?'rgba(255,255,255,0.4)':net>=0?'var(--green)':'var(--red)';
+    const netStr=(b.result==='Void'||b.result==='Pending')?'—':(net>=0?'+':'-')+'$'+Math.abs(net).toFixed(2);
     return `<div class="hist-row"><span class="hist-wk">Wk${b.week}</span><span class="hist-name">${b.punter}${b.isBonus?' 🎟️':''}</span><span class="pill pill-${cls}">${b.isBonus?'Bonus':b.result}</span><span class="hist-net" style="color:${netColor}">${netStr}</span><button class="hist-del" onclick="deleteBetById('${b.id}')">🗑</button></div>`;
   }).join('');}
   populateImportPunterSelect();
@@ -2892,7 +2888,7 @@ This sets a new baseline.`)) return;
 function exportCSV() {
   if(!state.bets.length){showToast('⚠️ No bets to export');return;}
   const hdrs=['Week','Date','Punter','Bet ($)','Return ($)','Net ($)','ROI (%)','Result'];
-  const rows=state.bets.map(b=>{const net=b.returnAmt-b.bet,roi=b.bet>0?(net/b.bet*100).toFixed(1):'0';return[b.week,b.date,b.punter,b.bet.toFixed(2),b.returnAmt.toFixed(2),net.toFixed(2),roi,b.result];});
+  const rows=state.bets.map(b=>{const net=realizedNet(b),roi=(!b.isBonus&&b.bet>0)?(net/b.bet*100).toFixed(1):'0';return[b.week,b.date,b.punter,b.bet.toFixed(2),b.returnAmt.toFixed(2),net.toFixed(2),roi,b.result];});
   const csv=[hdrs,...rows].map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`BusBois_${new Date().toISOString().slice(0,10)}.csv`;a.click();
   showToast('✅ CSV downloaded!');
@@ -2912,13 +2908,14 @@ function generateReport() {
   const gW=allValid.filter(b=>b.result==='Win').length,gL=allValid.filter(b=>b.result==='Loss').length;
   // Group P/L uses settled bets only — pending bets aren't won yet
   const settledAll=allValid.filter(b=>b.result!=='Pending');
-  const tBet=settledAll.reduce((a,b)=>a+b.bet,0),tRet=settledAll.reduce((a,b)=>a+b.returnAmt,0);
-  const gNet=tRet-tBet,gRoi=tBet>0?(gNet/tBet*100).toFixed(1):'0.0';
+  const tBet=settledAll.filter(b=>!b.isBonus).reduce((a,b)=>a+b.bet,0);
+  const gNet=settledAll.reduce((a,b)=>a+realizedNet(b),0);
+  const gRoi=tBet>0?(gNet/tBet*100).toFixed(1):'0.0';
   const weekNet=weekBets.reduce((a,b)=>a+realizedNet(b),0);
   const maxRoi=Math.max(...allStats.map(s=>Math.abs(s.roi)),1);
   const reportDate=weekBets[0]?.date||'';
   const gen=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  const weekRows=[...weekBets].sort((a,b)=>b.returnAmt-a.returnAmt).map(b=>{const isVoid=b.result==='Void',isPending=b.result==='Pending',neutral=isVoid||isPending,net=neutral?0:b.returnAmt-b.bet,roi=(!neutral&&b.bet>0)?(net/b.bet*100).toFixed(0):0,win=b.result==='Win',bg=neutral?'#F1F5F9':win?'#DCFCE7':'#FEE2E2',col=neutral?'#64748B':win?'#16A34A':'#DC2626';const detailParts=[b.sport,b.betType||null,b.odds?`@ ${b.odds}`:null,b.notes].filter(Boolean);const detailRow=detailParts.length?`<tr><td colspan="6" style="padding:2px 10px 8px;font-size:11px;color:#94A3B8;border-bottom:1px solid #F1F5F9">${detailParts.join(' · ')}</td></tr>`:'';return`<tr><td style="font-weight:700">${b.punter}</td><td>$${b.bet.toFixed(2)}</td><td>${neutral?'—':'$'+b.returnAmt.toFixed(2)}</td><td style="font-weight:800;color:${neutral?'#64748B':net>=0?'#16A34A':'#DC2626'}">${neutral?(isPending?'—':'$0.00'):(net>=0?'+':'-')+'$'+Math.abs(net).toFixed(2)}</td><td style="font-weight:700;color:${neutral?'#64748B':net>=0?'#16A34A':'#DC2626'}">${neutral?'—':(roi>0?'+':'')+roi+'%'}</td><td><span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;background:${bg};color:${col}">${b.result}</span></td></tr>${detailRow}`;}).join('');
+  const weekRows=[...weekBets].sort((a,b)=>realizedNet(b)-realizedNet(a)).map(b=>{const isVoid=b.result==='Void',isPending=b.result==='Pending',neutral=isVoid||isPending,net=realizedNet(b),roi=(!neutral&&!b.isBonus&&b.bet>0)?(net/b.bet*100).toFixed(0):0,win=b.result==='Win',bg=neutral?'#F1F5F9':win?'#DCFCE7':'#FEE2E2',col=neutral?'#64748B':win?'#16A34A':'#DC2626';const detailParts=[b.sport,b.betType||null,b.odds?`@ ${b.odds}`:null,b.notes].filter(Boolean);const detailRow=detailParts.length?`<tr><td colspan="6" style="padding:2px 10px 8px;font-size:11px;color:#94A3B8;border-bottom:1px solid #F1F5F9">${detailParts.join(' · ')}</td></tr>`:'';return`<tr><td style="font-weight:700">${b.punter}</td><td>$${b.bet.toFixed(2)}</td><td>${neutral?'—':'$'+b.returnAmt.toFixed(2)}</td><td style="font-weight:800;color:${neutral?'#64748B':net>=0?'#16A34A':'#DC2626'}">${neutral?(isPending?'—':'$0.00'):(net>=0?'+':'-')+'$'+Math.abs(net).toFixed(2)}</td><td style="font-weight:700;color:${neutral?'#64748B':net>=0?'#16A34A':'#DC2626'}">${neutral||b.isBonus?'—':(roi>0?'+':'')+roi+'%'}</td><td><span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;background:${bg};color:${col}">${b.result}</span></td></tr>${detailRow}`;}).join('');
   const ps=allStats.find(s=>s.name===nextPunter);const psStr=ps&&ps.bets>0?`${ps.wins}W / ${ps.losses}L · ${ps.roi>=0?'+':''}${ps.roi.toFixed(1)}% ROI`:'First bet coming up';
 
   // Season trend bar chart (one bar per week)
@@ -2945,9 +2942,9 @@ function generateReport() {
   const nonVoidWk=weekBets.filter(b=>b.result!=='Void'&&b.result!=='Pending');
   let highlightsHtml='';
   if(nonVoidWk.length>1){
-    const bestB=nonVoidWk.reduce((a,b)=>(b.returnAmt-b.bet)>(a.returnAmt-a.bet)?b:a);
-    const worstB=nonVoidWk.reduce((a,b)=>(b.returnAmt-b.bet)<(a.returnAmt-a.bet)?b:a);
-    const bestNet=bestB.returnAmt-bestB.bet,worstNet=worstB.returnAmt-worstB.bet;
+    const bestB=nonVoidWk.reduce((a,b)=>realizedNet(b)>realizedNet(a)?b:a);
+    const worstB=nonVoidWk.reduce((a,b)=>realizedNet(b)<realizedNet(a)?b:a);
+    const bestNet=realizedNet(bestB),worstNet=realizedNet(worstB);
     const parts=[];
     if(bestNet>0)parts.push(`<div style="flex:1;background:#DCFCE7;border-radius:10px;padding:10px 12px;min-width:0"><div style="font-size:9px;font-weight:800;color:#16A34A;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Best Bet</div><div style="font-size:16px;font-weight:900;color:#15803D">+$${bestNet.toFixed(2)}</div><div style="font-size:11px;color:#16A34A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${bestB.punter}${bestB.notes?' · '+bestB.notes.slice(0,28):''}</div></div>`);
     if(worstNet<0)parts.push(`<div style="flex:1;background:#FEE2E2;border-radius:10px;padding:10px 12px;min-width:0"><div style="font-size:9px;font-weight:800;color:#DC2626;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Worst Bet</div><div style="font-size:16px;font-weight:900;color:#B91C1C">-$${Math.abs(worstNet).toFixed(2)}</div><div style="font-size:11px;color:#DC2626;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${worstB.punter}${worstB.notes?' · '+worstB.notes.slice(0,28):''}</div></div>`);
