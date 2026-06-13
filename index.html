@@ -1404,8 +1404,11 @@ function getAccountTotal() {
   for (const b of state.bets) {
     if (b.result === 'Void') continue;  // void bets are refunds — no P/L impact
     if (b.isBonus) {
-      // Bonus bet: $0 cost, only winnings are real income
-      bal += b.returnAmt;
+      // Bonus bet: $0 cost; winnings only count once the bet settles
+      if (b.result !== 'Pending') bal += b.returnAmt;
+    } else if (b.result === 'Pending') {
+      // Pending bet: stake has left the account, no return received yet
+      bal -= b.bet;
     } else {
       bal += (b.returnAmt - b.bet);
     }
@@ -1424,7 +1427,9 @@ function getBalanceHistory() {
   for (const b of state.bets) {
     if (b.result === 'Void') continue;
     if (b.isBonus) {
-      runBal += b.returnAmt;
+      if (b.result !== 'Pending') runBal += b.returnAmt;
+    } else if (b.result === 'Pending') {
+      runBal -= b.bet;
     } else {
       runBal += (b.returnAmt - b.bet);
     }
@@ -1460,8 +1465,9 @@ function getPunterStats() {
     });
 
     const totalBet = realBets.reduce((a,b)=>a+b.bet,0);
-    const totalRet = realBets.reduce((a,b)=>a+b.returnAmt,0);
-    const bonusRet = bonusBets.reduce((a,b)=>a+b.returnAmt,0);
+    // Pending bets: stake committed, return not yet received (don't count as winnings)
+    const totalRet = realBets.reduce((a,b)=>a + (b.result==='Pending' ? 0 : b.returnAmt),0);
+    const bonusRet = bonusBets.reduce((a,b)=>a + (b.result==='Pending' ? 0 : b.returnAmt),0);
     // Net: real returns - real costs + bonus winnings (free)
     const net = (totalRet - totalBet) + bonusRet;
     const roi = totalBet > 0 ? net/totalBet*100 : 0;
