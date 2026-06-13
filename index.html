@@ -1235,9 +1235,15 @@ async function applyBetStatusChange() {
   if (!betId) { showToast('⚠️ Select a bet first'); return; }
   if (!newResult) { showToast('⚠️ Select a new status'); return; }
   try {
-    await updateBetStatusInSupabase(betId, newResult);
+    // When settling a Pending bet as Loss/Void, also zero returnAmt so stale
+    // potential winnings don't corrupt future P/L calculations
+    const clearReturn = (newResult === 'Loss' || newResult === 'Void');
+    const patch = clearReturn ? { result: newResult, return_amt: 0 } : { result: newResult };
+    const { error } = await supa.from('bets').update(patch).eq('id', betId);
+    if (error) throw error;
+    setSyncStatus('connected', `Live · ${state.bets.length} bet${state.bets.length !== 1 ? 's' : ''}`);
     const bet = state.bets.find(b => b.id === betId);
-    if (bet) bet.result = newResult;
+    if (bet) { bet.result = newResult; if (clearReturn) bet.returnAmt = 0; }
     showToast(`✅ Bet status updated to ${newResult}`);
     renderAdmin();
     renderHome();
@@ -1407,15 +1413,9 @@ function getAccountTotal() {
   let bal = state.openingBalance;
   for (const b of state.bets) {
     if (b.result === 'Void') continue;  // void bets are refunds — no P/L impact
-    if (b.isBonus) {
-      // Bonus bet: $0 cost; winnings only count once the bet settles
-      if (b.result !== 'Pending') bal += b.returnAmt;
-    } else if (b.result === 'Pending') {
-      // Pending bet: stake has left the account, no return received yet
-      bal -= b.bet;
-    } else {
-      bal += (b.returnAmt - b.bet);
-    }
+    bal += realizedNet(b);
+    // Pending real bet: stake is out but no return yet
+    if (b.result === 'Pending' && !b.isBonus) bal -= b.bet;
   }
   for (const t of (state.topups||[])) { bal += t.totalAdded; }
   return bal;
@@ -1430,23 +1430,21 @@ function getBalanceHistory() {
   allEvents.push(runBal);
   for (const b of state.bets) {
     if (b.result === 'Void') continue;
-    if (b.isBonus) {
-      if (b.result !== 'Pending') runBal += b.returnAmt;
-    } else if (b.result === 'Pending') {
-      runBal -= b.bet;
-    } else {
-      runBal += (b.returnAmt - b.bet);
-    }
+    runBal += realizedNet(b);
+    if (b.result === 'Pending' && !b.isBonus) runBal -= b.bet;
     allEvents.push(runBal);
   }
   return allEvents;
 }
 
 // Realized P/L contribution of a single bet for performance stats.
-// Void and Pending are not yet realized → contribute 0 (an "In Progress" bet is
-// neither a win nor a loss). For real cash position see getAccountTotal instead.
+// Void and Pending are not yet realized → contribute 0.
+// Loss bets always contribute -stake regardless of what returnAmt holds
+// (returnAmt may store potential winnings from when the bet was Pending).
 function realizedNet(b) {
   if (b.result === 'Void' || b.result === 'Pending') return 0;
+  if (b.result === 'Loss') return b.isBonus ? 0 : -b.bet;
+  // Win: bonus bet = returnAmt only; real bet = returnAmt - stake
   return b.isBonus ? b.returnAmt : (b.returnAmt - b.bet);
 }
 
@@ -1730,7 +1728,8 @@ function renderBetRow(b) {
   const isVoid = b.result === 'Void';
   const isPending = b.result === 'Pending';
   const cost = b.isBonus ? 0 : b.bet;
-  const net = (isVoid || isPending) ? 0 : b.isBonus ? b.returnAmt : (b.returnAmt - b.bet);
+  // Use realizedNet so Loss bets never show positive even if returnAmt has stale data
+  const net = realizedNet(b);
   const potentialNet = isPending ? (b.returnAmt - b.bet) : 0;
   const roi = cost > 0 ? (net / cost * 100).toFixed(0) : 0;
   const cls = b.result === 'Win' ? 'win' : (b.result === 'Void' || isPending) ? 'void' : 'loss';
@@ -2301,7 +2300,7 @@ function showPunterProfile(name) {
     const weekResult = !s2.isComplete ? 'In Progress' : s2.goesAgain ? '🔥 Win' : isWeekProfitable(s2) ? '✅ Win' : '❌ Loss';
     const netCol2 = weekNet>=0?'var(--green)':'var(--red)';
     const bRows = [...punterBets.filter(b=>b.week===w)].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).map(b => {
-      const isVoid = b.result==='Void', isPending=b.result==='Pending', bNet=(isVoid||isPending)?0:b.isBonus?b.returnAmt:(b.returnAmt-b.bet);
+      const isVoid = b.result==='Void', isPending=b.result==='Pending', bNet=realizedNet(b);
       const potNet = isPending ? (b.returnAmt - b.bet) : 0;
       const bNetStr=isVoid?'—':isPending?(potNet>0?`~+$${potNet.toFixed(2)}`:'—'):(bNet>=0?'+$':'-$')+Math.abs(bNet).toFixed(2);
       const bCol=(isVoid||isPending)?'var(--muted)':bNet>=0?'var(--green)':'var(--red)';
