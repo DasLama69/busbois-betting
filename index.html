@@ -468,6 +468,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div class="card-title">📅 Recent Bets</div>
     <div id="home-filter-ui"></div>
     <div id="home-recent"><div class="empty">No bets yet</div></div>
+    <div id="home-pagination"></div>
   </div>
 </div>
 
@@ -1622,69 +1623,154 @@ document.getElementById('st-winrate-sub').innerHTML=`${gW}W - ${gL}L - ${gV}V<br
 }
 
 function renderHomeFilterUI() {
-  const el = document.getElementById('home-filter-ui');
-  if (!el) return;
-  const f = window._homeFilter;
-  const punters = ['all', ...getPunters()];
-  const sports  = ['all','AFL','NRL','Racing','Cricket','Soccer','NBA','Other'];
-  const results = ['all','Win','Loss','Pending','Void'];
-  el.innerHTML = `
-    <div style="margin-bottom:10px">
-      <input type="text" value="${(f.text||'').replace(/"/g,'&quot;')}" placeholder="🔍 Search punter, notes, sport…"
-        oninput="updateHomeFilterText(this.value)"
-        style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;color:var(--dark);font-size:12px;margin-bottom:8px">
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <select class="iq-field" style="flex:1;min-width:90px" onchange="setHomeFilter('punter',this.value)">
-          ${punters.map(p=>`<option value="${p}"${f.punter===p?' selected':''}>${p==='all'?'All punters':p}</option>`).join('')}
-        </select>
-        <select class="iq-field" style="flex:1;min-width:90px" onchange="setHomeFilter('sport',this.value)">
-          ${sports.map(s=>`<option value="${s}"${f.sport===s?' selected':''}>${s==='all'?'All sports':s}</option>`).join('')}
-        </select>
-        <select class="iq-field" style="flex:1;min-width:90px" onchange="setHomeFilter('result',this.value)">
-          ${results.map(r=>`<option value="${r}"${f.result===r?' selected':''}>${r==='all'?'All results':r}</option>`).join('')}
-        </select>
-      </div>
-    </div>`;
+  renderBetFilterBar('home-filter-ui', window._homeFilter, 'updateHomeFilterText', 'setHomeFilter');
 }
 
+window._homePage     = window._homePage     !== undefined ? window._homePage     : 0;
+window._homePageSize = window._homePageSize !== undefined ? window._homePageSize : 20;
+
 function renderHomeRecent() {
-  const f = window._homeFilter || { text:'', result:'all', punter:'all', sport:'all' };
-  const txt = (f.text||'').toLowerCase();
-  const filtered = [...state.bets].reverse().filter(b => {
-    if (f.result !== 'all' && b.result !== f.result) return false;
-    if (f.punter !== 'all' && b.punter !== f.punter) return false;
-    if (f.sport  !== 'all' && (b.sport||'') !== f.sport) return false;
-    if (txt && !`${b.punter} ${b.notes||''} ${b.sport||''} ${b.betType||''}`.toLowerCase().includes(txt)) return false;
-    return true;
-  }).slice(0, 15);
-  const el = document.getElementById('home-recent');
-  if (!el) return;
-  el.innerHTML = filtered.length ? filtered.map(b => {
-    const isVoid = b.result === 'Void';
-    const cost = b.isBonus ? 0 : b.bet;
-    const net = isVoid ? 0 : b.isBonus ? b.returnAmt : (b.returnAmt - b.bet);
-    const roi = cost > 0 ? (net / cost * 100).toFixed(0) : 0;
-    const cls = b.result === 'Win' ? 'win' : (b.result === 'Void' || b.result === 'Pending') ? 'void' : 'loss';
-    const stakedStr = isVoid ? 'void' : b.isBonus ? (b.bonusStake > 0 ? `🎟️ $${b.bonusStake.toFixed(0)} token` : '🎟️ bonus') : '$' + b.bet.toFixed(0) + ' staked';
-    const netColor = isVoid ? 'rgba(255,255,255,0.4)' : net >= 0 ? 'var(--green)' : 'var(--red)';
-    const netStr = isVoid ? '—' : (net >= 0 ? '+' : '-') + '$' + Math.abs(net).toFixed(2);
-    const roiStr = (isVoid || b.isBonus) ? '—' : (roi > 0 ? '+' : '') + roi + '% ROI';
-    const extraParts = [b.sport, b.betType||null, b.odds ? `@ ${b.odds}` : null, b.notes].filter(Boolean);
-    const extraLine = extraParts.length ? `<div class="bet-meta" style="margin-top:2px">${extraParts.join(' · ')}</div>` : '';
-    return `<div class="bet-row"><div class="bet-avatar ${cls}">${INI(b.punter)}</div><div class="bet-info"><div class="bet-name">${b.punter} <span class="pill pill-${cls}">${b.result}</span>${b.isBonus?' 🎟️':''}</div><div class="bet-meta">Wk${b.week} · ${b.date} · ${stakedStr}</div>${extraLine}</div><div class="bet-amount"><div class="bet-net" style="color:${netColor}">${netStr}</div><div class="bet-roi">${roiStr}</div></div></div>`;
-  }).join('') : '<div class="empty">No bets match</div>';
+  const allFiltered = applyBetFilter(window._homeFilter, [...state.bets].reverse());
+  const ps    = window._homePageSize;
+  const page  = window._homePage;
+  const total = allFiltered.length;
+  const totalPages = ps === 0 ? 1 : Math.ceil(total / ps);
+  const pageBets   = ps === 0 ? allFiltered : allFiltered.slice(page * ps, (page + 1) * ps);
+
+  renderBetHistoryGroups(document.getElementById('home-recent'), pageBets);
+
+  const pEl = document.getElementById('home-pagination');
+  if (!pEl) return;
+  if (total === 0) { pEl.innerHTML = ''; return; }
+  const from = ps === 0 ? 1 : page * ps + 1;
+  const to   = ps === 0 ? total : Math.min((page + 1) * ps, total);
+  const sizes = [10, 20, 50, 0];
+  pEl.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0 2px;font-size:12px;color:var(--muted)">
+    <span>Showing ${from}–${to} of ${total}</span>
+    <div style="display:flex;align-items:center;gap:8px">
+      <select class="iq-field" style="padding:4px 8px;font-size:11px" onchange="setHomePageSize(+this.value)">
+        ${sizes.map(s=>`<option value="${s}"${ps===s?' selected':''}>${s===0?'All':s+' per page'}</option>`).join('')}
+      </select>
+      <button onclick="setHomePage(${page-1})" ${page===0?'disabled':''} style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);color:var(--dark);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px">←</button>
+      <span style="min-width:50px;text-align:center">${page+1} / ${totalPages}</span>
+      <button onclick="setHomePage(${page+1})" ${page>=totalPages-1?'disabled':''} style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);color:var(--dark);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px">→</button>
+    </div>
+  </div>`;
+}
+
+function setHomePage(p) {
+  const ps    = window._homePageSize;
+  const total = applyBetFilter(window._homeFilter, state.bets).length;
+  const max   = ps === 0 ? 0 : Math.max(0, Math.ceil(total / ps) - 1);
+  window._homePage = Math.max(0, Math.min(p, max));
+  renderHomeRecent();
+}
+
+function setHomePageSize(size) {
+  window._homePageSize = size;
+  window._homePage = 0;
+  renderHomeRecent();
 }
 
 function updateHomeFilterText(val) {
   window._homeFilter = window._homeFilter || { text:'', result:'all', punter:'all', sport:'all' };
   window._homeFilter.text = val;
+  window._homePage = 0;
   renderHomeRecent();
 }
 
 function setHomeFilter(key, val) {
   window._homeFilter = window._homeFilter || { text:'', result:'all', punter:'all', sport:'all' };
   window._homeFilter[key] = val;
+  window._homePage = 0;
   renderHomeRecent();
+}
+
+// ═══════════════ SHARED BET HISTORY RENDERING ═══════════════
+
+function applyBetFilter(f, bets) {
+  if (!f) return bets;
+  const txt = (f.text||'').toLowerCase();
+  return bets.filter(b => {
+    if (f.result !== 'all' && b.result !== f.result) return false;
+    if (f.punter !== 'all' && b.punter !== f.punter) return false;
+    if (f.sport  !== 'all' && (b.sport||'') !== f.sport) return false;
+    if (txt && !`${b.punter} ${b.notes||''} ${b.sport||''} ${b.betType||''}`.toLowerCase().includes(txt)) return false;
+    return true;
+  });
+}
+
+function renderBetRow(b) {
+  const isVoid = b.result === 'Void';
+  const isPending = b.result === 'Pending';
+  const cost = b.isBonus ? 0 : b.bet;
+  const net = (isVoid || isPending) ? 0 : b.isBonus ? b.returnAmt : (b.returnAmt - b.bet);
+  const potentialNet = isPending ? (b.returnAmt - b.bet) : 0;
+  const roi = cost > 0 ? (net / cost * 100).toFixed(0) : 0;
+  const cls = b.result === 'Win' ? 'win' : (b.result === 'Void' || isPending) ? 'void' : 'loss';
+  const stakedStr = isVoid ? 'void' : b.isBonus ? (b.bonusStake > 0 ? `🎟️ $${b.bonusStake.toFixed(0)} token` : '🎟️ bonus') : '$' + b.bet.toFixed(0) + ' staked';
+  const netColor = (isVoid || isPending) ? 'rgba(255,255,255,0.4)' : net >= 0 ? 'var(--green)' : 'var(--red)';
+  const netStr = isVoid ? '—' : isPending ? (potentialNet > 0 ? `~+$${potentialNet.toFixed(2)}` : '—') : (net >= 0 ? '+' : '-') + '$' + Math.abs(net).toFixed(2);
+  const roiStr = (isVoid || isPending || b.isBonus) ? '—' : (roi > 0 ? '+' : '') + roi + '% ROI';
+  const extraParts = [b.sport, b.betType||null, b.odds ? `@ ${b.odds}` : null, b.notes].filter(Boolean);
+  const extraLine = extraParts.length ? `<div class="bet-meta" style="margin-top:2px">${extraParts.join(' · ')}</div>` : '';
+  return `<div class="bet-row"><div class="bet-avatar ${cls}">${INI(b.punter)}</div><div class="bet-info"><div class="bet-name">${b.punter} <span class="pill pill-${cls}">${b.isBonus?'Bonus':b.result}</span>${b.isBonus?' 🎟️':''}</div><div class="bet-meta">${b.date} · ${stakedStr}</div>${extraLine}</div><div class="bet-amount"><div class="bet-net" style="color:${netColor}">${netStr}</div><div class="bet-roi">${roiStr}</div><button onclick="openEditBet('${b.id}')" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:11px;cursor:pointer;padding:1px 0;display:block;width:100%;text-align:right">✏️</button></div></div>`;
+}
+
+function renderBetHistoryGroups(containerEl, bets) {
+  if (!containerEl) return;
+  if (!bets.length) { containerEl.innerHTML = '<div class="empty">No bets match</div>'; return; }
+  const weekMap = {};
+  bets.forEach(b => { if (!weekMap[b.week]) weekMap[b.week] = []; weekMap[b.week].push(b); });
+  const po = getPunters();
+  containerEl.innerHTML = Object.keys(weekMap).map(Number).sort((a,b)=>b-a).map(w => {
+    const weekBets = [...weekMap[w]].sort((a,b) => {
+      const d = (a.date||'').localeCompare(b.date||'');
+      return d !== 0 ? d : po.indexOf(a.punter) - po.indexOf(b.punter);
+    });
+    const weekNet = weekBets.reduce((acc, b) => {
+      if (b.result === 'Void' || b.result === 'Pending') return acc;
+      return acc + (b.isBonus ? b.returnAmt : b.returnAmt - b.bet);
+    }, 0);
+    const netStr = (weekNet >= 0 ? '+$' : '-$') + Math.abs(weekNet).toFixed(2);
+    const netCol = weekNet >= 0 ? 'var(--green)' : 'var(--red)';
+    const hasPending = weekBets.some(b => b.result === 'Pending');
+    return `<div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--navy);border-radius:10px 10px 0 0;padding:9px 12px">
+        <span style="font-size:12px;font-weight:800;color:white;letter-spacing:0.5px">WEEK ${w}</span>
+        <span style="display:flex;align-items:center;gap:8px">
+          ${hasPending?'<span class="pill pill-void" style="font-size:10px">In Progress</span>':''}
+          <span style="font-size:12px;font-weight:800;color:${netCol}">${netStr}</span>
+        </span>
+      </div>
+      <div style="border:1px solid var(--gray);border-top:none;border-radius:0 0 10px 10px;padding:0 10px">${weekBets.map(renderBetRow).join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderBetFilterBar(containerId, filter, textFn, setFn) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const f = filter || {};
+  const punters = ['all', ...getPunters()];
+  const sports  = ['all','AFL','NRL','Racing','Cricket','Soccer','NBA','Other'];
+  const results = ['all','Win','Loss','Pending','Void'];
+  el.innerHTML = `<div style="margin-bottom:10px">
+    <input type="text" value="${(f.text||'').replace(/"/g,'&quot;')}" placeholder="🔍 Search punter, notes, sport…"
+      oninput="${textFn}(this.value)"
+      style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;color:var(--dark);font-size:12px;margin-bottom:8px">
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <select class="iq-field" style="flex:1;min-width:90px" onchange="${setFn}('punter',this.value)">
+        ${punters.map(p=>`<option value="${p}"${f.punter===p?' selected':''}>${p==='all'?'All punters':p}</option>`).join('')}
+      </select>
+      <select class="iq-field" style="flex:1;min-width:90px" onchange="${setFn}('sport',this.value)">
+        ${sports.map(s=>`<option value="${s}"${f.sport===s?' selected':''}>${s==='all'?'All sports':s}</option>`).join('')}
+      </select>
+      <select class="iq-field" style="flex:1;min-width:90px" onchange="${setFn}('result',this.value)">
+        ${results.map(r=>`<option value="${r}"${f.result===r?' selected':''}>${r==='all'?'All results':r}</option>`).join('')}
+      </select>
+    </div>
+  </div>`;
 }
 
 // ═══════════════ ENTRY FORM ═══════════════
@@ -2326,108 +2412,31 @@ function renderBoard() {
   renderBreakdown();
 
   // ── Filter bar ─────────────────────────────────────────────────────────────
-  window._boardFilter = window._boardFilter || { text: '', result: 'all', punter: 'all' };
-  const f = window._boardFilter;
-  const punterChips = ['all', ...getPunters()].map(p =>
-    `<span class="filter-chip${f.punter===p?' active':''}" onclick="setBoardFilter('punter','${p}')">${p==='all'?'All':p}</span>`).join('');
-  const resultChips = ['all','Win','Loss','Pending','Void'].map(r =>
-    `<span class="filter-chip${f.result===r?' active':''}" onclick="setBoardFilter('result','${r}')">${r==='all'?'All':r}</span>`).join('');
-  document.getElementById('board-filter-ui').innerHTML = `
-    <div style="margin-bottom:10px">
-      <input type="text" value="${f.text.replace(/"/g,'&quot;')}" placeholder="🔍 Search notes, punter, sport…"
-        oninput="updateBoardFilterText(this.value)"
-        style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;color:var(--dark);font-size:12px;margin-bottom:8px">
-      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">${resultChips}</div>
-      <div style="display:flex;gap:5px;flex-wrap:wrap">${punterChips}</div>
-    </div>`;
+  window._boardFilter = window._boardFilter || { text: '', result: 'all', punter: 'all', sport: 'all' };
+  renderBetFilterBar('board-filter-ui', window._boardFilter, 'updateBoardFilterText', 'setBoardFilter');
 
   renderBoardHistory();
 }
 
-window._boardFilter = window._boardFilter || { text: '', result: 'all', punter: 'all' };
+window._boardFilter = window._boardFilter || { text: '', result: 'all', punter: 'all', sport: 'all' };
 
 function setBoardFilter(key, val) {
+  window._boardFilter = window._boardFilter || { text:'', result:'all', punter:'all', sport:'all' };
   window._boardFilter[key] = val;
-  renderBoard();
+  renderBetFilterBar('board-filter-ui', window._boardFilter, 'updateBoardFilterText', 'setBoardFilter');
+  renderBoardHistory();
 }
 
 function updateBoardFilterText(val) {
-  window._boardFilter = window._boardFilter || { text:'', result:'all', punter:'all' };
+  window._boardFilter = window._boardFilter || { text:'', result:'all', punter:'all', sport:'all' };
   window._boardFilter.text = val;
   renderBoardHistory();
 }
 
 function renderBoardHistory() {
-  const histEl = document.getElementById('board-history');
-  if (!state.bets.length) { histEl.innerHTML = '<div class="empty">No bets yet</div>'; return; }
-
-  const f = window._boardFilter || { text: '', result: 'all', punter: 'all' };
-  const txt = (f.text || '').toLowerCase();
-
-  let filtered = state.bets.filter(b => {
-    if (f.result !== 'all' && b.result !== f.result) return false;
-    if (f.punter !== 'all' && b.punter !== f.punter) return false;
-    if (txt && !`${b.punter} ${b.notes||''} ${b.sport||''} ${b.betType||''}`.toLowerCase().includes(txt)) return false;
-    return true;
-  });
-
-  if (!filtered.length) { histEl.innerHTML = `<div class="empty">No bets match the current filter</div>`; return; }
-
-  const groups = {};
-  filtered.forEach(b => {
-    const key = `${String(b.week).padStart(4,'0')}:${b.punter}`;
-    if (!groups[key]) groups[key] = { week: b.week, punter: b.punter, bets: [] };
-    groups[key].bets.push(b);
-  });
-
-  const po = getPunters();
-  const sortedGroups = Object.values(groups).sort((a, b) =>
-    b.week !== a.week ? b.week - a.week : po.indexOf(a.punter) - po.indexOf(b.punter)
-  );
-
-  histEl.innerHTML = sortedGroups.map(g => {
-    const s = getWeekSummary(g.punter, g.week);
-    const weekNet = (s.totalReturn - s.totalStaked) + s.bonusReturn;
-    const weekCls = s.goesAgain || isWeekProfitable(s) ? 'win' : 'loss';
-    const weekResult = !s.isComplete ? 'In Progress' : s.goesAgain ? '🔥 Win' : isWeekProfitable(s) ? '✅ Win' : '❌ Loss';
-    const netStr = (weekNet >= 0 ? '+$' : '-$') + Math.abs(weekNet).toFixed(2);
-    const netCol = weekNet >= 0 ? 'var(--green)' : 'var(--red)';
-
-    const betRows = [...g.bets].sort((a, b) => (a.date||'').localeCompare(b.date||'')).map(b => {
-      const isVoid = b.result === 'Void';
-      const bNet = isVoid ? 0 : b.isBonus ? b.returnAmt : (b.returnAmt - b.bet);
-      const bNetStr = isVoid ? '—' : (bNet >= 0 ? '+$' : '-$') + Math.abs(bNet).toFixed(2);
-      const bNetCol = isVoid ? 'var(--muted)' : bNet >= 0 ? 'var(--green)' : 'var(--red)';
-      const cls = b.result === 'Win' ? 'win' : (b.result === 'Void' || b.result === 'Pending') ? 'void' : 'loss';
-      const stakedStr = isVoid ? 'void' : b.isBonus ? (b.bonusStake > 0 ? `🎟️ $${b.bonusStake.toFixed(0)} token` : '🎟️ bonus') : `$${b.bet.toFixed(0)} staked`;
-      const retStr = isVoid ? '—' : `→ $${b.returnAmt.toFixed(2)}`;
-      const dp = [b.sport, b.betType||null, b.odds ? `@ ${b.odds}` : null, b.notes].filter(Boolean);
-      const dl = dp.length ? `<div class="bet-meta" style="margin-top:2px">${dp.join(' · ')}</div>` : '';
-      return `<div class="bet-row">
-        <div class="bet-avatar ${cls}">${INI(b.punter)}</div>
-        <div class="bet-info">
-          <div class="bet-name"><span class="pill pill-${cls}">${b.isBonus ? 'Bonus' : b.result}</span></div>
-          <div class="bet-meta">${b.date} · ${stakedStr} ${retStr}</div>
-          ${dl}
-        </div>
-        <div class="bet-amount">
-          <div class="bet-net" style="color:${bNetCol}">${bNetStr}</div>
-          <button onclick="openEditBet('${b.id}')" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:11px;cursor:pointer;padding:2px 0;display:block;width:100%;text-align:right">✏️</button>
-        </div>
-      </div>`;
-    }).join('');
-
-    return `<div style="margin-bottom:14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--navy);border-radius:10px 10px 0 0;padding:9px 12px">
-        <span style="font-size:12px;font-weight:800;color:white;letter-spacing:0.5px">WEEK ${g.week} · ${g.punter}</span>
-        <span style="display:flex;align-items:center;gap:8px">
-          <span class="pill pill-${weekCls}" style="font-size:10px">${weekResult}</span>
-          <span style="font-size:12px;font-weight:800;color:${netCol}">${netStr}</span>
-        </span>
-      </div>
-      <div style="border:1px solid var(--gray);border-top:none;border-radius:0 0 10px 10px;padding:0 10px">${betRows}</div>
-    </div>`;
-  }).join('');
+  window._boardFilter = window._boardFilter || { text:'', result:'all', punter:'all', sport:'all' };
+  const filtered = applyBetFilter(window._boardFilter, [...state.bets].reverse());
+  renderBetHistoryGroups(document.getElementById('board-history'), filtered);
 }
 
 // ═══════════════ ADMIN ═══════════════
