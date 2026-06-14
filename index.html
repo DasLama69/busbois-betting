@@ -1478,6 +1478,8 @@ function getPunterStats() {
     });
 
     const totalBet = realBets.reduce((a,b)=>a+b.bet,0);
+    const totalRet = realBets.filter(b=>b.result==='Win').reduce((a,b)=>a+b.returnAmt,0);
+    const bonusRet = bonusBets.filter(b=>b.result==='Win').reduce((a,b)=>a+b.returnAmt,0);
     // Use realizedNet so Loss bets with stale returnAmt don't inflate totals
     const net = [...realBets, ...bonusBets].reduce((a,b)=>a+realizedNet(b),0);
     const roi = totalBet > 0 ? net/totalBet*100 : 0;
