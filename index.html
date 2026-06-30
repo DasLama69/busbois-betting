@@ -344,14 +344,16 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .import-preview-table tr.dup td { opacity:0.35; }
 .import-row-status-new { color:#4ade80; font-weight:700; }
 .import-row-status-dup { color:#94a3b8; }
-.iq-row { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px; margin-bottom:6px; }
+.iq-row { background:var(--off); border:1px solid var(--gray); border-radius:8px; padding:8px; margin-bottom:6px; }
 .iq-row.dup { opacity:0.4; }
 .iq-row.dup .iq-status { color:#94a3b8; }
 .iq-row.new .iq-status { color:#4ade80; font-weight:700; }
-.iq-field { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); border-radius:5px; color:#fff; font-size:0.72rem; padding:3px 6px; }
-.iq-field option { background:#163356; color:#fff; }
-.iq-field::placeholder { color:rgba(255,255,255,0.35); }
-.edit-sheet .iq-field { padding:8px 10px; font-size:13px; border-radius:8px; }
+.iq-field { background:var(--off); border:1px solid var(--gray); border-radius:5px; color:var(--dark); font-size:0.72rem; padding:3px 6px; }
+.iq-field option { background:#fff; color:var(--dark); }
+.iq-field::placeholder { color:var(--muted); }
+.edit-sheet .iq-field { padding:8px 10px; font-size:13px; border-radius:8px; background:rgba(255,255,255,0.07); border-color:rgba(255,255,255,0.15); color:#fff; }
+.edit-sheet .iq-field option { background:#163356; color:#fff; }
+.edit-sheet .iq-field::placeholder { color:rgba(255,255,255,0.35); }
 .edit-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:300;display:none }
 .edit-overlay.open { display:flex;align-items:flex-end }
 .edit-sheet { background:var(--mid);border-radius:18px 18px 0 0;padding:20px;width:100%;max-height:85vh;overflow-y:auto;box-sizing:border-box }
@@ -497,7 +499,7 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   <!-- Paste & Import (primary) -->
   <div class="card">
     <div class="card-title">📥 Paste &amp; Import</div>
-    <textarea id="import-input" rows="5" placeholder="Paste your bet history here…" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px;color:var(--text-primary);font-size:0.72rem;resize:vertical;box-sizing:border-box"></textarea>
+    <textarea id="import-input" rows="5" placeholder="Paste your bet history here…" style="width:100%;background:var(--off);border:1px solid var(--gray);border-radius:8px;padding:8px;color:var(--dark);font-size:0.72rem;resize:vertical;box-sizing:border-box"></textarea>
     <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
       <select id="import-punter-select" class="form-control" style="flex:1;min-width:120px;font-size:12px"></select>
       <button class="btn btn-primary" onclick="parseImportInput()" style="flex:1;min-width:80px">Parse</button>
@@ -3672,7 +3674,7 @@ function renderImportQueue() {
       <button class="btn btn-primary" onclick="confirmImportQueue()" ${btnDis} style="flex:1">
         Import ${newCount} new bet${newCount!==1?'s':''}
       </button>
-      <button onclick="clearImport()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--text-secondary);cursor:pointer">Clear</button>
+      <button onclick="clearImport()" style="background:var(--off);border:1px solid var(--gray);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--muted);cursor:pointer">Clear</button>
     </div>`;
 }
 
@@ -3695,7 +3697,7 @@ function renderQueueRow(b, idx) {
       <input class="iq-field" type="text" value="${b.date}" style="width:80px" onchange="updateQueueItem(${idx},'date',this.value)" placeholder="YYYY-MM-DD">
       <label style="font-size:0.68rem;color:var(--muted);flex-shrink:0">Wk</label>
       <input class="iq-field" type="number" value="${b.week||1}" style="width:38px" min="1" step="1" onchange="updateQueueItem(${idx},'week',parseInt(this.value)||1)">
-      <button onclick="removeQueueItem(${idx})" style="background:none;border:none;color:rgba(255,255,255,0.35);font-size:14px;cursor:pointer;padding:0 2px;flex-shrink:0">×</button>
+      <button onclick="removeQueueItem(${idx})" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:0 2px;flex-shrink:0">×</button>
     </div>
     <div style="margin-bottom:4px">
       <input class="iq-field" type="text" value="${(b.notes||'').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box" onchange="updateQueueItem(${idx},'notes',this.value)" placeholder="Notes / match name">
